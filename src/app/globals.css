@@ -1,0 +1,463 @@
+@import "tailwindcss";
+@import "tw-animate-css";
+
+/* Situs ini hanya punya tema terang. Varian `dark:` bawaan shadcn
+   hanya aktif jika ada class .dark, yang tidak pernah dipakai. */
+@custom-variant dark (&:is(.dark *));
+
+/* Token shadcn — nilai HSL tanpa hsl(), sesuai brand WeaveLens. */
+:root {
+  --background: 0 0% 98%;
+  --foreground: 10 30% 13%;
+  --primary: 7 46% 31%;
+  --primary-foreground: 0 0% 98%;
+  --secondary: 29 56% 88%;
+  --secondary-foreground: 10 30% 13%;
+  --muted: 29 56% 88%;
+  --muted-foreground: 12 10% 50%;
+  --accent: 20 50% 94%;
+  --accent-foreground: 7 46% 31%;
+  --card: 0 0% 98%;
+  --card-foreground: 10 30% 13%;
+  --popover: 0 0% 98%;
+  --popover-foreground: 10 30% 13%;
+  --destructive: 7 46% 31%;
+  --border: 27 28% 84%;
+  --input: 27 28% 84%;
+  --ring: 7 46% 31%;
+  --radius: 1rem;
+}
+
+@theme inline {
+  --color-background: hsl(var(--background));
+  --color-foreground: hsl(var(--foreground));
+  --color-primary: hsl(var(--primary));
+  --color-primary-foreground: hsl(var(--primary-foreground));
+  --color-secondary: hsl(var(--secondary));
+  --color-secondary-foreground: hsl(var(--secondary-foreground));
+  --color-muted: hsl(var(--muted));
+  --color-muted-foreground: hsl(var(--muted-foreground));
+  --color-accent: hsl(var(--accent));
+  --color-accent-foreground: hsl(var(--accent-foreground));
+  --color-card: hsl(var(--card));
+  --color-card-foreground: hsl(var(--card-foreground));
+  --color-popover: hsl(var(--popover));
+  --color-popover-foreground: hsl(var(--popover-foreground));
+  --color-destructive: hsl(var(--destructive));
+  --color-border: hsl(var(--border));
+  --color-input: hsl(var(--input));
+  --color-ring: hsl(var(--ring));
+
+  /* Token brand langsung (hex), untuk kasus di luar semantik shadcn. */
+  --color-brand: #74342b;
+  --color-brand-hover: #5c2822;
+  --color-brand-soft: #f7ece6;
+  --color-sand: #f2e1d1;
+  --color-sand-deep: #e6cfb8;
+  --color-paper: #f9f9f9;
+  --color-ink: #2b1a17;
+  --color-ink-muted: #8c7b74;
+  --color-line: #e2d6cc;
+  --color-placeholder: #e3e0dd;
+  /* Status sukses di portal (disetujui, lunas). Kontras teks 6.4:1 di atas success-soft. */
+  --color-success: #2f6b3a;
+  --color-success-soft: #e4efe3;
+
+  /* Radius: 8px input/badge, 16px tombol/card, 24px panel besar. */
+  --radius-sm: 0.5rem;
+  --radius-md: var(--radius);
+  --radius-lg: var(--radius);
+  --radius-xl: var(--radius);
+  --radius-2xl: 1.5rem;
+
+  --shadow-soft: 0 4px 16px rgba(116, 52, 43, 0.08);
+  --shadow-lift: 0 14px 36px rgba(116, 52, 43, 0.16);
+
+  --font-heading: var(--font-montserrat), "Helvetica Neue", Helvetica, Arial, sans-serif;
+  --font-sans: "Helvetica Neue", Helvetica, Arial, sans-serif;
+
+  --animate-hero-in: hero-in 700ms cubic-bezier(0.2, 0.7, 0.2, 1) both;
+
+  @keyframes hero-in {
+    from {
+      opacity: 0;
+      transform: translateY(24px) scale(0.98);
+    }
+    to {
+      opacity: 1;
+      transform: none;
+    }
+  }
+}
+
+@layer base {
+  * {
+    @apply border-border outline-ring/50;
+  }
+
+  html {
+    scroll-behavior: smooth;
+    scroll-padding-top: 7.5rem;
+  }
+
+  @media (min-width: 768px) {
+    html {
+      scroll-padding-top: 5rem;
+    }
+  }
+
+  body {
+    @apply bg-background text-foreground font-sans antialiased;
+  }
+
+  h1,
+  h2,
+  h3 {
+    @apply font-heading font-bold text-primary text-balance;
+  }
+
+  :focus-visible {
+    outline: 2px solid hsl(var(--ring));
+    outline-offset: 2px;
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    html {
+      scroll-behavior: auto;
+    }
+
+    *,
+    *::before,
+    *::after {
+      animation-duration: 0.01ms !important;
+      animation-iteration-count: 1 !important;
+      transition-duration: 0.01ms !important;
+    }
+  }
+}
+
+/* ------------------------------------------------------------------
+   Glass: panel semi-transparan dengan blur. Dipakai hemat, hanya di atas
+   foto atau warna solid agar teks tetap terbaca.
+   ------------------------------------------------------------------ */
+@utility glass {
+  background-color: rgb(249 249 249 / 0.72);
+  border: 1px solid rgb(255 255 255 / 0.55);
+  box-shadow: var(--shadow-soft);
+  backdrop-filter: blur(14px) saturate(1.4);
+  -webkit-backdrop-filter: blur(14px) saturate(1.4);
+}
+
+/* Versi tanpa blur untuk elemen yang bergerak: ringan untuk GPU. */
+@utility glass-lite {
+  background-color: rgb(249 249 249 / 0.88);
+  border: 1px solid rgb(255 255 255 / 0.7);
+  box-shadow: var(--shadow-soft);
+}
+
+@utility glass-dark {
+  background-color: rgb(249 249 249 / 0.12);
+  border: 1px solid rgb(249 249 249 / 0.28);
+}
+
+/* ------------------------------------------------------------------
+   Gerak berbasis waktu (loop halus). Mati otomatis pada prefers-reduced-motion
+   lewat aturan di @layer base.
+   ------------------------------------------------------------------ */
+@keyframes float {
+  50% {
+    transform: translateY(-10px);
+  }
+}
+
+@keyframes marquee {
+  to {
+    transform: translateX(-50%);
+  }
+}
+
+@keyframes ping-soft {
+  0% {
+    transform: scale(1);
+    opacity: 0.55;
+  }
+  80%,
+  100% {
+    transform: scale(1.6);
+    opacity: 0;
+  }
+}
+
+@keyframes word-rise {
+  from {
+    transform: translateY(0.45em);
+    opacity: 0.35;
+  }
+  to {
+    transform: none;
+    opacity: 1;
+  }
+}
+
+.float {
+  animation: float 6s ease-in-out infinite;
+  animation-delay: var(--float-delay, 0s);
+}
+
+.marquee-track {
+  animation: marquee var(--marquee-speed, 32s) linear infinite;
+}
+
+/* Lubang sprocket pita film. */
+.film-holes {
+  background-image: linear-gradient(90deg, rgb(249 249 249 / 0.85) 0 12px, transparent 12px);
+  background-size: 26px 100%;
+  background-position: 7px 0;
+  border-radius: 2px;
+}
+
+.marquee:hover .marquee-track,
+.marquee:focus-within .marquee-track {
+  animation-play-state: paused;
+}
+
+.fab-ping {
+  background-color: var(--color-primary);
+  animation: ping-soft 2.4s cubic-bezier(0, 0, 0.2, 1) infinite;
+}
+
+.hero-word {
+  display: inline-block;
+  animation: word-rise 550ms cubic-bezier(0.2, 0.7, 0.2, 1) both;
+  animation-delay: calc(var(--word, 0) * 35ms);
+}
+
+/* ------------------------------------------------------------------
+   Gerak berbasis scroll (CSS scroll-driven animations).
+   Browser yang belum mendukung tetap menampilkan semuanya secara statis.
+   ------------------------------------------------------------------ */
+.scroll-progress {
+  display: none;
+}
+
+@keyframes grow-x {
+  from {
+    transform: scaleX(0);
+  }
+  to {
+    transform: scaleX(1);
+  }
+}
+
+@keyframes reveal-up {
+  from {
+    transform: translateY(56px) scale(0.95);
+  }
+  to {
+    transform: none;
+  }
+}
+
+@keyframes drift-up {
+  to {
+    transform: translateY(-64px);
+  }
+}
+
+@keyframes drift-down {
+  to {
+    transform: translateY(48px);
+  }
+}
+
+@keyframes turn {
+  to {
+    transform: rotate(120deg);
+  }
+}
+
+@supports (animation-timeline: scroll()) {
+  @media (prefers-reduced-motion: no-preference) {
+    .scroll-progress {
+      display: block;
+      transform-origin: 0 50%;
+      animation: grow-x linear both;
+      animation-timeline: scroll(root);
+    }
+
+    [data-reveal] {
+      animation: reveal-up linear both;
+      animation-timeline: view();
+      animation-range: entry calc(4% + var(--reveal-step, 0) * 7%)
+        cover calc(28% + var(--reveal-step, 0) * 7%);
+    }
+
+    /* Parallax hanya di layar lebar: di mobile efeknya kecil tapi menunda render foto hero. */
+    @media (min-width: 768px) {
+      .drift-up {
+        animation: drift-up linear both;
+        animation-timeline: scroll(root);
+        animation-range: 0 100vh;
+      }
+    }
+
+    .drift-down {
+      animation: drift-down linear both;
+      animation-timeline: scroll(root);
+      animation-range: 0 100vh;
+    }
+
+    .turn-on-scroll {
+      animation: turn linear both;
+      animation-timeline: view();
+    }
+
+    .draw-x {
+      transform-origin: 0 50%;
+      animation: grow-x linear both;
+      animation-timeline: view();
+      animation-range: entry 30% cover 55%;
+    }
+  }
+}
+
+/* ------------------------------------------------------------------
+   Glass gradasi: kaca dengan gradasi cahaya, untuk kartu di atas batik.
+   Tanpa backdrop-filter supaya tetap ringan walau latarnya bergerak.
+   ------------------------------------------------------------------ */
+@utility glass-gradient {
+  background-image: linear-gradient(
+    140deg,
+    rgb(255 255 255 / 0.78) 0%,
+    rgb(249 249 249 / 0.6) 45%,
+    rgb(247 236 230 / 0.45) 100%
+  );
+  border: 1px solid rgb(255 255 255 / 0.7);
+  box-shadow:
+    0 10px 36px rgba(116, 52, 43, 0.1),
+    inset 0 1px 0 rgb(255 255 255 / 0.8);
+}
+
+@utility glass-gradient-dark {
+  background-image: linear-gradient(
+    140deg,
+    rgb(249 249 249 / 0.16) 0%,
+    rgb(249 249 249 / 0.06) 55%,
+    rgb(242 225 209 / 0.1) 100%
+  );
+  border: 1px solid rgb(249 249 249 / 0.2);
+  box-shadow: inset 0 1px 0 rgb(249 249 249 / 0.18);
+}
+
+/* ------------------------------------------------------------------
+   Batik bergerak: lapisan pola yang bergeser tepat satu tile per putaran
+   sehingga gerakannya mulus tanpa sambungan.
+   ------------------------------------------------------------------ */
+@keyframes batik-drift {
+  to {
+    transform: translate(var(--tile), var(--tile));
+  }
+}
+
+@keyframes batik-drift-x {
+  to {
+    transform: translateX(var(--tile));
+  }
+}
+
+@keyframes spin-slow {
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+.batik-layer {
+  will-change: transform;
+  animation: batik-drift var(--batik-speed, 60s) linear infinite;
+}
+
+.batik-layer[data-drift="x"] {
+  animation-name: batik-drift-x;
+}
+
+.batik-layer[data-drift="none"] {
+  animation: none;
+}
+
+.spin-slow {
+  animation: spin-slow var(--spin-speed, 24s) linear infinite;
+}
+
+/* ------------------------------------------------------------------
+   Cahaya: bahasa visual fotografi (light leak, ambient glow, sheen).
+   Semua bergerak lewat transform/opacity supaya ringan.
+   ------------------------------------------------------------------ */
+@keyframes glow-drift {
+  0%,
+  100% {
+    transform: translate3d(0, 0, 0) scale(1);
+  }
+  50% {
+    transform: translate3d(6%, -8%, 0) scale(1.12);
+  }
+}
+
+@keyframes light-leak {
+  0%,
+  100% {
+    opacity: 0.35;
+    transform: translate3d(0, 0, 0);
+  }
+  50% {
+    opacity: 0.7;
+    transform: translate3d(-6%, 5%, 0);
+  }
+}
+
+@keyframes sheen {
+  0%,
+  65% {
+    transform: translateX(-160%) skewX(-20deg);
+  }
+  100% {
+    transform: translateX(360%) skewX(-20deg);
+  }
+}
+
+.glow {
+  pointer-events: none;
+  position: absolute;
+  border-radius: 9999px;
+  background: radial-gradient(circle, var(--glow-color, rgb(255 205 160 / 0.55)), transparent 68%);
+  animation: glow-drift var(--glow-speed, 18s) ease-in-out infinite;
+  animation-delay: var(--glow-delay, 0s);
+  will-change: transform;
+}
+
+.light-leak {
+  pointer-events: none;
+  position: absolute;
+  inset: -10%;
+  background:
+    radial-gradient(ellipse at 88% 8%, rgb(255 160 90 / 0.75), transparent 45%),
+    radial-gradient(ellipse at 8% 96%, rgb(255 214 170 / 0.5), transparent 45%);
+  mix-blend-mode: screen;
+  animation: light-leak 9s ease-in-out infinite;
+  will-change: transform, opacity;
+}
+
+.sheen {
+  position: relative;
+  overflow: hidden;
+  isolation: isolate;
+}
+
+.sheen::after {
+  content: "";
+  pointer-events: none;
+  position: absolute;
+  inset: 0;
+  width: 35%;
+  background: linear-gradient(90deg, transparent, rgb(255 255 255 / 0.35), transparent);
+  animation: sheen 5s ease-in-out infinite;
+}

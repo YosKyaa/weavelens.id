@@ -1,0 +1,46 @@
+import { NextResponse, type NextRequest } from "next/server";
+import { createServerClient } from "@supabase/ssr";
+import { supabaseEnv } from "@/lib/supabase/env";
+
+const LOGIN_PATH = "/login";
+const PROTECTED = ["/admin", "/c"];
+
+/**
+ * Menyegarkan sesi Supabase dan mengarahkan tamu dari halaman portal ke login.
+ * Pemeriksaan peran (admin/klien) dilakukan di layout masing-masing dan di setiap Server Action.
+ */
+export async function middleware(request: NextRequest) {
+  const env = supabaseEnv();
+  if (!env) return NextResponse.next();
+
+  let response = NextResponse.next({ request });
+  const supabase = createServerClient(env.url, env.key, {
+    cookies: {
+      getAll: () => request.cookies.getAll(),
+      setAll: (list) => {
+        for (const { name, value } of list) request.cookies.set(name, value);
+        response = NextResponse.next({ request });
+        for (const { name, value, options } of list) response.cookies.set(name, value, options);
+      },
+    },
+  });
+
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
+
+  const { pathname, search } = request.nextUrl;
+  const isProtected = PROTECTED.some(
+    (base) => pathname === base || pathname.startsWith(`${base}/`),
+  );
+  if (!user && isProtected) {
+    const url = new URL(LOGIN_PATH, request.url);
+    url.searchParams.set("next", `${pathname}${search}`);
+    return NextResponse.redirect(url);
+  }
+  return response;
+}
+
+export const config = {
+  matcher: ["/admin/:path*", "/c/:path*", "/login", "/auth/:path*"],
+};

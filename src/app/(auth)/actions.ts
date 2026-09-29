@@ -1,0 +1,97 @@
+"use server";
+
+import { headers } from "next/headers";
+import { redirect } from "next/navigation";
+import { z } from "zod";
+import { portal } from "@/content/portal";
+import { ADMIN_HOME, CLIENT_HOME, LOGIN_PATH } from "@/lib/auth";
+import { safeNext } from "@/lib/auth-redirect";
+import { createSessionClient } from "@/lib/supabase/server";
+
+export type AuthState = { error?: string; notice?: string };
+
+const text = portal.login.errors;
+
+const passwordSchema = z.object({
+  email: z.string().trim().toLowerCase().email(text.emailInvalid),
+  password: z.string().min(1, text.passwordMissing),
+  next: z.string().optional(),
+});
+
+const magicLinkSchema = z.object({
+  email: z.string().trim().toLowerCase().email(text.emailInvalid),
+  next: z.string().optional(),
+});
+
+function formValues(formData: FormData) {
+  return Object.fromEntries(
+    [...formData.entries()].map(([key, value]) => [key, typeof value === "string" ? value : ""]),
+  );
+}
+
+/** Asal URL untuk link di email: NEXT_PUBLIC_SITE_URL jika ada, selain itu dari header request. */
+async function siteOrigin(): Promise<string> {
+  if (process.env.NEXT_PUBLIC_SITE_URL) return process.env.NEXT_PUBLIC_SITE_URL.replace(/\/$/, "");
+  const list = await headers();
+  const host = list.get("x-forwarded-host") ?? list.get("host") ?? "localhost:3000";
+  const proto = list.get("x-forwarded-proto") ?? (host.startsWith("localhost") ? "http" : "https");
+  return `${proto}://${host}`;
+}
+
+/** Tim WeaveLens: email + password. Akun klien ditolak di sini agar peran tidak tertukar. */
+export async function signInWithPassword(_prev: AuthState, formData: FormData): Promise<AuthState> {
+  const parsed = passwordSchema.safeParse(formValues(formData));
+  if (!parsed.success) return { error: parsed.error.issues[0]?.message };
+
+  const supabase = await createSessionClient();
+  if (!supabase) return { error: text.notConfigured };
+
+  const { data, error } = await supabase.auth.signInWithPassword({
+    email: parsed.data.email,
+    password: parsed.data.password,
+  });
+  if (error || !data.user) return { error: text.wrongCredentials };
+
+  const { data: profile } = await supabase
+    .from("profiles")
+    .select("role")
+    .eq("id", data.user.id)
+    .maybeSingle();
+  if (profile?.role !== "admin") {
+    await supabase.auth.signOut();
+    return { error: text.notAdmin };
+  }
+
+  redirect(safeNext(parsed.data.next, "admin") ?? ADMIN_HOME);
+}
+
+/**
+ * Klien: link masuk lewat email. Hanya untuk akun yang sudah dibuat admin (shouldCreateUser: false).
+ * Pesan sukses sama untuk email terdaftar maupun tidak, supaya daftar klien tidak bisa ditebak.
+ */
+export async function sendMagicLink(_prev: AuthState, formData: FormData): Promise<AuthState> {
+  const parsed = magicLinkSchema.safeParse(formValues(formData));
+  if (!parsed.success) return { error: parsed.error.issues[0]?.message };
+
+  const supabase = await createSessionClient();
+  if (!supabase) return { error: text.notConfigured };
+
+  const next = safeNext(parsed.data.next, "client") ?? CLIENT_HOME;
+  const callback = new URL("/auth/callback", await siteOrigin());
+  callback.searchParams.set("next", next);
+
+  const { error } = await supabase.auth.signInWithOtp({
+    email: parsed.data.email,
+    options: { shouldCreateUser: false, emailRedirectTo: callback.toString() },
+  });
+  if (error?.status === 429) return { error: text.linkFailed };
+  if (error) console.info("[auth] magic link tidak dikirim:", error.message);
+
+  return { notice: portal.login.linkSent(parsed.data.email) };
+}
+
+export async function signOut() {
+  const supabase = await createSessionClient();
+  await supabase?.auth.signOut();
+  redirect(LOGIN_PATH);
+}
