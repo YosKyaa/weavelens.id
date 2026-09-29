@@ -50,7 +50,15 @@ export async function signInWithPassword(_prev: AuthState, formData: FormData): 
     email: parsed.data.email,
     password: parsed.data.password,
   });
-  if (error || !data.user) return { error: text.wrongCredentials };
+  if (error || !data.user) {
+    // Hanya kredensial yang benar-benar salah yang disebut "email atau password salah".
+    // Masalah konfigurasi (mis. API key tidak valid) dicatat di log server.
+    if (error?.code === "invalid_credentials" || error?.status === 400) {
+      return { error: text.wrongCredentials };
+    }
+    console.error("[auth] login gagal:", error?.status, error?.message);
+    return { error: text.serviceDown };
+  }
 
   const { data: profile } = await supabase
     .from("profiles")

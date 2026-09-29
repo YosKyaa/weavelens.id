@@ -57,3 +57,6 @@ weavelens-landing-spec.md
 weavelens-landing-superprompt.md
 weavelens-portal-spec.md
 SPEC-PORTAL.md
+
+.vercel
+.env*

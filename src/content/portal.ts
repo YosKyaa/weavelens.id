@@ -84,6 +84,8 @@ export const portal = {
       linkFailed: "Link masuk tidak bisa dikirim. Coba lagi beberapa menit lagi.",
       linkExpired: "Link masuk sudah kedaluwarsa atau sudah dipakai. Minta link baru di bawah.",
       notConfigured: "Portal belum terhubung ke database.",
+      serviceDown:
+        "Portal sedang tidak bisa terhubung ke server login. Coba lagi sebentar; jika tetap gagal, hubungi admin teknis.",
     },
   },
 
