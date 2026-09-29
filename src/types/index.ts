@@ -3,7 +3,15 @@ export type WaMessageKey = "general" | "photo" | "photoVideo" | "video" | "reels
 
 /** Asal klik CTA, dikirim ke Vercel Analytics. */
 export type CtaSection =
-  "header" | "hero" | "services" | "pricing" | "final-cta" | "footer" | "sticky" | "not-found";
+  | "header"
+  | "hero"
+  | "services"
+  | "pricing"
+  | "final-cta"
+  | "footer"
+  | "sticky"
+  | "not-found"
+  | "bio";
 
 /** Admin WhatsApp. `number` format internasional tanpa "+", mis. 6281234567890. */
 export type WaAdmin = {
