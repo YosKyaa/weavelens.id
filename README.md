@@ -168,8 +168,8 @@ Kartu otomatis berubah: badge "Segera hadir" hilang dan tombol WhatsApp muncul. 
 1. Push repo ini ke GitHub.
 2. Di [vercel.com](https://vercel.com) → **Add New → Project** → pilih repo → **Deploy**. Pengaturan bawaan sudah benar, tidak perlu environment variable.
 3. **Analytics**: di dashboard proyek → tab **Analytics** → **Enable**. Klik tombol WA tercatat sebagai event `cta_whatsapp` dengan properti `section` (hero, pricing, sticky, dll.).
-4. **Domain**: **Settings → Domains** → tambahkan `weavelens.com` dan `www.weavelens.com`. Vercel menampilkan record DNS yang harus dipasang di tempat kamu membeli domain (biasanya record `A` ke `76.76.21.21` untuk domain utama dan `CNAME` ke `cname.vercel-dns.com` untuk `www`). Tunggu propagasi DNS (beberapa menit sampai 24 jam).
-5. Jika domain berbeda dari `weavelens.com`, ubah `url` di `src/content/site.ts` supaya sitemap dan preview link benar.
+4. **Domain**: **Settings → Domains** → tambahkan `weavelens.id` dan `www.weavelens.id`. Vercel menampilkan record DNS yang harus dipasang di tempat kamu membeli domain (biasanya record `A` ke `76.76.21.21` untuk domain utama dan `CNAME` ke `cname.vercel-dns.com` untuk `www`). Tunggu propagasi DNS (beberapa menit sampai 24 jam).
+5. Jika domain berbeda dari `weavelens.id`, ubah `url` di `src/content/site.ts` supaya sitemap dan preview link benar.
 
 Setiap push ke GitHub otomatis membuat deploy baru.
 
