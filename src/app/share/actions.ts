@@ -3,7 +3,7 @@
 import { cookies } from "next/headers";
 import { revalidatePath } from "next/cache";
 import { z } from "zod";
-import { idSchema, isId } from "@/lib/ids";
+import { isId } from "@/lib/ids";
 import { shareText } from "@/content/workspace";
 import { logActivity } from "@/lib/activity";
 import { GUEST_COOKIE, getGuestName } from "@/lib/guest";
@@ -21,7 +21,6 @@ const INVALID = shareText.invalid.body;
 const FAILED = "Gagal mengirim. Periksa koneksi lalu coba lagi.";
 const NEED_NAME =
   "Isi nama kamu dulu (di bagian atas halaman) supaya tim tahu siapa yang memberi masukan.";
-const uuid = idSchema;
 
 function refresh(token: string, projectId: string) {
   revalidatePath(`/share/${token}`, "layout");

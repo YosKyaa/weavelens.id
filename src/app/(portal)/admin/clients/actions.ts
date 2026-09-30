@@ -2,13 +2,12 @@
 
 import { revalidatePath } from "next/cache";
 import { z } from "zod";
-import { idSchema, isId } from "@/lib/ids";
+import { isId } from "@/lib/ids";
 import { requireAdmin } from "@/lib/auth";
 
 export type Result<T = object> = ({ ok: true } & T) | { ok: false; error: string };
 
 const FAILED = "Gagal menyimpan. Periksa koneksi lalu coba lagi.";
-const id = idSchema;
 const optional = (max: number) =>
   z
     .string()

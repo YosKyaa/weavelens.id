@@ -2,7 +2,7 @@
 
 import { revalidatePath } from "next/cache";
 import { z } from "zod";
-import { idSchema, isId } from "@/lib/ids";
+import { isId } from "@/lib/ids";
 import { logActivity } from "@/lib/activity";
 import { requireAdmin } from "@/lib/auth";
 import {
@@ -16,7 +16,6 @@ import {
 export type Result<T = object> = ({ ok: true } & T) | { ok: false; error: string };
 
 const FAILED = "Gagal menyimpan. Periksa koneksi lalu coba lagi.";
-const uuid = idSchema;
 
 function refresh(galleryId: string, projectId?: string) {
   revalidatePath(`/admin/galleries/${galleryId}`);
