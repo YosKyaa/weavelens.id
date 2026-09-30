@@ -62,6 +62,10 @@
   /* Status sukses di portal (disetujui, lunas). Kontras teks 6.4:1 di atas success-soft. */
   --color-success: #2f6b3a;
   --color-success-soft: #e4efe3;
+  /* Latar area kerja portal: sedikit lebih hangat dari paper supaya kartu putih terbaca. */
+  --color-canvas: #f6efe8;
+  --color-danger: #a1261b;
+  --color-danger-soft: #fbeae7;
 
   /* Radius: 8px input/badge, 16px tombol/card, 24px panel besar. */
   --radius-sm: 0.5rem;
@@ -460,4 +464,38 @@
   width: 35%;
   background: linear-gradient(90deg, transparent, rgb(255 255 255 / 0.35), transparent);
   animation: sheen 5s ease-in-out infinite;
+}
+
+/* ─── Cetak invoice ─────────────────────────────────────────────────────────
+   Editor merender salinan dokumen ke <body> (portal .print-root). Saat mencetak,
+   hanya salinan itu yang tampil, jadi PDF identik dengan pratinjau di layar. */
+.print-root {
+  display: none;
+}
+
+@media print {
+  @page {
+    size: A4;
+    margin: 0;
+  }
+
+  html,
+  body {
+    background: var(--color-brand) !important;
+    -webkit-print-color-adjust: exact;
+    print-color-adjust: exact;
+  }
+
+  body > *:not(.print-root) {
+    display: none !important;
+  }
+
+  .print-root {
+    display: block !important;
+  }
+
+  .invoice-row,
+  .invoice-keep {
+    break-inside: avoid;
+  }
 }

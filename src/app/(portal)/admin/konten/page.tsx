@@ -1,6 +1,5 @@
 import Link from "next/link";
 import { ArrowRight } from "lucide-react";
-import { portal } from "@/content/portal";
 import { requireAdmin } from "@/lib/auth";
 import { CMS_BASE, collections } from "@/lib/cms/collections";
 import { cmsFrom } from "@/lib/cms/untyped";
@@ -21,8 +20,7 @@ export default async function CmsHomePage() {
 
   return (
     <>
-      <p className="max-w-[60ch] text-ink/80">{portal.cms.intro}</p>
-      <ul className="mt-8 grid gap-4 sm:grid-cols-2 xl:grid-cols-3">
+      <ul className="grid gap-4 sm:grid-cols-2 xl:grid-cols-3">
         {collections.map((collection, index) => (
           <li key={collection.slug}>
             <Link

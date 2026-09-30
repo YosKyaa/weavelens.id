@@ -5,16 +5,8 @@ import Link from "next/link";
 import { ArrowDown, ArrowUp, Loader2, Pencil, Trash2 } from "lucide-react";
 import { toast } from "sonner";
 import { deleteItem, moveItem, setVisible } from "@/app/(portal)/admin/konten/actions";
+import { ConfirmDialog } from "@/components/molecules/ConfirmDialog";
 import { Button } from "@/components/ui/button";
-import {
-  Dialog,
-  DialogClose,
-  DialogContent,
-  DialogDescription,
-  DialogFooter,
-  DialogTitle,
-  DialogTrigger,
-} from "@/components/ui/dialog";
 import { Switch } from "@/components/ui/switch";
 import { CMS_BASE } from "@/lib/cms/collections";
 
@@ -85,35 +77,22 @@ export function AdminRowActions({
           <Pencil aria-hidden />
         </Link>
       </Button>
-      <Dialog>
-        <DialogTrigger asChild>
+      <ConfirmDialog
+        trigger={
           <Button
             variant="ghost"
             size="icon"
-            className="text-red-700 hover:bg-red-50 hover:text-red-800"
+            className="text-danger hover:bg-danger-soft hover:text-danger"
             aria-label={`Hapus “${title}”`}
           >
             <Trash2 aria-hidden />
           </Button>
-        </DialogTrigger>
-        <DialogContent className="sm:max-w-md">
-          <DialogTitle>Hapus “{title}”?</DialogTitle>
-          <DialogDescription>
-            Item ini langsung hilang dari website dan tidak bisa dikembalikan. Kalau hanya ingin
-            menyembunyikan sementara, matikan saklar “Tampil”.
-          </DialogDescription>
-          <DialogFooter>
-            <DialogClose asChild>
-              <Button variant="outline">Batal</Button>
-            </DialogClose>
-            <form action={deleteItem.bind(null, slug, id)}>
-              <Button type="submit" className="w-full bg-red-700 text-white hover:bg-red-800">
-                Ya, hapus
-              </Button>
-            </form>
-          </DialogFooter>
-        </DialogContent>
-      </Dialog>
+        }
+        title={`Hapus “${title}”?`}
+        description="Item ini langsung hilang dari website dan tidak bisa dikembalikan. Kalau hanya ingin menyembunyikan sementara, matikan saklar “Tampil”."
+        confirmLabel="Ya, hapus"
+        onConfirm={() => deleteItem(slug, id)}
+      />
     </div>
   );
 }

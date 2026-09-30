@@ -65,3 +65,18 @@ npm run db:types
    update public.profiles set role = 'admin', client_id = null
    where id = (select id from auth.users where email = 'email-admin-baru@contoh.com');
    ```
+
+## 5. Analitik website
+
+- **Cara mencatat:** pengunjung dicatat oleh `/api/t` ke tabel `analytics_events`, tanpa cookie dan tanpa menyimpan IP. Pengunjung dihitung unik per hari lewat hash harian. Tim atau klien yang sedang login tidak ikut dihitung.
+- **Env di Vercel:** butuh `SUPABASE_SERVICE_ROLE_KEY` (hanya dipakai server). Opsional: `ANALYTICS_SALT`, string acak untuk hash pengunjung.
+- **Sumber kunjungan:** dibaca dari UTM lebih dulu, lalu dari referrer. Link bio (`/bio`) menambahkan `utm_source=instagram&utm_medium=bio` secara otomatis.
+- **Dashboard:** `/admin/analitik` untuk rentang 7, 30, atau 90 hari. Isinya rekomendasi otomatis, tren harian, sumber kunjungan, halaman, tombol WhatsApp, admin, perangkat, dan kota.
+
+## 6. Invoice
+
+- **Nomor:** `/admin/invoice/baru`. Item, harga, dan penerima diisi bebas. Nomor `WL-YYYY-NNNN` dibuat Postgres saat pertama disimpan, jadi tidak pernah dobel.
+- **Cetak / simpan PDF:** memakai dokumen yang sama dengan pratinjau. Di jendela cetak, pilih "Simpan sebagai PDF". Ukurannya A4 dengan latar brand penuh.
+- **Status:** Draf, lalu Belum dibayar ("Tandai terkirim", bisa diurungkan), lalu Lunas atau Dibatalkan. Kedua status terakhir dikunci dan harus dikonfirmasi.
+- **Duplikat:** menyalin penerima dan item ke invoice baru.
+- **Data bawaan:** perusahaan, rekening, dan penanda tangan diatur di `/admin/settings`.

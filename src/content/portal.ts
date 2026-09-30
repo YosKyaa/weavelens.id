@@ -96,16 +96,39 @@ export const portal = {
     /** Badge di header klien jika akun belum terhubung ke organisasi. */
     clientFallback: "Klien",
     menuLabel: "Menu portal",
+    openMenu: "Buka menu",
+    signedInAs: "Masuk sebagai",
   },
 
+  /** Menu dikelompokkan per jenis pekerjaan; grup tanpa `label` tampil paling atas. */
   nav: {
     admin: [
-      { href: "/admin", label: "Menunggu saya", icon: "inbox" },
-      { href: "/admin/projects", label: "Proyek", icon: "folder" },
-      { href: "/admin/clients", label: "Klien", icon: "users" },
-      { href: "/admin/konten", label: "Konten website", icon: "layout" },
+      {
+        items: [
+          { href: "/admin", label: "Ringkasan", icon: "home" },
+          { href: "/admin/analitik", label: "Analitik website", icon: "chart" },
+        ],
+      },
+      {
+        label: "Pekerjaan",
+        items: [
+          { href: "/admin/projects", label: "Proyek", icon: "folder" },
+          { href: "/admin/invoice", label: "Invoice", icon: "invoice" },
+        ],
+      },
+      {
+        label: "Data",
+        items: [{ href: "/admin/clients", label: "Klien", icon: "users" }],
+      },
+      {
+        label: "Website",
+        items: [
+          { href: "/admin/konten", label: "Konten website", icon: "layout" },
+          { href: "/admin/settings", label: "Pengaturan", icon: "settings" },
+        ],
+      },
     ],
-    client: [{ href: "/c", label: "Proyek saya", icon: "folder" }],
+    client: [{ items: [{ href: "/c", label: "Proyek saya", icon: "folder" }] }],
   },
 
   adminHome: {

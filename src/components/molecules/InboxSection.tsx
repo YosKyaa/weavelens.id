@@ -1,4 +1,5 @@
 import type { ReactNode } from "react";
+import Link from "next/link";
 import { EmptyState } from "@/components/atoms/EmptyState";
 
 export type InboxRow = {
@@ -7,6 +8,8 @@ export type InboxRow = {
   /** Baris kedua, mis. nama klien · proyek. */
   meta: string;
   aside?: ReactNode;
+  /** Jika diisi, seluruh baris menjadi link ke halaman detailnya. */
+  href?: string;
 };
 
 type InboxSectionProps = {
@@ -20,7 +23,7 @@ export function InboxSection({ heading, empty, rows }: InboxSectionProps) {
   const headingId = `inbox-${heading.toLowerCase().replace(/[^a-z0-9]+/g, "-")}`;
 
   return (
-    <section aria-labelledby={headingId}>
+    <section aria-labelledby={headingId} className="min-w-0">
       <h2 id={headingId} className="flex items-center gap-2 text-lg">
         {heading}
         {rows.length > 0 && (
@@ -33,18 +36,32 @@ export function InboxSection({ heading, empty, rows }: InboxSectionProps) {
         <EmptyState message={empty} className="mt-3 py-6" />
       ) : (
         <ul className="mt-3 divide-y divide-line overflow-hidden rounded-2xl border border-line bg-paper">
-          {rows.map((row) => (
-            <li
-              key={row.id}
-              className="flex flex-wrap items-center justify-between gap-3 px-5 py-4"
-            >
-              <span className="min-w-0">
-                <span className="block font-medium text-ink">{row.title}</span>
-                <span className="block text-sm text-ink/70">{row.meta}</span>
-              </span>
-              {row.aside}
-            </li>
-          ))}
+          {rows.map((row) => {
+            const content = (
+              <>
+                <span className="min-w-0">
+                  <span className="block font-medium text-ink">{row.title}</span>
+                  <span className="block text-sm text-ink/70">{row.meta}</span>
+                </span>
+                {row.aside}
+              </>
+            );
+            const className = "flex flex-wrap items-center justify-between gap-3 px-5 py-4";
+            return (
+              <li key={row.id}>
+                {row.href ? (
+                  <Link
+                    href={row.href}
+                    className={`${className} transition-colors hover:bg-sand/40`}
+                  >
+                    {content}
+                  </Link>
+                ) : (
+                  <div className={className}>{content}</div>
+                )}
+              </li>
+            );
+          })}
         </ul>
       )}
     </section>

@@ -55,6 +55,60 @@ export type Database = {
           },
         ];
       };
+      analytics_events: {
+        Row: {
+          id: number;
+          created_at: string;
+          type: string;
+          path: string;
+          source: string;
+          referrer_host: string | null;
+          utm_source: string | null;
+          utm_medium: string | null;
+          utm_campaign: string | null;
+          device: string | null;
+          country: string | null;
+          city: string | null;
+          visitor_hash: string;
+          section: string | null;
+          admin_id: string | null;
+        };
+        Insert: {
+          id?: number;
+          created_at?: string;
+          type: string;
+          path: string;
+          source?: string;
+          referrer_host?: string | null;
+          utm_source?: string | null;
+          utm_medium?: string | null;
+          utm_campaign?: string | null;
+          device?: string | null;
+          country?: string | null;
+          city?: string | null;
+          visitor_hash: string;
+          section?: string | null;
+          admin_id?: string | null;
+        };
+        Update: {
+          id?: number;
+          created_at?: string;
+          type?: string;
+          path?: string;
+          source?: string;
+          referrer_host?: string | null;
+          utm_source?: string | null;
+          utm_medium?: string | null;
+          utm_campaign?: string | null;
+          device?: string | null;
+          country?: string | null;
+          city?: string | null;
+          visitor_hash?: string;
+          section?: string | null;
+          admin_id?: string | null;
+        };
+        Relationships: [];
+      };
       clients: {
         Row: {
           id: string;
@@ -108,6 +162,8 @@ export type Database = {
           signer_name: string;
           signer_role: string;
           updated_at: string;
+          email: string | null;
+          bank_details: string | null;
         };
         Insert: {
           id?: number;
@@ -119,6 +175,8 @@ export type Database = {
           signer_name: string;
           signer_role: string;
           updated_at?: string;
+          email?: string | null;
+          bank_details?: string | null;
         };
         Update: {
           id?: number;
@@ -130,6 +188,8 @@ export type Database = {
           signer_name?: string;
           signer_role?: string;
           updated_at?: string;
+          email?: string | null;
+          bank_details?: string | null;
         };
         Relationships: [];
       };
@@ -338,7 +398,7 @@ export type Database = {
       invoices: {
         Row: {
           id: string;
-          client_id: string;
+          client_id: string | null;
           project_id: string | null;
           number: string;
           issue_date: string;
@@ -352,10 +412,17 @@ export type Database = {
           pdf_path: string | null;
           paid_at: string | null;
           created_at: string;
+          bill_to_name: string | null;
+          bill_to_company: string | null;
+          bill_to_contact: string | null;
+          bill_to_address: string | null;
+          discount: number;
+          payment_details: string | null;
+          updated_at: string;
         };
         Insert: {
           id?: string;
-          client_id: string;
+          client_id?: string | null;
           project_id?: string | null;
           number: string;
           issue_date?: string;
@@ -369,10 +436,17 @@ export type Database = {
           pdf_path?: string | null;
           paid_at?: string | null;
           created_at?: string;
+          bill_to_name?: string | null;
+          bill_to_company?: string | null;
+          bill_to_contact?: string | null;
+          bill_to_address?: string | null;
+          discount?: number;
+          payment_details?: string | null;
+          updated_at?: string;
         };
         Update: {
           id?: string;
-          client_id?: string;
+          client_id?: string | null;
           project_id?: string | null;
           number?: string;
           issue_date?: string;
@@ -386,6 +460,13 @@ export type Database = {
           pdf_path?: string | null;
           paid_at?: string | null;
           created_at?: string;
+          bill_to_name?: string | null;
+          bill_to_company?: string | null;
+          bill_to_contact?: string | null;
+          bill_to_address?: string | null;
+          discount?: number;
+          payment_details?: string | null;
+          updated_at?: string;
         };
         Relationships: [
           {
@@ -935,6 +1016,18 @@ export type Database = {
         Args: { issue?: string };
         Returns: string;
       };
+      analytics_overview: {
+        Args: { p_from: string; p_to: string };
+        Returns: { visitors: number; pageviews: number; cta_clicks: number; cta_visitors: number }[];
+      };
+      analytics_daily: {
+        Args: { p_from: string; p_to: string };
+        Returns: { day: string; visitors: number; pageviews: number; cta_clicks: number }[];
+      };
+      analytics_breakdown: {
+        Args: { p_from: string; p_to: string; p_dimension: string; p_limit?: number };
+        Returns: { label: string; visitors: number; pageviews: number; cta_clicks: number }[];
+      };
     };
     Enums: {
       [_ in never]: never;
@@ -944,3 +1037,4 @@ export type Database = {
     };
   };
 };
+

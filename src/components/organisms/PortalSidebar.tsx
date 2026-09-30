@@ -3,8 +3,10 @@
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import {
+  BarChart3,
   FileText,
   FolderOpen,
+  Home,
   Inbox,
   LayoutTemplate,
   type LucideIcon,
@@ -14,9 +16,12 @@ import {
 import { cn } from "@/lib/utils";
 
 export type PortalNavItem = { href: string; label: string; icon: string };
+export type PortalNavGroup = { label?: string; items: PortalNavItem[] };
 
 /** Ikon dipetakan di sini karena komponen ikon tidak bisa dikirim dari Server Component. */
 const icons: Record<string, LucideIcon> = {
+  home: Home,
+  chart: BarChart3,
   inbox: Inbox,
   folder: FolderOpen,
   users: Users,
@@ -26,43 +31,54 @@ const icons: Record<string, LucideIcon> = {
 };
 
 type PortalSidebarProps = {
-  items: PortalNavItem[];
+  groups: PortalNavGroup[];
   label: string;
+  /** Dipanggil setelah link diklik, mis. untuk menutup menu di HP. */
+  onNavigate?: () => void;
 };
 
-/** Menu samping di desktop, baris geser di HP. Item aktif ditandai aria-current. */
-export function PortalSidebar({ items, label }: PortalSidebarProps) {
+/** Menu portal berkelompok. Item aktif = href terpanjang yang cocok dengan URL (ditandai aria-current). */
+export function PortalSidebar({ groups, label, onNavigate }: PortalSidebarProps) {
   const pathname = usePathname();
-  // Item dengan href terpanjang yang cocok dianggap aktif (/admin vs /admin/projects).
-  const activeHref = items
-    .map((item) => item.href)
+  const activeHref = groups
+    .flatMap((group) => group.items.map((item) => item.href))
     .filter((href) => pathname === href || pathname.startsWith(`${href}/`))
     .sort((a, b) => b.length - a.length)[0];
 
   return (
-    <nav aria-label={label}>
-      <ul className="flex gap-1 overflow-x-auto pb-1 md:flex-col md:overflow-visible md:pb-0">
-        {items.map((item) => {
-          const Icon = icons[item.icon] ?? FolderOpen;
-          const active = item.href === activeHref;
-          return (
-            <li key={item.href} className="shrink-0">
-              <Link
-                href={item.href}
-                aria-current={active ? "page" : undefined}
-                className={cn(
-                  "flex h-10 items-center gap-3 rounded-md px-3 text-sm font-medium whitespace-nowrap text-ink/80 transition-colors hover:bg-sand hover:text-ink",
-                  active &&
-                    "bg-primary text-primary-foreground hover:bg-primary hover:text-primary-foreground",
-                )}
-              >
-                <Icon aria-hidden className="size-4" />
-                {item.label}
-              </Link>
-            </li>
-          );
-        })}
-      </ul>
+    <nav aria-label={label} className="flex flex-col gap-6">
+      {groups.map((group, index) => (
+        <div key={group.label ?? index}>
+          {group.label && (
+            <p className="mb-2 px-3 font-heading text-xs font-semibold text-ink/60">
+              {group.label}
+            </p>
+          )}
+          <ul className="flex flex-col gap-0.5">
+            {group.items.map((item) => {
+              const Icon = icons[item.icon] ?? FolderOpen;
+              const active = item.href === activeHref;
+              return (
+                <li key={item.href}>
+                  <Link
+                    href={item.href}
+                    onClick={onNavigate}
+                    aria-current={active ? "page" : undefined}
+                    className={cn(
+                      "flex h-10 items-center gap-3 rounded-lg px-3 text-sm font-medium text-ink/80 transition-colors hover:bg-sand hover:text-ink",
+                      active &&
+                        "bg-primary text-primary-foreground shadow-soft hover:bg-primary hover:text-primary-foreground",
+                    )}
+                  >
+                    <Icon aria-hidden className="size-4 shrink-0" />
+                    {item.label}
+                  </Link>
+                </li>
+              );
+            })}
+          </ul>
+        </div>
+      ))}
     </nav>
   );
 }

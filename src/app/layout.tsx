@@ -2,6 +2,7 @@ import type { Metadata, Viewport } from "next";
 import { Montserrat } from "next/font/google";
 import { Analytics } from "@vercel/analytics/next";
 import { CtaTracker } from "@/components/atoms/CtaTracker";
+import { PageTracker } from "@/components/atoms/PageTracker";
 import { site } from "@/content/site";
 import "./globals.css";
 
@@ -46,6 +47,7 @@ export default function RootLayout({
         </a>
         {children}
         <CtaTracker />
+        <PageTracker />
         <Analytics />
       </body>
     </html>
