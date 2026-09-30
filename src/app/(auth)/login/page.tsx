@@ -25,7 +25,7 @@ export default async function LoginPage({ searchParams }: PageProps) {
   const { next, error } = await searchParams;
 
   return (
-    <main id="konten" className="flex min-h-dvh items-center justify-center bg-sand/50 px-4 py-16">
+    <main id="content" className="flex min-h-dvh items-center justify-center bg-sand/50 px-4 py-16">
       <div className="w-full max-w-sm rounded-2xl border border-line bg-paper p-8 shadow-soft">
         <Logo priority className="h-9" />
         <h1 className="mt-8 text-2xl">{portal.login.heading}</h1>

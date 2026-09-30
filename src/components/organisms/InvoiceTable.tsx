@@ -44,7 +44,7 @@ const columns: ColumnDef<InvoiceListRow, unknown>[] = [
     header: text.columns.number,
     cell: ({ row }) => (
       <Link
-        href={`/admin/invoice/${row.original.id}`}
+        href={`/admin/invoices/${row.original.id}`}
         className="font-heading font-semibold text-primary hover:underline"
       >
         {row.original.number}
@@ -108,7 +108,7 @@ export function InvoiceTable({ rows }: { rows: InvoiceListRow[] }) {
       emptyMessage={text.empty}
       emptyAction={
         <Button asChild>
-          <Link href="/admin/invoice/baru">
+          <Link href="/admin/invoices/new">
             <Plus aria-hidden />
             {text.create}
           </Link>
@@ -116,7 +116,7 @@ export function InvoiceTable({ rows }: { rows: InvoiceListRow[] }) {
       }
       renderCard={(row) => (
         <Link
-          href={`/admin/invoice/${row.id}`}
+          href={`/admin/invoices/${row.id}`}
           className="flex flex-col gap-2 rounded-2xl border border-line bg-paper p-4 active:bg-sand/40"
         >
           <span className="flex items-start justify-between gap-3">

@@ -24,9 +24,9 @@ function validateAdmins(list: WaAdmin[]): WaAdmin[] {
 }
 
 const nav: NavItem[] = [
-  { label: "Layanan", href: "#layanan" },
-  { label: "Portofolio", href: "#portofolio" },
-  { label: "Harga", href: "#harga" },
+  { label: "Layanan", href: "#services" },
+  { label: "Portofolio", href: "#portfolio" },
+  { label: "Harga", href: "#pricing" },
   { label: "FAQ", href: "#faq" },
 ];
 

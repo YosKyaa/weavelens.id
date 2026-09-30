@@ -1,7 +1,7 @@
 import type { CaseStudy, SectionCopy } from "@/types";
 
 export const caseStudiesSection: SectionCopy = {
-  id: "proyek",
+  id: "projects",
   heading: "Proyek yang pernah kami kerjakan",
   sub: "Dari event korporat sampai konten kampus. Ini tantangan klien dan cara kami menjawabnya.",
 };

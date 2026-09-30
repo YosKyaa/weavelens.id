@@ -80,7 +80,7 @@ export function PortalFrame({ homeHref, nav, badge, userLabel, children }: Porta
         </Link>
       </header>
 
-      <main id="konten" tabIndex={-1} className="outline-none lg:pl-64">
+      <main id="content" tabIndex={-1} className="outline-none lg:pl-64">
         <div className="mx-auto w-full max-w-6xl px-4 py-6 md:px-8 md:py-10">{children}</div>
       </main>
       <Suspense>

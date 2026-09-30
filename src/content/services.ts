@@ -1,7 +1,7 @@
 import type { PortfolioImage, SectionCopy, Service } from "@/types";
 
 export const servicesSection: SectionCopy = {
-  id: "layanan",
+  id: "services",
   heading: "Satu tim untuk semua kebutuhan visual acaramu",
   sub: "Foto, video, Reels, dan desain dikerjakan tim yang sama, jadi warna dan gayanya tetap senada.",
 };

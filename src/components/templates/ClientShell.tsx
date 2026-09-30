@@ -11,7 +11,12 @@ type ClientShellProps = {
 
 export function ClientShell({ clientName, userLabel, children }: ClientShellProps) {
   return (
-    <PortalFrame homeHref="/c" nav={portal.nav.client} badge={clientName} userLabel={userLabel}>
+    <PortalFrame
+      homeHref="/client"
+      nav={portal.nav.client}
+      badge={clientName}
+      userLabel={userLabel}
+    >
       {children}
     </PortalFrame>
   );

@@ -5,7 +5,7 @@
  */
 
 /** Halaman internal yang tidak dihitung sebagai kunjungan website. */
-const IGNORED = ["/admin", "/c", "/login", "/auth", "/p/", "/api"];
+const IGNORED = ["/admin", "/client", "/login", "/auth", "/share/", "/api"];
 const SESSION_KEY = "wl_visit_source";
 
 type VisitSource = {

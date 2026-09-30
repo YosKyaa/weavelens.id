@@ -1,5 +1,6 @@
 "use client";
 
+import Link from "next/link";
 import type { ColumnDef } from "@tanstack/react-table";
 import { StatusBadge } from "@/components/atoms/StatusBadge";
 import { DataTable } from "@/components/organisms/DataTable";
@@ -23,7 +24,12 @@ const columns: ColumnDef<ProjectListRow, unknown>[] = [
     header: text.columns.title,
     cell: ({ row }) => (
       <span>
-        <span className="block font-medium text-ink">{row.original.title}</span>
+        <Link
+          href={`/admin/projects/${row.original.id}`}
+          className="block font-medium text-primary hover:underline"
+        >
+          {row.original.title}
+        </Link>
         <span className="block text-sm text-ink/65">{row.original.client}</span>
       </span>
     ),
@@ -64,9 +70,12 @@ export function ProjectTable({ rows }: { rows: ProjectListRow[] }) {
       }}
       emptyMessage={text.empty}
       renderCard={(row) => (
-        <div className="flex flex-col gap-2 rounded-2xl border border-line bg-paper p-4">
+        <Link
+          href={`/admin/projects/${row.id}`}
+          className="flex flex-col gap-2 rounded-2xl border border-line bg-paper p-4 active:bg-sand/40"
+        >
           <span className="flex items-start justify-between gap-3">
-            <span className="font-medium text-ink">{row.title}</span>
+            <span className="font-medium text-primary">{row.title}</span>
             <StatusBadge kind="project" status={row.status} />
           </span>
           <span className="text-sm text-ink/70">
@@ -74,7 +83,7 @@ export function ProjectTable({ rows }: { rows: ProjectListRow[] }) {
               .filter(Boolean)
               .join(" · ")}
           </span>
-        </div>
+        </Link>
       )}
     />
   );

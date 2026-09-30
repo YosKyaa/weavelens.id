@@ -1,7 +1,7 @@
 import type { PricingPlan, SectionCopy } from "@/types";
 
 export const pricingSection: SectionCopy = {
-  id: "harga",
+  id: "pricing",
   heading: "Harga jelas sejak awal",
   sub: "Ini harga mulainya. Harga akhir tergantung durasi dan jumlah tim, penawaran lengkapnya kami kirim lewat WhatsApp.",
 };

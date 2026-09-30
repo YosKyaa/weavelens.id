@@ -10,7 +10,10 @@ export default async function SettingsPage() {
 
   return (
     <>
-      <PageHeader title={invoiceText.settings.title} description={invoiceText.settings.description} />
+      <PageHeader
+        title={invoiceText.settings.title}
+        description={invoiceText.settings.description}
+      />
       <SettingsForm initial={company} />
     </>
   );

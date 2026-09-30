@@ -6,7 +6,7 @@ import { site } from "@/content/site";
 export default function NotFound() {
   return (
     <main
-      id="konten"
+      id="content"
       tabIndex={-1}
       className="mx-auto flex min-h-dvh max-w-xl flex-col items-center justify-center px-4 py-20 text-center outline-none"
     >

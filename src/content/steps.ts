@@ -1,7 +1,7 @@
 import type { SectionCopy, Step } from "@/types";
 
 export const stepsSection: SectionCopy = {
-  id: "cara-kerja",
+  id: "how-it-works",
   heading: "Dari chat sampai hasil, cuma tiga langkah",
   sub: "Semua diurus lewat WhatsApp, tanpa formulir.",
 };

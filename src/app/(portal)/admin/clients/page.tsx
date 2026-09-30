@@ -1,14 +1,16 @@
 import { PageHeader } from "@/components/molecules/PageHeader";
+import { ClientCreate } from "@/components/organisms/ClientCreate";
 import { ClientTable } from "@/components/organisms/ClientTable";
-import { portal } from "@/content/portal";
+import { workspaceText } from "@/content/workspace";
 import { requireAdmin } from "@/lib/auth";
 
-/** Daftar klien. Tambah klien, brand, dan anggota menyusul di tahap berikutnya. */
+const text = workspaceText.clients;
+
 export default async function AdminClientsPage() {
   const { supabase } = await requireAdmin();
   const { data } = await supabase
     .from("clients")
-    .select("id, name, contact_name, contact_email, projects(count)")
+    .select("id, name, contact_name, contact_email, projects(count), brands(name)")
     .order("name");
 
   const rows = (data ?? []).map((client) => ({
@@ -17,11 +19,12 @@ export default async function AdminClientsPage() {
     contactName: client.contact_name ?? "",
     contactEmail: client.contact_email ?? "",
     projects: client.projects[0]?.count ?? 0,
+    brands: client.brands.map((brand) => brand.name),
   }));
 
   return (
     <>
-      <PageHeader title={portal.clients.heading} description={portal.clients.sub} />
+      <PageHeader title={text.title} description={text.description} actions={<ClientCreate />} />
       <ClientTable rows={rows} />
     </>
   );

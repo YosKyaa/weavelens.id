@@ -22,7 +22,7 @@ import {
   markSent,
   saveInvoice,
   voidInvoice,
-} from "@/app/(portal)/admin/invoice/actions";
+} from "@/app/(portal)/admin/invoices/actions";
 import { StatusBadge } from "@/components/atoms/StatusBadge";
 import { ConfirmDialog } from "@/components/molecules/ConfirmDialog";
 import { FormSection } from "@/components/molecules/FormSection";
@@ -248,7 +248,7 @@ export function InvoiceEditor({ id, initial, company, clients }: InvoiceEditorPr
       router.refresh();
     } else {
       toast.success(text.toast.saved(result.number));
-      router.replace(`/admin/invoice/${result.id}`);
+      router.replace(`/admin/invoices/${result.id}`);
     }
     return result.number;
   }
@@ -320,7 +320,7 @@ export function InvoiceEditor({ id, initial, company, clients }: InvoiceEditorPr
     <>
       <PageHeader
         title={title}
-        back={{ href: "/admin/invoice", label: text.back }}
+        back={{ href: "/admin/invoices", label: text.back }}
         actions={<StatusBadge kind="invoice" status={draft.status} />}
       />
 
@@ -576,7 +576,7 @@ export function InvoiceEditor({ id, initial, company, clients }: InvoiceEditorPr
                 </Button>
               </DropdownMenuTrigger>
               <DropdownMenuContent align="end" className="w-52">
-                <DropdownMenuItem onSelect={() => router.push(`/admin/invoice/baru?dari=${id}`)}>
+                <DropdownMenuItem onSelect={() => router.push(`/admin/invoices/new?from=${id}`)}>
                   <Copy aria-hidden />
                   {text.duplicate}
                 </DropdownMenuItem>
@@ -613,7 +613,7 @@ export function InvoiceEditor({ id, initial, company, clients }: InvoiceEditorPr
                 }
                 setSaved(JSON.stringify(draft));
                 toast.success(text.toast.deleted);
-                router.replace("/admin/invoice");
+                router.replace("/admin/invoices");
               }}
             />
           )}

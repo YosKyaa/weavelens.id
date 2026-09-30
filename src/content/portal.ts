@@ -36,6 +36,14 @@ export const statuses = {
     editing: { label: "Sedang diedit", tone: "brand" },
     delivered: { label: "Hasil siap", tone: "success" },
   },
+  stage: {
+    brief: { label: "Brief", tone: "neutral" },
+    in_progress: { label: "Dikerjakan", tone: "brand" },
+    client_review: { label: "Menunggu review", tone: "brand" },
+    revision: { label: "Direvisi", tone: "sand" },
+    approved: { label: "Disetujui", tone: "success" },
+    published: { label: "Tayang", tone: "muted" },
+  },
   invoice: {
     draft: { label: "Draf", tone: "neutral" },
     sent: { label: "Belum dibayar", tone: "brand" },
@@ -47,10 +55,10 @@ export const statuses = {
 export type StatusKind = keyof typeof statuses;
 
 export const projectTypes: Record<string, string> = {
-  design: "Desain",
-  photo: "Foto",
-  video: "Video",
-  mixed: "Foto, video & desain",
+  design: "Konten sosial media & desain",
+  photo: "Dokumentasi foto",
+  video: "Dokumentasi video",
+  mixed: "Foto & video",
 };
 
 export const portal = {
@@ -100,35 +108,45 @@ export const portal = {
     signedInAs: "Masuk sebagai",
   },
 
-  /** Menu dikelompokkan per jenis pekerjaan; grup tanpa `label` tampil paling atas. */
+  /**
+   * Menu dikelompokkan per jenis pekerjaan. Grup `cms` diisi otomatis dari daftar koleksi CMS
+   * (lihat AdminShell) dan bisa dibuka-tutup supaya menu tetap ringkas saat fitur bertambah.
+   */
   nav: {
     admin: [
       {
+        id: "main",
         items: [
           { href: "/admin", label: "Ringkasan", icon: "home" },
-          { href: "/admin/analitik", label: "Analitik website", icon: "chart" },
+          { href: "/admin/analytics", label: "Analitik website", icon: "chart" },
         ],
       },
       {
+        id: "work",
         label: "Pekerjaan",
         items: [
-          { href: "/admin/projects", label: "Proyek", icon: "folder" },
-          { href: "/admin/invoice", label: "Invoice", icon: "invoice" },
+          { href: "/admin/projects", label: "Proyek & konten", icon: "kanban" },
+          { href: "/admin/galleries", label: "Seleksi foto & video", icon: "images" },
+          { href: "/admin/invoices", label: "Invoice", icon: "invoice" },
         ],
       },
       {
+        id: "data",
         label: "Data",
-        items: [{ href: "/admin/clients", label: "Klien", icon: "users" }],
-      },
-      {
-        label: "Website",
-        items: [
-          { href: "/admin/konten", label: "Konten website", icon: "layout" },
-          { href: "/admin/settings", label: "Pengaturan", icon: "settings" },
-        ],
+        items: [{ href: "/admin/clients", label: "Klien & brand", icon: "users" }],
       },
     ],
-    client: [{ items: [{ href: "/c", label: "Proyek saya", icon: "folder" }] }],
+    cmsGroup: {
+      id: "cms",
+      label: "Konten website (CMS)",
+      icon: "layout",
+      overview: "Ringkasan CMS",
+    },
+    settings: {
+      id: "system",
+      items: [{ href: "/admin/settings", label: "Pengaturan", icon: "settings" }],
+    },
+    client: [{ id: "client", items: [{ href: "/client", label: "Proyek saya", icon: "folder" }] }],
   },
 
   adminHome: {

@@ -3,7 +3,7 @@ import { createServerClient } from "@supabase/ssr";
 import { supabaseEnv } from "@/lib/supabase/env";
 
 const LOGIN_PATH = "/login";
-const PROTECTED = ["/admin", "/c"];
+const PROTECTED = ["/admin", "/client"];
 
 /**
  * Menyegarkan sesi Supabase dan mengarahkan tamu dari halaman portal ke login.
@@ -42,5 +42,5 @@ export async function middleware(request: NextRequest) {
 }
 
 export const config = {
-  matcher: ["/admin/:path*", "/c/:path*", "/login", "/auth/:path*"],
+  matcher: ["/admin/:path*", "/client/:path*", "/login", "/auth/:path*"],
 };

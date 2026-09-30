@@ -10,11 +10,14 @@ type RangeFilterProps = {
 /** Pilihan rentang waktu sebagai link (bisa dibagikan & tetap saat halaman dimuat ulang). */
 export function RangeFilter({ basePath, options, value }: RangeFilterProps) {
   return (
-    <nav aria-label="Rentang waktu" className="inline-flex rounded-lg border border-line bg-paper p-1">
+    <nav
+      aria-label="Rentang waktu"
+      className="inline-flex rounded-lg border border-line bg-paper p-1"
+    >
       {options.map((days) => (
         <Link
           key={days}
-          href={`${basePath}?hari=${days}`}
+          href={`${basePath}?days=${days}`}
           aria-current={days === value ? "page" : undefined}
           scroll={false}
           className={cn(

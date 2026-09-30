@@ -21,6 +21,7 @@ export type Database = {
           action: string;
           meta: Json;
           created_at: string;
+          actor_name: string | null;
         };
         Insert: {
           id?: string;
@@ -29,6 +30,7 @@ export type Database = {
           action: string;
           meta?: Json;
           created_at?: string;
+          actor_name?: string | null;
         };
         Update: {
           id?: string;
@@ -37,6 +39,7 @@ export type Database = {
           action?: string;
           meta?: Json;
           created_at?: string;
+          actor_name?: string | null;
         };
         Relationships: [
           {
@@ -108,6 +111,44 @@ export type Database = {
           admin_id?: string | null;
         };
         Relationships: [];
+      };
+      brands: {
+        Row: {
+          id: string;
+          client_id: string;
+          name: string;
+          color: string;
+          instagram: string | null;
+          sort: number;
+          created_at: string;
+        };
+        Insert: {
+          id?: string;
+          client_id: string;
+          name: string;
+          color?: string;
+          instagram?: string | null;
+          sort?: number;
+          created_at?: string;
+        };
+        Update: {
+          id?: string;
+          client_id?: string;
+          name?: string;
+          color?: string;
+          instagram?: string | null;
+          sort?: number;
+          created_at?: string;
+        };
+        Relationships: [
+          {
+            foreignKeyName: "brands_client_id_fkey";
+            columns: ["client_id"];
+            isOneToOne: false;
+            referencedRelation: "clients";
+            referencedColumns: ["id"];
+          },
+        ];
       };
       clients: {
         Row: {
@@ -199,18 +240,45 @@ export type Database = {
           project_id: string;
           title: string;
           created_at: string;
+          brand_id: string | null;
+          format: string;
+          stage: string;
+          brief: string | null;
+          caption: string | null;
+          due_date: string | null;
+          publish_date: string | null;
+          sort: number;
+          updated_at: string;
         };
         Insert: {
           id?: string;
           project_id: string;
           title: string;
           created_at?: string;
+          brand_id?: string | null;
+          format?: string;
+          stage?: string;
+          brief?: string | null;
+          caption?: string | null;
+          due_date?: string | null;
+          publish_date?: string | null;
+          sort?: number;
+          updated_at?: string;
         };
         Update: {
           id?: string;
           project_id?: string;
           title?: string;
           created_at?: string;
+          brand_id?: string | null;
+          format?: string;
+          stage?: string;
+          brief?: string | null;
+          caption?: string | null;
+          due_date?: string | null;
+          publish_date?: string | null;
+          sort?: number;
+          updated_at?: string;
         };
         Relationships: [
           {
@@ -220,38 +288,54 @@ export type Database = {
             referencedRelation: "projects";
             referencedColumns: ["id"];
           },
+          {
+            foreignKeyName: "design_assets_brand_id_fkey";
+            columns: ["brand_id"];
+            isOneToOne: false;
+            referencedRelation: "brands";
+            referencedColumns: ["id"];
+          },
         ];
       };
       design_comments: {
         Row: {
           id: string;
           version_id: string;
-          author_id: string;
+          author_id: string | null;
           body: string;
           x: number | null;
           y: number | null;
           resolved: boolean;
           created_at: string;
+          guest_name: string | null;
+          share_link_id: string | null;
+          slide: number;
         };
         Insert: {
           id?: string;
           version_id: string;
-          author_id: string;
+          author_id?: string | null;
           body: string;
           x?: number | null;
           y?: number | null;
           resolved?: boolean;
           created_at?: string;
+          guest_name?: string | null;
+          share_link_id?: string | null;
+          slide?: number;
         };
         Update: {
           id?: string;
           version_id?: string;
-          author_id?: string;
+          author_id?: string | null;
           body?: string;
           x?: number | null;
           y?: number | null;
           resolved?: boolean;
           created_at?: string;
+          guest_name?: string | null;
+          share_link_id?: string | null;
+          slide?: number;
         };
         Relationships: [
           {
@@ -268,6 +352,13 @@ export type Database = {
             referencedRelation: "profiles";
             referencedColumns: ["id"];
           },
+          {
+            foreignKeyName: "design_comments_share_link_id_fkey";
+            columns: ["share_link_id"];
+            isOneToOne: false;
+            referencedRelation: "share_links";
+            referencedColumns: ["id"];
+          },
         ];
       };
       design_versions: {
@@ -275,31 +366,43 @@ export type Database = {
           id: string;
           asset_id: string;
           version_no: number;
-          file_path: string;
+          file_path: string | null;
           note: string | null;
           uploaded_by: string | null;
           status: string;
           created_at: string;
+          files: Json;
+          external_url: string | null;
+          decided_by: string | null;
+          decided_at: string | null;
         };
         Insert: {
           id?: string;
           asset_id: string;
           version_no: number;
-          file_path: string;
+          file_path?: string | null;
           note?: string | null;
           uploaded_by?: string | null;
           status?: string;
           created_at?: string;
+          files?: Json;
+          external_url?: string | null;
+          decided_by?: string | null;
+          decided_at?: string | null;
         };
         Update: {
           id?: string;
           asset_id?: string;
           version_no?: number;
-          file_path?: string;
+          file_path?: string | null;
           note?: string | null;
           uploaded_by?: string | null;
           status?: string;
           created_at?: string;
+          files?: Json;
+          external_url?: string | null;
+          decided_by?: string | null;
+          decided_at?: string | null;
         };
         Relationships: [
           {
@@ -520,6 +623,7 @@ export type Database = {
           selected_by: string | null;
           note: string | null;
           created_at: string;
+          guest_name: string | null;
         };
         Insert: {
           id?: string;
@@ -528,6 +632,7 @@ export type Database = {
           selected_by?: string | null;
           note?: string | null;
           created_at?: string;
+          guest_name?: string | null;
         };
         Update: {
           id?: string;
@@ -536,6 +641,7 @@ export type Database = {
           selected_by?: string | null;
           note?: string | null;
           created_at?: string;
+          guest_name?: string | null;
         };
         Relationships: [
           {
@@ -573,6 +679,10 @@ export type Database = {
           sync_locked_at: string | null;
           edited_share_url: string | null;
           created_at: string;
+          edited_folder_id: string | null;
+          submitted_at: string | null;
+          submitted_by: string | null;
+          synced_at: string | null;
         };
         Insert: {
           id?: string;
@@ -585,6 +695,10 @@ export type Database = {
           sync_locked_at?: string | null;
           edited_share_url?: string | null;
           created_at?: string;
+          edited_folder_id?: string | null;
+          submitted_at?: string | null;
+          submitted_by?: string | null;
+          synced_at?: string | null;
         };
         Update: {
           id?: string;
@@ -597,6 +711,10 @@ export type Database = {
           sync_locked_at?: string | null;
           edited_share_url?: string | null;
           created_at?: string;
+          edited_folder_id?: string | null;
+          submitted_at?: string | null;
+          submitted_by?: string | null;
+          synced_at?: string | null;
         };
         Relationships: [
           {
@@ -618,6 +736,9 @@ export type Database = {
           width: number | null;
           height: number | null;
           sort_order: number;
+          mime_type: string | null;
+          kind: string;
+          size_bytes: number | null;
         };
         Insert: {
           id?: string;
@@ -628,6 +749,9 @@ export type Database = {
           width?: number | null;
           height?: number | null;
           sort_order?: number;
+          mime_type?: string | null;
+          kind?: string;
+          size_bytes?: number | null;
         };
         Update: {
           id?: string;
@@ -638,6 +762,9 @@ export type Database = {
           width?: number | null;
           height?: number | null;
           sort_order?: number;
+          mime_type?: string | null;
+          kind?: string;
+          size_bytes?: number | null;
         };
         Relationships: [
           {
@@ -813,6 +940,8 @@ export type Database = {
           status: string;
           drive_folder_id: string | null;
           created_at: string;
+          description: string | null;
+          updated_at: string;
         };
         Insert: {
           id?: string;
@@ -823,6 +952,8 @@ export type Database = {
           status?: string;
           drive_folder_id?: string | null;
           created_at?: string;
+          description?: string | null;
+          updated_at?: string;
         };
         Update: {
           id?: string;
@@ -833,6 +964,8 @@ export type Database = {
           status?: string;
           drive_folder_id?: string | null;
           created_at?: string;
+          description?: string | null;
+          updated_at?: string;
         };
         Relationships: [
           {
@@ -894,6 +1027,60 @@ export type Database = {
           updated_at?: string;
         };
         Relationships: [];
+      };
+      share_links: {
+        Row: {
+          id: string;
+          token: string;
+          project_id: string;
+          brand_id: string | null;
+          label: string;
+          can_review: boolean;
+          expires_at: string | null;
+          revoked_at: string | null;
+          last_opened_at: string | null;
+          created_at: string;
+        };
+        Insert: {
+          id?: string;
+          token: string;
+          project_id: string;
+          brand_id?: string | null;
+          label: string;
+          can_review?: boolean;
+          expires_at?: string | null;
+          revoked_at?: string | null;
+          last_opened_at?: string | null;
+          created_at?: string;
+        };
+        Update: {
+          id?: string;
+          token?: string;
+          project_id?: string;
+          brand_id?: string | null;
+          label?: string;
+          can_review?: boolean;
+          expires_at?: string | null;
+          revoked_at?: string | null;
+          last_opened_at?: string | null;
+          created_at?: string;
+        };
+        Relationships: [
+          {
+            foreignKeyName: "share_links_project_id_fkey";
+            columns: ["project_id"];
+            isOneToOne: false;
+            referencedRelation: "projects";
+            referencedColumns: ["id"];
+          },
+          {
+            foreignKeyName: "share_links_brand_id_fkey";
+            columns: ["brand_id"];
+            isOneToOne: false;
+            referencedRelation: "brands";
+            referencedColumns: ["id"];
+          },
+        ];
       };
       site_contact: {
         Row: {

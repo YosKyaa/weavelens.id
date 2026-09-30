@@ -1,5 +1,5 @@
 import Link from "next/link";
-import { BarChart3, FilePlus2, LayoutTemplate } from "lucide-react";
+import { BarChart3, FilePlus2, FolderPlus, LayoutTemplate } from "lucide-react";
 import { DateText } from "@/components/atoms/DateText";
 import { StatTile } from "@/components/atoms/StatTile";
 import { StatusBadge } from "@/components/atoms/StatusBadge";
@@ -17,9 +17,10 @@ const ACTIVE_STATUSES = ["active", "in_review", "revision", "approved"];
 const number = new Intl.NumberFormat("id-ID");
 
 const quickActions = [
-  { href: "/admin/invoice/baru", label: "Buat invoice", icon: FilePlus2 },
-  { href: "/admin/analitik", label: "Lihat analitik", icon: BarChart3 },
-  { href: "/admin/konten", label: "Ubah konten website", icon: LayoutTemplate },
+  { href: "/admin/projects/new", label: "Buat proyek", icon: FolderPlus },
+  { href: "/admin/invoices/new", label: "Buat invoice", icon: FilePlus2 },
+  { href: "/admin/analytics", label: "Lihat analitik", icon: BarChart3 },
+  { href: "/admin/cms", label: "Ubah konten website", icon: LayoutTemplate },
 ];
 
 /** Ringkasan: angka 7 hari terakhir, jalan pintas, lalu daftar yang menunggu tindakan. */
@@ -86,7 +87,7 @@ export default async function AdminHomePage() {
     .filter((invoice) => invoice.due_date < today)
     .map((invoice) => ({
       id: invoice.id,
-      href: `/admin/invoice/${invoice.id}`,
+      href: `/admin/invoices/${invoice.id}`,
       title: `${invoice.number} · ${formatRupiah(invoice.total)}`,
       meta: [
         invoice.bill_to_name || invoice.clients?.name,
@@ -101,6 +102,7 @@ export default async function AdminHomePage() {
     .filter((row) => latest.get(row.asset_id) === row.version_no)
     .map((row) => ({
       id: row.id,
+      href: `/admin/projects/${row.design_assets.projects.id}/content/${row.asset_id}`,
       title: text.revisions.item(row.design_assets.title, row.version_no),
       meta: [row.design_assets.projects.clients?.name, row.design_assets.projects.title]
         .filter(Boolean)
@@ -110,6 +112,7 @@ export default async function AdminHomePage() {
 
   const selectionRows: InboxRow[] = (selections.data ?? []).map((row) => ({
     id: row.id,
+    href: `/admin/galleries/${row.id}`,
     title: row.title,
     meta: [row.projects.clients?.name, row.projects.title].filter(Boolean).join(" · "),
     aside: <StatusBadge kind="photoSet" status="selection_closed" />,
@@ -117,6 +120,7 @@ export default async function AdminHomePage() {
 
   const activeRows: InboxRow[] = (active.data ?? []).map((row) => ({
     id: row.id,
+    href: `/admin/projects/${row.id}`,
     title: row.title,
     meta: [row.clients?.name, projectTypes[row.type]].filter(Boolean).join(" · "),
     aside: (

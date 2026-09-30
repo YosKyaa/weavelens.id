@@ -5,7 +5,7 @@ import { createSessionClient } from "@/lib/supabase/server";
 
 export const LOGIN_PATH = "/login";
 export const ADMIN_HOME = "/admin";
-export const CLIENT_HOME = "/c";
+export const CLIENT_HOME = "/client";
 
 /** User yang login beserta profilnya. `null` jika belum login atau profil belum ada. Di-dedupe per request. */
 export const getSession = cache(async () => {

@@ -5,7 +5,7 @@
  */
 
 /** Lokasi CMS di dalam portal admin. */
-export const CMS_BASE = "/admin/konten";
+export const CMS_BASE = "/admin/cms";
 
 export type SelectOption = { value: string; label: string };
 
@@ -70,7 +70,7 @@ const whenAvailable = { field: "status", equals: "available" };
 
 export const collections: CmsCollection[] = [
   {
-    slug: "testimoni",
+    slug: "testimonials",
     table: "testimonials",
     label: "Testimoni",
     singular: "testimoni",
@@ -107,7 +107,7 @@ export const collections: CmsCollection[] = [
     ],
   },
   {
-    slug: "galeri",
+    slug: "gallery",
     table: "portfolio_images",
     label: "Galeri",
     singular: "foto",
@@ -157,7 +157,7 @@ export const collections: CmsCollection[] = [
     ],
   },
   {
-    slug: "layanan",
+    slug: "services",
     table: "services",
     label: "Layanan",
     singular: "layanan",
@@ -223,7 +223,7 @@ export const collections: CmsCollection[] = [
     ],
   },
   {
-    slug: "harga",
+    slug: "pricing",
     table: "pricing_plans",
     label: "Harga",
     singular: "paket",
@@ -278,7 +278,7 @@ export const collections: CmsCollection[] = [
     ],
   },
   {
-    slug: "klien",
+    slug: "partners",
     table: "partners",
     label: "Klien",
     singular: "klien",
@@ -297,7 +297,7 @@ export const collections: CmsCollection[] = [
     ],
   },
   {
-    slug: "admin-wa",
+    slug: "whatsapp-admins",
     table: "wa_admins",
     label: "Admin WhatsApp",
     singular: "admin",
@@ -327,7 +327,7 @@ export const collections: CmsCollection[] = [
     ],
   },
   {
-    slug: "kontak",
+    slug: "contact",
     table: "site_contact",
     label: "Kontak",
     singular: "kontak",

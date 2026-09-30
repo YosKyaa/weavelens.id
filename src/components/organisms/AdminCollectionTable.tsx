@@ -21,7 +21,7 @@ type AdminCollectionTableProps = {
 
 /** Daftar item satu koleksi, urut sesuai tampilan di website. */
 export function AdminCollectionTable({ collection, rows }: AdminCollectionTableProps) {
-  const newHref = `${CMS_BASE}/${collection.slug}/baru`;
+  const newHref = `${CMS_BASE}/${collection.slug}/new`;
 
   if (rows.length === 0) {
     return (

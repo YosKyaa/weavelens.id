@@ -29,7 +29,7 @@ export async function BioTemplate() {
 
   return (
     <main
-      id="konten"
+      id="content"
       tabIndex={-1}
       className="relative min-h-dvh overflow-hidden bg-paper outline-none"
     >
@@ -58,7 +58,7 @@ export async function BioTemplate() {
 
         {photos.length > 0 && (
           <Link
-            href="/?utm_source=instagram&utm_medium=bio#portofolio"
+            href="/?utm_source=instagram&utm_medium=bio#portfolio"
             aria-label={bio.photosLabel}
             className="mt-8 grid w-full animate-hero-in grid-cols-3 gap-2 [animation-delay:220ms]"
           >

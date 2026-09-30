@@ -4,7 +4,7 @@ import { useOptimistic, useTransition } from "react";
 import Link from "next/link";
 import { ArrowDown, ArrowUp, Loader2, Pencil, Trash2 } from "lucide-react";
 import { toast } from "sonner";
-import { deleteItem, moveItem, setVisible } from "@/app/(portal)/admin/konten/actions";
+import { deleteItem, moveItem, setVisible } from "@/app/(portal)/admin/cms/actions";
 import { ConfirmDialog } from "@/components/molecules/ConfirmDialog";
 import { Button } from "@/components/ui/button";
 import { Switch } from "@/components/ui/switch";

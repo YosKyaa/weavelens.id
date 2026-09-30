@@ -31,7 +31,7 @@ export async function LandingTemplate() {
       <ScrollProgress />
       <CursorLight />
       <Header />
-      <main id="konten" tabIndex={-1} className="outline-none">
+      <main id="content" tabIndex={-1} className="outline-none">
         <Hero className="bg-paper" />
         <SectionTransition from="paper" to="sand" />
         <ClientStrip className="bg-sand" />

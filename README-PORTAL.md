@@ -3,10 +3,10 @@
 Portal untuk tim (admin) dan klien: rencana kerja, review desain, seleksi foto, dan invoice. Spesifikasi lengkap ada di `weavelens-portal-spec.md`.
 
 - **Admin:** `/admin`. Masuk dengan email dan password di tab "Tim WeaveLens".
-- **Klien:** `/c`. Masuk lewat link di email (magic link), tanpa password. Akun klien dibuat oleh admin, tidak ada halaman daftar.
+- **Klien:** cukup buka **link akses** `/share/<token>` yang dikirim tim lewat WhatsApp, tanpa login. Portal login klien `/client` (magic link) tetap tersedia untuk klien yang punya akun.
 - **Konten landing page (CMS):** `/admin/konten`.
 
-> Status: **Tahap 1 (fondasi & auth)**. Modul klien/proyek, desain, foto, dan invoice menyusul di tahap 2–5. Bagian README ini dilengkapi di tahap 6.
+> URL portal memakai bahasa Inggris: `/admin`, `/admin/projects`, `/admin/galleries`, `/admin/invoices`, `/admin/analytics`, `/admin/cms`, dan `/share/<token>` untuk klien. URL lama berbahasa Indonesia otomatis dialihkan.
 
 ## 1. Setup Supabase (sekali)
 
@@ -80,3 +80,54 @@ npm run db:types
 - **Status:** Draf, lalu Belum dibayar ("Tandai terkirim", bisa diurungkan), lalu Lunas atau Dibatalkan. Kedua status terakhir dikunci dan harus dikonfirmasi.
 - **Duplikat:** menyalin penerima dan item ke invoice baru.
 - **Data bawaan:** perusahaan, rekening, dan penanda tangan diatur di `/admin/settings`.
+
+## 7. Alur kerja harian
+
+### A. Konten sosial media (mis. 1 klien dengan 4 perusahaan)
+1. **Klien & brand:** buka **Klien & brand**, lalu **Tambah klien** (mis. nama grup). Di halaman klien, tambahkan 4 brand dengan warna penanda masing-masing.
+2. **Proyek:** buka **Proyek & konten**, lalu **Buat proyek** dengan jenis "Konten sosial media & desain". Mis. "Konten Instagram Oktober 2026".
+3. **Rencana kerja:** isi tab **Rencana kerja** dengan tahapan yang dilihat klien sebagai timeline progres.
+4. **Papan konten:**
+   - Tambah kartu per konten (brand, format Feed/Carousel/Story/Reels, tenggat).
+   - Geser kartu antar tahap. Di HP, pakai menu ⋯ di kartu.
+5. **Kirim desain:** buka kartu, lalu **Unggah versi baru**.
+   - Carousel: pilih beberapa file sekaligus.
+   - Reels di atas 50 MB: tempel link Google Drive.
+   - Setelah dikirim, kartu otomatis pindah ke "Menunggu review".
+6. **Link klien:** di tab **Link klien**, buat link. Pilih "Hanya Brand X" supaya PIC tiap perusahaan hanya melihat kontennya sendiri. Link otomatis tersalin; kirim lewat tombol WhatsApp.
+7. **Klien me-review:**
+   - Klien membuka link, mengisi nama, lalu mengklik bagian desain untuk menaruh titik komentar.
+   - Setelah itu klien memilih **Setujui desain** atau **Minta revisi**.
+   - Kartu otomatis pindah ke "Disetujui" atau "Direvisi", dan semuanya tercatat di tab **Aktivitas**.
+8. **Revisi:** tandai komentar selesai, unggah versi berikutnya. Versi lama tetap bisa dibuka.
+
+### B. Seleksi foto/video (wisuda, acara korporat)
+1. Buat proyek jenis **Dokumentasi foto / video / Foto & video**.
+2. Unggah file mentah ke folder Google Drive, lalu bagikan folder itu ke email service account (lihat bagian 8).
+3. Di tab **Galeri seleksi**, klik **Buat galeri** dan tempel link folder. Isi **maksimal pilihan** (mis. 50) dan batas waktu.
+4. Klik **Sinkronkan dari Drive**, lalu **Buka seleksi untuk klien**. Kirim link proyek (tab **Link klien**).
+5. **Klien memilih:**
+   - Klien memilih foto/video, dengan penghitung "23 / 50" yang selalu terlihat.
+   - Setiap pilihan bisa diberi catatan untuk editor.
+   - Terakhir klien menekan **Kirim pilihan**, lalu galeri otomatis tertutup.
+6. **Tim mengedit:**
+   - Klik **Unduh daftar file (.txt)**, atau **Salin nama file** untuk ditempel di filter Lightroom.
+   - Klik **Mulai edit**.
+7. **Kirim hasil:** unggah hasil edit ke folder Drive, tempel link foldernya, lalu klik **Kirim hasil edit**. Klien melihat tombol **Buka hasil edit**.
+
+## 8. Menghubungkan Google Drive (sekali)
+1. Buka [console.cloud.google.com](https://console.cloud.google.com), buat project, lalu aktifkan **Google Drive API**.
+2. Buka **IAM & Admin**, pilih **Service Accounts**, lalu **Create service account** (peran tidak perlu diisi).
+3. Buka service account itu, pilih **Keys**, lalu **Add key** (JSON). File JSON akan terunduh.
+4. Isi env `GOOGLE_SERVICE_ACCOUNT_JSON` dengan isi file JSON (boleh dalam bentuk base64) di `.env` dan di Vercel.
+5. Di Google Drive, buat folder induk (mis. "WeaveLens Clients"), lalu **Bagikan** ke email service account (`…@….iam.gserviceaccount.com`) sebagai **Editor**. Semua subfolder di dalamnya ikut bisa dibaca portal.
+
+**Catatan:**
+- **Thumbnail:** diambil server lewat `/api/drive/thumb/…` dan di-cache CDN. Browser klien tidak pernah mengakses Drive langsung, kecuali saat memutar video.
+- **Video:** diputar dengan pemutar Google Drive. Karena itu, saat seleksi dibuka, folder dibuat "siapa pun yang punya link bisa melihat".
+- **Hapus galeri:** file di Drive tidak ikut terhapus.
+
+## 9. Keamanan link klien
+- Token link terdiri dari 192 bit acak, sehingga tidak bisa ditebak. Link bisa diberi masa berlaku dan **dicabut kapan saja**; aksesnya langsung terputus.
+- Setiap aksi dari link diperiksa ulang di server: token masih aktif, izin review, dan data yang disentuh memang milik proyek/brand link itu.
+- Link "hanya lihat" tidak bisa memberi komentar atau persetujuan.

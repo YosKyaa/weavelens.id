@@ -33,14 +33,14 @@ export const bio = {
   links: (priceFrom: string | null): BioLink[] => [
     {
       id: "portofolio",
-      href: `/${fromBio}#portofolio`,
+      href: `/${fromBio}#portfolio`,
       title: "Lihat hasil kerja kami",
       sub: "Wisuda, acara kantor, dan event",
       icon: "images",
     },
     {
       id: "harga",
-      href: `/${fromBio}#harga`,
+      href: `/${fromBio}#pricing`,
       title: "Daftar harga",
       sub: priceFrom
         ? `Mulai dari ${priceFrom} · harga jelas sejak awal`
@@ -49,7 +49,7 @@ export const bio = {
     },
     {
       id: "layanan",
-      href: `/${fromBio}#layanan`,
+      href: `/${fromBio}#services`,
       title: "Layanan kami",
       sub: "Foto · Video highlight · Reels · Desain",
       icon: "sparkles",

@@ -4,7 +4,7 @@ import type { SectionCopy, Testimonial } from "@/types";
 export const quoteMark = "\u201C";
 
 export const testimonialsSection: SectionCopy = {
-  id: "testimoni",
+  id: "testimonials",
   heading: "Kata klien kami",
   sub: "Cerita langsung dari klien yang pernah bekerja sama dengan WeaveLens.",
 };

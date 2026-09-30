@@ -3,7 +3,7 @@
 import { startTransition, useActionState, type FormEvent } from "react";
 import Link from "next/link";
 import { Loader2 } from "lucide-react";
-import { saveItem, type FormState } from "@/app/(portal)/admin/konten/actions";
+import { saveItem, type FormState } from "@/app/(portal)/admin/cms/actions";
 import { AdminField } from "@/components/molecules/AdminField";
 import { Button } from "@/components/ui/button";
 import { CMS_BASE, findCollection } from "@/lib/cms/collections";

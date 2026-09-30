@@ -4,7 +4,7 @@ import { portal } from "@/content/portal";
 export function PortalSetupNotice() {
   return (
     <main
-      id="konten"
+      id="content"
       className="mx-auto flex min-h-dvh max-w-xl flex-col justify-center gap-4 px-4 py-16"
     >
       <h1 className="text-3xl">{portal.setup.heading}</h1>

@@ -1,7 +1,7 @@
 import type { PortfolioFilter, PortfolioImage, SectionCopy } from "@/types";
 
 export const portfolioSection: SectionCopy = {
-  id: "portofolio",
+  id: "portfolio",
   heading: "Hasil kerja kami",
   sub: "Wisuda, acara korporat, dan event yang pernah kami liput. Ketuk foto untuk melihat lebih besar.",
 };
