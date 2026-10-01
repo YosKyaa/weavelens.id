@@ -279,7 +279,12 @@ export function ReviewWorkspace({
               </Button>
             </div>
           )}
-          {canPin && <p className="mt-3 text-center text-sm text-ink/65">{text.pinHint}</p>}
+          {canPin && (
+            <p className="mt-3 text-center text-sm text-ink/65">
+              <span className="pointer-coarse:hidden">{text.pinHint}</span>
+              <span className="hidden pointer-coarse:inline">{text.pinHintTouch}</span>
+            </p>
+          )}
         </div>
       </div>
 

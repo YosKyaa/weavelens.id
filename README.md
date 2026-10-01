@@ -173,6 +173,18 @@ Kartu otomatis berubah: badge "Segera hadir" hilang dan tombol WhatsApp muncul. 
 
 Setiap push ke GitHub otomatis membuat deploy baru.
 
+## 9. SEO & GEO (muncul di jawaban AI)
+
+Supaya ChatGPT, Perplexity, Gemini, Claude, dan Google AI Overview bisa menemukan dan mengutip WeaveLens:
+
+- **Data terstruktur (JSON-LD)** di beranda: profil bisnis lokal (Jakarta, area Jabodetabek, kontak, jam balas), katalog layanan + harga mulai, dan FAQ. Dibuat otomatis dari konten CMS (`src/lib/structured-data.ts`).
+- **`/llms.txt`**: ringkasan fakta WeaveLens dalam Markdown untuk asisten AI. Ikut berubah saat CMS diubah (maks. 1 jam).
+- **`robots.txt`** mengizinkan crawler AI secara eksplisit (GPTBot, OAI-SearchBot, ClaudeBot, PerplexityBot, Google-Extended, dll.). Portal dan link klien tetap tertutup.
+- **Sitemap** memuat foto portofolio (pencarian gambar). **Canonical** ke `https://www.weavelens.id`.
+- **Jawaban FAQ selalu ada di HTML** (pakai `<details>`), jadi terbaca walau tertutup.
+
+Tips konten agar makin sering dikutip AI: tulis FAQ dengan pertanyaan yang benar-benar diketik orang (mis. "Berapa harga jasa foto wisuda di Jakarta?") dan jawab dengan angka/fakta yang jelas lewat **CMS → FAQ**. Setelah deploy, daftarkan sitemap di Google Search Console dan Bing Webmaster Tools (Bing dipakai ChatGPT Search & Copilot).
+
 ## Struktur kode
 
 ```

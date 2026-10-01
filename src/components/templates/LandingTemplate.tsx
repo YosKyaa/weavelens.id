@@ -1,6 +1,7 @@
 import { CursorLight } from "@/components/atoms/CursorLight";
 import { ScrollProgress } from "@/components/atoms/ScrollProgress";
 import { SectionTransition } from "@/components/atoms/SectionTransition";
+import { JsonLd } from "@/components/atoms/JsonLd";
 import { WaLink } from "@/components/atoms/WaLink";
 import { CaseStudies } from "@/components/organisms/CaseStudies";
 import { ClientStrip } from "@/components/organisms/ClientStrip";
@@ -16,6 +17,7 @@ import { Services } from "@/components/organisms/Services";
 import { StickyWa } from "@/components/organisms/StickyWa";
 import { Testimonials } from "@/components/organisms/Testimonials";
 import { getCms } from "@/lib/cms/data";
+import { landingJsonLd } from "@/lib/structured-data";
 
 /**
  * Urutan AIDA. Latar bergantian netral (paper) / sekunder (sand),
@@ -24,10 +26,12 @@ import { getCms } from "@/lib/cms/data";
  * Desire: HowItWorks, CaseStudies, Pricing, Faq · Action: FinalCta, StickyWa.
  */
 export async function LandingTemplate() {
-  const { testimonials } = await getCms();
+  const cms = await getCms();
+  const { testimonials } = cms;
 
   return (
     <>
+      <JsonLd data={landingJsonLd(cms)} />
       <ScrollProgress />
       <CursorLight />
       <Header />

@@ -12,7 +12,7 @@ export async function loadReviewVersions(
   const { data } = await db
     .from("design_versions")
     .select(
-      "id, version_no, status, note, created_at, decided_by, files, external_url, design_comments(id, body, x, y, slide, resolved, created_at, guest_name, author_id, profiles(full_name))",
+      "id, version_no, status, note, created_at, decided_by, files, external_url, design_comments(id, body, x, y, slide, resolved, created_at, guest_name, author_id, profiles(full_name, role))",
     )
     .eq("asset_id", contentId)
     .order("version_no", { ascending: false });
@@ -33,7 +33,7 @@ export async function loadReviewVersions(
           id: comment.id,
           body: comment.body,
           author: comment.guest_name ?? comment.profiles?.full_name ?? "Tim WeaveLens",
-          isTeam: Boolean(comment.author_id),
+          isTeam: comment.profiles?.role === "admin" || comment.profiles?.role === "team",
           x: comment.x,
           y: comment.y,
           slide: comment.slide,

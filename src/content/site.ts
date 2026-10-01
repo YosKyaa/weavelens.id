@@ -35,7 +35,8 @@ export const site = {
   tagline: "Catch the Moment, Remember Forever",
   /** Tiga pilar layanan (dari Creative Portfolio). */
   pillars: "Capture. Craft. Connect.",
-  url: "https://weavelens.id",
+  /** Domain kanonik (weavelens.id dialihkan ke www). */
+  url: "https://www.weavelens.id",
   locale: "id_ID",
 
   meta: {

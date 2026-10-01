@@ -1,6 +1,5 @@
 import { SectionHeading } from "@/components/atoms/SectionHeading";
 import { FaqItem } from "@/components/molecules/FaqItem";
-import { Accordion } from "@/components/ui/accordion";
 import { faqSection } from "@/content/faq";
 import { getCms } from "@/lib/cms/data";
 import { reveal } from "@/lib/motion";
@@ -29,11 +28,9 @@ export async function Faq({ className }: FaqProps) {
           className="md:col-span-5 md:mb-0"
         />
         <div {...reveal(1)} className="md:col-span-7">
-          <Accordion type="single" collapsible defaultValue={faqs[0]?.id}>
-            {faqs.map((faq) => (
-              <FaqItem key={faq.id} faq={faq} />
-            ))}
-          </Accordion>
+          {faqs.map((faq, index) => (
+            <FaqItem key={faq.id} faq={faq} defaultOpen={index === 0} />
+          ))}
         </div>
       </div>
     </section>

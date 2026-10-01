@@ -1,3 +1,5 @@
+import Link from "next/link";
+import { ArrowRight, MessageSquareWarning } from "lucide-react";
 import { EmptyState } from "@/components/atoms/EmptyState";
 import { StatusBadge } from "@/components/atoms/StatusBadge";
 import { portal, projectTypes } from "@/content/portal";
@@ -23,7 +25,7 @@ export default async function ClientHomePage() {
     supabase.from("clients").select("name").eq("id", profile.client_id).maybeSingle(),
     supabase
       .from("projects")
-      .select("id, title, type, event_date, status, plan_items(status)")
+      .select("id, title, type, event_date, status, plan_items(status), design_assets(stage)")
       .neq("status", "draft")
       .order("created_at", { ascending: false }),
   ]);
@@ -40,11 +42,19 @@ export default async function ClientHomePage() {
             {projects.map((project) => {
               const total = project.plan_items.length;
               const done = project.plan_items.filter((item) => item.status === "done").length;
+              const waiting = project.design_assets.filter(
+                (asset) => asset.stage === "client_review",
+              ).length;
               return (
                 <li key={project.id}>
-                  <article className="flex h-full flex-col gap-4 rounded-2xl border border-line bg-paper p-6">
+                  <Link
+                    href={`/client/projects/${project.id}`}
+                    className={`group flex h-full flex-col gap-4 rounded-2xl border bg-paper p-6 transition-shadow hover:shadow-lift ${
+                      waiting ? "border-primary ring-1 ring-primary" : "border-line"
+                    }`}
+                  >
                     <div className="flex items-start justify-between gap-3">
-                      <h2 className="text-xl">{project.title}</h2>
+                      <h2 className="text-xl group-hover:text-primary">{project.title}</h2>
                       <StatusBadge kind="project" status={project.status} />
                     </div>
                     <p className="text-sm text-ink/70">
@@ -56,7 +66,7 @@ export default async function ClientHomePage() {
                         .join(" · ")}
                     </p>
                     {total > 0 && (
-                      <div className="mt-auto">
+                      <div>
                         <div
                           className="h-2 overflow-hidden rounded-full bg-sand"
                           role="progressbar"
@@ -73,7 +83,24 @@ export default async function ClientHomePage() {
                         <p className="mt-2 text-sm text-ink/70">{text.planProgress(done, total)}</p>
                       </div>
                     )}
-                  </article>
+                    <span className="mt-auto flex flex-wrap items-center justify-between gap-2 pt-1">
+                      {waiting > 0 ? (
+                        <span className="inline-flex items-center gap-1.5 rounded-full bg-brand-soft px-3 py-1 text-sm font-semibold text-primary">
+                          <MessageSquareWarning aria-hidden className="size-4" />
+                          {text.waitingReview(waiting)}
+                        </span>
+                      ) : (
+                        <span />
+                      )}
+                      <span className="inline-flex items-center gap-1 text-sm font-semibold text-primary">
+                        {text.openProject}
+                        <ArrowRight
+                          aria-hidden
+                          className="size-4 transition-transform group-hover:translate-x-0.5"
+                        />
+                      </span>
+                    </span>
+                  </Link>
                 </li>
               );
             })}

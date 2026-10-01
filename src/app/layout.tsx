@@ -17,10 +17,17 @@ export const metadata: Metadata = {
   metadataBase: new URL(site.url),
   title: site.meta.title,
   description: site.meta.description,
+  applicationName: site.name,
+  alternates: { canonical: "/" },
+  robots: {
+    index: true,
+    follow: true,
+    googleBot: { index: true, follow: true, "max-image-preview": "large", "max-snippet": -1 },
+  },
   openGraph: {
     title: site.meta.title,
     description: site.meta.description,
-    url: site.url,
+    url: "/",
     siteName: site.name,
     locale: site.locale,
     type: "website",

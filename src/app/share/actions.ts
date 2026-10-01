@@ -8,6 +8,12 @@ import { shareText } from "@/content/workspace";
 import { logActivity } from "@/lib/activity";
 import { GUEST_COOKIE, getGuestName } from "@/lib/guest";
 import type { CommentPoint } from "@/lib/review";
+import {
+  ALREADY_DECIDED,
+  decideVersion,
+  latestVersionInScope,
+  parseComment,
+} from "@/lib/review-decision";
 import { resolveShare, type ShareContext } from "@/lib/share";
 
 /**
@@ -53,25 +59,11 @@ async function actor(token: string, needsReview: boolean): Promise<Actor | { err
 }
 
 /** Versi harus milik proyek (dan brand, jika link dibatasi) dari link, dan merupakan versi terbaru. */
-async function versionInScope(context: ShareContext, versionId: string) {
-  const { data } = await context.db
-    .from("design_versions")
-    .select(
-      "id, asset_id, version_no, status, design_assets!inner(id, title, project_id, brand_id)",
-    )
-    .eq("id", versionId)
-    .maybeSingle();
-  if (!data || data.design_assets.project_id !== context.project.id) return null;
-  if (context.brandId && data.design_assets.brand_id !== context.brandId) return null;
-
-  const { data: newer } = await context.db
-    .from("design_versions")
-    .select("id")
-    .eq("asset_id", data.asset_id)
-    .gt("version_no", data.version_no)
-    .limit(1);
-  if (newer?.length) return null;
-  return data;
+function versionInScope(context: ShareContext, versionId: string) {
+  return latestVersionInScope(context.db, versionId, {
+    projectId: context.project.id,
+    brandId: context.brandId,
+  });
 }
 
 // ─── Review desain ─────────────────────────────────────────────────────────
@@ -85,18 +77,8 @@ export async function guestComment(
   if (!isId(versionId)) return { ok: false, error: INVALID };
   const who = await actor(token, true);
   if ("error" in who) return { ok: false, error: who.error };
-  const message = z.string().trim().min(1, "Tulis komentar dulu.").max(2000).safeParse(body);
-  if (!message.success) return { ok: false, error: message.error.issues[0]?.message ?? FAILED };
-  const coords = point
-    ? z
-        .object({
-          x: z.number().min(0).max(1),
-          y: z.number().min(0).max(1),
-          slide: z.number().int().min(0).max(50),
-        })
-        .safeParse(point)
-    : null;
-  if (coords && !coords.success) return { ok: false, error: FAILED };
+  const comment = parseComment(body, point);
+  if (!comment.ok) return comment;
 
   const version = await versionInScope(who.context, versionId);
   if (!version) return { ok: false, error: INVALID };
@@ -105,10 +87,10 @@ export async function guestComment(
     version_id: versionId,
     guest_name: who.name,
     share_link_id: who.context.linkId,
-    body: message.data,
-    x: coords?.data.x ?? null,
-    y: coords?.data.y ?? null,
-    slide: coords?.data.slide ?? 0,
+    body: comment.body,
+    x: comment.x,
+    y: comment.y,
+    slide: comment.slide,
   });
   if (error) return { ok: false, error: FAILED };
 
@@ -126,47 +108,16 @@ async function decide(
   token: string,
   versionId: string,
   decision: "approved" | "changes_requested",
-) {
+): Promise<Result> {
   if (!isId(versionId)) return { ok: false, error: INVALID };
   const who = await actor(token, true);
-  if ("error" in who) return { ok: false as const, error: who.error };
+  if ("error" in who) return { ok: false, error: who.error };
   const version = await versionInScope(who.context, versionId);
-  if (!version || version.status !== "pending_review") {
-    return {
-      ok: false as const,
-      error: "Versi ini sudah diputuskan atau sudah ada versi yang lebih baru. Muat ulang halaman.",
-    };
-  }
+  if (!version) return { ok: false, error: ALREADY_DECIDED };
 
-  if (decision === "changes_requested") {
-    const { count } = await who.context.db
-      .from("design_comments")
-      .select("id", { count: "exact", head: true })
-      .eq("version_id", versionId)
-      .eq("resolved", false);
-    if (!count) return { ok: false as const, error: shareText.content.revisionNeedsComment };
-  }
-
-  const now = new Date().toISOString();
-  const { error } = await who.context.db
-    .from("design_versions")
-    .update({ status: decision, decided_by: who.name, decided_at: now })
-    .eq("id", versionId)
-    .eq("status", "pending_review");
-  if (error) return { ok: false as const, error: FAILED };
-
-  await who.context.db
-    .from("design_assets")
-    .update({ stage: decision === "approved" ? "approved" : "revision", updated_at: now })
-    .eq("id", version.asset_id);
-  await logActivity(who.context.db, {
-    projectId: who.context.project.id,
-    action: decision === "approved" ? "version.approved" : "version.changes_requested",
-    actorName: who.name,
-    meta: { title: version.design_assets.title, version: version.version_no },
-  });
-  refresh(token, who.context.project.id);
-  return { ok: true as const };
+  const result = await decideVersion(who.context.db, version, decision, { name: who.name });
+  if (result.ok) refresh(token, who.context.project.id);
+  return result;
 }
 
 export async function guestApprove(token: string, versionId: string): Promise<Result> {

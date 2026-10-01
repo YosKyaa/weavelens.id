@@ -203,6 +203,14 @@ export const portal = {
     eventDate: (date: string) => `Acara ${date}`,
     planProgress: (done: number, total: number) =>
       `${done} dari ${total} tahap rencana kerja selesai`,
+    waitingReview: (count: number) => `${count} desain menunggu review kamu`,
+    openProject: "Lihat desain",
+    backToProjects: "Semua proyek",
+    contentHeading: "Desain & konten",
+    contentSub:
+      "Buka satu desain untuk memberi komentar langsung di gambar, lalu setujui atau minta revisi.",
+    noContent:
+      "Belum ada desain untuk proyek ini. Kami kabari begitu desain pertama siap direview.",
   },
 
   cms: {

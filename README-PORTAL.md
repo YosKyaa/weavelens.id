@@ -100,6 +100,8 @@ npm run db:types
    - Klien membuka link, mengisi nama, lalu mengklik bagian desain untuk menaruh titik komentar.
    - Setelah itu klien memilih **Setujui desain** atau **Minta revisi**.
    - Kartu otomatis pindah ke "Disetujui" atau "Direvisi", dan semuanya tercatat di tab **Aktivitas**.
+   - **Per satu desain:** di halaman konten admin, bagian **Kirim ke klien** berisi tombol **Salin link desain** / **Kirim via WhatsApp**. Klien langsung masuk ke desain itu, tidak perlu mencari di daftar.
+   - **Klien yang punya akun portal:** login di `/login` (tab Klien), buka **Proyek saya**, pilih proyek, lalu review desain dengan cara yang sama. Namanya tercatat dari akunnya.
 8. **Revisi:** tandai komentar selesai, unggah versi berikutnya. Versi lama tetap bisa dibuka.
 
 ### B. Seleksi foto/video (wisuda, acara korporat)

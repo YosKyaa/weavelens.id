@@ -28,6 +28,8 @@ function ServiceTitle({ title, size }: { title: string; size: "lg" | "md" }) {
           {kicker}
         </span>
       )}
+      {/* Spasi agar terbaca "Dokumentasi Foto" oleh mesin pencari & pembaca layar. */}
+      {kicker && " "}
       <span
         className={cn(
           "mt-1 block tracking-tight",

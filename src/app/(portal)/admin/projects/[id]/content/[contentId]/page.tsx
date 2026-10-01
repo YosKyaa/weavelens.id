@@ -5,6 +5,7 @@ import { addTeamComment, setCommentResolved } from "@/app/(portal)/admin/project
 import { StatusBadge } from "@/components/atoms/StatusBadge";
 import { FormSection } from "@/components/molecules/FormSection";
 import { ContentDetailsForm } from "@/components/organisms/ContentDetailsForm";
+import { ContentShareLinks } from "@/components/organisms/ContentShareLinks";
 import { ReviewWorkspace } from "@/components/organisms/ReviewWorkspace";
 import { VersionUploader } from "@/components/organisms/VersionUploader";
 import {
@@ -36,14 +37,27 @@ export default async function ContentPage({ params }: PageProps) {
     .maybeSingle();
   if (!content) notFound();
 
-  const [versions, { data: brands }] = await Promise.all([
+  const [versions, { data: brands }, { data: links }] = await Promise.all([
     loadReviewVersions(supabase, contentId),
     supabase
       .from("brands")
       .select("id, name")
       .eq("client_id", content.projects.client_id)
       .order("sort"),
+    // Link klien aktif yang boleh review dan mencakup brand konten ini.
+    supabase
+      .from("share_links")
+      .select("id, token, label, brand_id, expires_at")
+      .eq("project_id", id)
+      .eq("can_review", true)
+      .is("revoked_at", null)
+      .order("created_at", { ascending: false }),
   ]);
+  const now = Date.now();
+  const reviewLinks = (links ?? [])
+    .filter((link) => !link.expires_at || new Date(link.expires_at).getTime() > now)
+    .filter((link) => !link.brand_id || link.brand_id === content.brand_id)
+    .map((link) => ({ id: link.id, token: link.token, label: link.label }));
   const format = (FORMATS as readonly string[]).includes(content.format)
     ? (content.format as ContentFormat)
     : "other";
@@ -75,6 +89,18 @@ export default async function ContentPage({ params }: PageProps) {
           resolve: setCommentResolved.bind(null, id),
         }}
       />
+
+      <FormSection
+        title="Kirim ke klien"
+        description="Klien membuka desain ini langsung, memberi komentar di titik yang ingin diubah, lalu menyetujui atau minta revisi. Klien yang punya akun portal juga bisa mereview dari menu Proyek saya."
+      >
+        <ContentShareLinks
+          projectId={id}
+          contentId={contentId}
+          contentTitle={content.title}
+          links={reviewLinks}
+        />
+      </FormSection>
 
       <div className="grid gap-5 xl:grid-cols-2">
         <FormSection title={text.versions.upload}>

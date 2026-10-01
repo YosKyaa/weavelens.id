@@ -44,11 +44,17 @@ export default async function ShareLayout({ children, params }: LayoutProps) {
 
   const [name, contentCount, galleryCount] = await Promise.all([
     getGuestName(),
-    context.db
-      .from("design_assets")
-      .select("id", { count: "exact", head: true })
-      .eq("project_id", context.project.id)
-      .then((result) => result.count ?? 0),
+    (context.brandId
+      ? context.db
+          .from("design_assets")
+          .select("id", { count: "exact", head: true })
+          .eq("project_id", context.project.id)
+          .eq("brand_id", context.brandId)
+      : context.db
+          .from("design_assets")
+          .select("id", { count: "exact", head: true })
+          .eq("project_id", context.project.id)
+    ).then((result) => result.count ?? 0),
     context.db
       .from("photo_sets")
       .select("id", { count: "exact", head: true })
