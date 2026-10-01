@@ -10,6 +10,18 @@ const PROTECTED = ["/admin", "/client"];
  * Pemeriksaan peran (admin/tim/klien) dilakukan di layout masing-masing dan di setiap Server Action.
  */
 export async function middleware(request: NextRequest) {
+  // Jaring pengaman: jika Supabase mengembalikan login ke beranda (`/?code=…`, terjadi bila
+  // redirect tidak ada di allowlist), teruskan ke callback supaya login tetap selesai.
+  if (request.nextUrl.pathname === "/") {
+    const { searchParams } = request.nextUrl;
+    if (searchParams.has("code") || searchParams.has("error_description")) {
+      const url = new URL("/auth/callback", request.url);
+      url.search = request.nextUrl.search;
+      return NextResponse.redirect(url);
+    }
+    return NextResponse.next();
+  }
+
   const env = supabaseEnv();
   if (!env) return NextResponse.next();
 
@@ -42,5 +54,5 @@ export async function middleware(request: NextRequest) {
 }
 
 export const config = {
-  matcher: ["/admin/:path*", "/client/:path*", "/login", "/auth/:path*"],
+  matcher: ["/", "/admin/:path*", "/client/:path*", "/login", "/auth/:path*"],
 };

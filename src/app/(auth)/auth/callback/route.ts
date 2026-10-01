@@ -1,6 +1,7 @@
 import { NextResponse, type NextRequest } from "next/server";
 import type { EmailOtpType } from "@supabase/supabase-js";
 import { ADMIN_HOME, CLIENT_HOME, LOGIN_PATH } from "@/lib/auth";
+import { AUTH_NEXT_COOKIE } from "@/lib/auth-next";
 import { safeNext } from "@/lib/auth-redirect";
 import { createSessionClient } from "@/lib/supabase/server";
 
@@ -49,7 +50,11 @@ export async function GET(request: NextRequest) {
   }
   const role = profile?.role === "admin" || profile?.role === "team" ? "admin" : "client";
   const home = role === "admin" ? ADMIN_HOME : CLIENT_HOME;
-  const target = safeNext(searchParams.get("next"), role) ?? home;
+  // Tujuan dari query (link lama) atau cookie yang diset saat tombol login ditekan.
+  const requested = searchParams.get("next") ?? request.cookies.get(AUTH_NEXT_COOKIE)?.value;
+  const target = safeNext(requested, role) ?? home;
 
-  return NextResponse.redirect(new URL(target, request.url));
+  const response = NextResponse.redirect(new URL(target, request.url));
+  response.cookies.delete(AUTH_NEXT_COOKIE);
+  return response;
 }

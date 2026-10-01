@@ -1,10 +1,11 @@
 "use server";
 
-import { headers } from "next/headers";
+import { cookies, headers } from "next/headers";
 import { redirect } from "next/navigation";
 import { z } from "zod";
 import { portal } from "@/content/portal";
 import { ADMIN_HOME, CLIENT_HOME, LOGIN_PATH } from "@/lib/auth";
+import { AUTH_NEXT_COOKIE, authNextCookieOptions } from "@/lib/auth-next";
 import { safeNext } from "@/lib/auth-redirect";
 import { googleEnabled } from "@/lib/supabase/providers";
 import { createSessionClient } from "@/lib/supabase/server";
@@ -86,8 +87,9 @@ export async function sendMagicLink(_prev: AuthState, formData: FormData): Promi
   if (!supabase) return { error: text.notConfigured };
 
   const next = safeNext(parsed.data.next, "client") ?? CLIENT_HOME;
+  // Tanpa query: alamat harus persis sama dengan Redirect URLs di Supabase.
   const callback = new URL("/auth/callback", await siteOrigin());
-  callback.searchParams.set("next", next);
+  (await cookies()).set(AUTH_NEXT_COOKIE, next, authNextCookieOptions);
 
   const { error } = await supabase.auth.signInWithOtp({
     email: parsed.data.email,
@@ -110,7 +112,9 @@ export async function signInWithGoogle(next: string | null): Promise<AuthState> 
 
   const callback = new URL("/auth/callback", await siteOrigin());
   const target = safeNext(next, "admin") ?? safeNext(next, "client");
-  if (target) callback.searchParams.set("next", target);
+  const jar = await cookies();
+  if (target) jar.set(AUTH_NEXT_COOKIE, target, authNextCookieOptions);
+  else jar.delete(AUTH_NEXT_COOKIE);
 
   const { data, error } = await supabase.auth.signInWithOAuth({
     provider: "google",
