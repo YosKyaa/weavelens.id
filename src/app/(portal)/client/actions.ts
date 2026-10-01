@@ -1,10 +1,12 @@
 "use server";
 
 import { revalidatePath } from "next/cache";
+import { after } from "next/server";
 import { logActivity } from "@/lib/activity";
 import { requireClient } from "@/lib/auth";
 import { isId } from "@/lib/ids";
-import type { CommentPoint } from "@/lib/review";
+import { emailTeamDecision } from "@/lib/notify";
+import type { CommentPoint, CommentTarget } from "@/lib/review";
 import { decideVersion, latestVersionInScope, parseComment } from "@/lib/review-decision";
 import { createServiceClient } from "@/lib/supabase/service";
 
@@ -54,8 +56,9 @@ export async function clientComment(
   versionId: string,
   body: string,
   point: CommentPoint | null,
+  target?: CommentTarget,
 ): Promise<Result> {
-  const comment = parseComment(body, point);
+  const comment = parseComment(body, point, target);
   if (!comment.ok) return comment;
   const context = await scope(versionId);
   if (!context) return { ok: false, error: UNAVAILABLE };
@@ -68,6 +71,7 @@ export async function clientComment(
     x: comment.x,
     y: comment.y,
     slide: comment.slide,
+    target: comment.target,
   });
   if (error) return { ok: false, error: FAILED };
 
@@ -77,7 +81,11 @@ export async function clientComment(
     action: "comment.added",
     actorId: context.actor.id,
     actorName: context.actor.name,
-    meta: { title: context.version.design_assets.title },
+    meta: {
+      title: context.version.design_assets.title,
+      contentId: context.version.asset_id,
+      by: "client",
+    },
   });
   refresh(projectId);
   return { ok: true };
@@ -87,7 +95,19 @@ async function decide(versionId: string, decision: "approved" | "changes_request
   const context = await scope(versionId);
   if (!context) return { ok: false as const, error: UNAVAILABLE };
   const result = await decideVersion(context.db, context.version, decision, context.actor);
-  if (result.ok) refresh(context.version.design_assets.project_id);
+  if (result.ok) {
+    const { version, actor, db } = context;
+    refresh(version.design_assets.project_id);
+    after(() =>
+      emailTeamDecision(db, {
+        projectId: version.design_assets.project_id,
+        contentId: version.asset_id,
+        title: version.design_assets.title,
+        decision,
+        actorName: actor.name,
+      }),
+    );
+  }
   return result;
 }
 

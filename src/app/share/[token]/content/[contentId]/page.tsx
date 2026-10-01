@@ -3,6 +3,7 @@ import { guestApprove, guestComment, guestRequestRevision } from "@/app/share/ac
 import { ContentReviewDetail } from "@/components/organisms/ContentReviewDetail";
 import { FORMATS, type ContentFormat } from "@/content/workspace";
 import { loadReviewVersions } from "@/lib/review-data";
+import { loadReviewQueue } from "@/lib/review-queue";
 import { resolveShare } from "@/lib/share";
 
 type PageProps = { params: Promise<{ token: string; contentId: string }> };
@@ -22,7 +23,10 @@ export default async function ShareReviewPage({ params }: PageProps) {
   const { data: content } = await query.maybeSingle();
   if (!content) notFound();
 
-  const versions = await loadReviewVersions(context.db, contentId);
+  const [versions, queue] = await Promise.all([
+    loadReviewVersions(context.db, contentId),
+    loadReviewQueue(context.db, context.project.id, context.brandId),
+  ]);
   const format = (FORMATS as readonly string[]).includes(content.format)
     ? (content.format as ContentFormat)
     : "other";
@@ -34,6 +38,8 @@ export default async function ShareReviewPage({ params }: PageProps) {
       format={format}
       versions={versions}
       canReview={context.canReview}
+      queue={queue}
+      hrefFor={(id) => `/share/${token}/content/${id}`}
       actions={{
         comment: guestComment.bind(null, token),
         approve: guestApprove.bind(null, token),

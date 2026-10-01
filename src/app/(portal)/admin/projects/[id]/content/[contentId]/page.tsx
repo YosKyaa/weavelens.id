@@ -83,6 +83,7 @@ export default async function ContentPage({ params }: PageProps) {
         versions={versions}
         format={format}
         canComment
+        caption={content.caption}
         emptyMessage={text.versions.empty}
         actions={{
           comment: addTeamComment.bind(null, id),

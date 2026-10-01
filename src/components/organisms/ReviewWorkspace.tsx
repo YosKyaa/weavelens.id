@@ -7,9 +7,11 @@ import {
   Check,
   ChevronLeft,
   ChevronRight,
+  Columns2,
   ExternalLink,
   Loader2,
   MapPin,
+  MessageSquareText,
   RotateCcw,
   Send,
   X,
@@ -21,7 +23,14 @@ import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
 import { formatAspect, shareText, workspaceText, type ContentFormat } from "@/content/workspace";
 import { formatDate } from "@/lib/format";
-import type { CommentPoint, ReviewActions, ReviewComment, ReviewVersion } from "@/lib/review";
+import type { SignedDesignFile } from "@/lib/design-files";
+import type {
+  CommentPoint,
+  CommentTarget,
+  ReviewActions,
+  ReviewComment,
+  ReviewVersion,
+} from "@/lib/review";
 import { cn } from "@/lib/utils";
 
 const text = shareText.content;
@@ -36,6 +45,10 @@ type ReviewWorkspaceProps = {
   /** Klien: tampilkan tombol Setujui / Minta revisi. */
   showDecision?: boolean;
   emptyMessage: string;
+  /** Caption konten: tampil di samping desain dan bisa dikomentari. */
+  caption?: string | null;
+  /** Mode review berurutan: setelah memutuskan, langsung buka desain berikutnya. */
+  nextHref?: string | null;
 };
 
 function frameWidth(format: ContentFormat): string {
@@ -49,6 +62,8 @@ export function ReviewWorkspace({
   canComment,
   showDecision = false,
   emptyMessage,
+  caption,
+  nextHref,
 }: ReviewWorkspaceProps) {
   const router = useRouter();
   const [versionId, setVersionId] = useState(versions[0]?.id ?? null);
@@ -56,13 +71,19 @@ export function ReviewWorkspace({
   const [point, setPoint] = useState<CommentPoint | null>(null);
   const [body, setBody] = useState("");
   const [activeComment, setActiveComment] = useState<string | null>(null);
+  const [target, setTarget] = useState<CommentTarget>("design");
+  const [compare, setCompare] = useState(false);
   const [pending, startTransition] = useTransition();
 
   const version = versions.find((item) => item.id === versionId) ?? versions[0];
   const isLatest = version?.id === versions[0]?.id;
   const files = version?.files ?? [];
   const file = files[Math.min(slide, Math.max(0, files.length - 1))];
-  const canPin = canComment && isLatest && file?.kind === "image";
+  const canPin = canComment && isLatest && file?.kind === "image" && !compare;
+  // Versi sebelumnya (untuk dibandingkan berdampingan dengan versi terbaru).
+  const previous = versions[1];
+
+  const hasCaption = Boolean(caption?.trim());
 
   // Nomor titik mengikuti urutan komentar bertitik di versi ini.
   const pinNumbers = useMemo(() => {
@@ -99,6 +120,7 @@ export function ReviewWorkspace({
     const x = Math.min(1, Math.max(0, (event.clientX - box.left) / box.width));
     const y = Math.min(1, Math.max(0, (event.clientY - box.top) / box.height));
     setPoint({ x, y, slide });
+    setTarget("design");
     document.getElementById("review-comment")?.focus();
   }
 
@@ -110,7 +132,12 @@ export function ReviewWorkspace({
   function submitComment() {
     if (!body.trim()) return;
     startTransition(async () => {
-      const result = await actions.comment(version.id, body, point);
+      const result = await actions.comment(
+        version.id,
+        body,
+        target === "caption" ? null : point,
+        target,
+      );
       if (!result.ok) {
         toast.error(result.error);
         return;
@@ -118,15 +145,26 @@ export function ReviewWorkspace({
       toast.success(text.commentSent);
       setBody("");
       setPoint(null);
+      setTarget("design");
       router.refresh();
     });
   }
 
-  function run(action: () => Promise<{ ok: boolean; error?: string }>, success: string) {
+  function run(
+    action: () => Promise<{ ok: boolean; error?: string }>,
+    success: string,
+    advance = false,
+  ) {
     return async () => {
       const result = await action();
       if (!result.ok) {
         toast.error(result.error ?? "Gagal. Coba lagi.");
+        return;
+      }
+      // Mode review berurutan: langsung ke desain berikutnya.
+      if (advance && nextHref) {
+        toast.success(`${success} ${text.nextDesign}`);
+        router.push(nextHref);
         return;
       }
       toast.success(success);
@@ -134,34 +172,79 @@ export function ReviewWorkspace({
     };
   }
 
+  function commentOnCaption() {
+    setTarget("caption");
+    setPoint(null);
+    document.getElementById("review-comment")?.focus();
+  }
+
   const decided = version.status !== "pending_review";
 
   return (
     <div className="grid gap-6 lg:grid-cols-[minmax(0,1fr)_22rem]">
       <div className="grid content-start gap-4">
-        {/* Pilihan versi */}
+        {/* Pilihan versi + bandingkan dengan versi sebelumnya */}
         {versions.length > 1 && (
-          <div role="tablist" aria-label="Versi desain" className="flex flex-wrap gap-2">
-            {versions.map((item) => (
-              <button
-                key={item.id}
-                type="button"
-                role="tab"
-                aria-selected={item.id === version.id}
-                onClick={() => selectVersion(item.id)}
-                className={cn(
-                  "rounded-full border border-line bg-paper px-3 py-1.5 text-sm font-medium text-ink/75 hover:text-ink",
-                  item.id === version.id && "border-ink bg-ink text-paper hover:text-paper",
-                )}
+          <div className="flex flex-wrap items-center justify-between gap-2">
+            <div role="tablist" aria-label="Versi desain" className="flex flex-wrap gap-2">
+              {versions.map((item) => (
+                <button
+                  key={item.id}
+                  type="button"
+                  role="tab"
+                  aria-selected={item.id === version.id}
+                  onClick={() => {
+                    selectVersion(item.id);
+                    setCompare(false);
+                  }}
+                  className={cn(
+                    "rounded-full border border-line bg-paper px-3 py-1.5 text-sm font-medium text-ink/75 hover:text-ink",
+                    item.id === version.id && "border-ink bg-ink text-paper hover:text-paper",
+                  )}
+                >
+                  {workspaceText.content.versions.label(item.versionNo)}
+                  {item.id === versions[0].id && ` · ${text.latest}`}
+                </button>
+              ))}
+            </div>
+            {isLatest && previous && (
+              <Button
+                variant={compare ? "default" : "outline"}
+                size="sm"
+                aria-pressed={compare}
+                onClick={() => {
+                  setCompare((value) => !value);
+                  setPoint(null);
+                }}
               >
-                {workspaceText.content.versions.label(item.versionNo)}
-                {item.id === versions[0].id && ` · ${text.latest}`}
-              </button>
+                <Columns2 aria-hidden />
+                {compare ? text.compareOff : text.compareWith(previous.versionNo)}
+              </Button>
+            )}
+          </div>
+        )}
+
+        {compare && previous && (
+          <div className="grid gap-3 sm:grid-cols-2">
+            {[previous, version].map((item) => (
+              <figure key={item.id} className="grid content-start gap-2">
+                <figcaption className="text-sm font-semibold text-ink/75">
+                  {workspaceText.content.versions.label(item.versionNo)}
+                  {item.id === version.id && ` · ${text.latest}`}
+                </figcaption>
+                <div className="overflow-hidden rounded-2xl border border-line bg-ink/5">
+                  <PlainFile
+                    file={item.files[Math.min(slide, Math.max(0, item.files.length - 1))]}
+                    external={item.externalPreview}
+                    format={format}
+                  />
+                </div>
+              </figure>
             ))}
           </div>
         )}
 
-        <div className={cn("mx-auto w-full", frameWidth(format))}>
+        <div className={cn("mx-auto w-full", frameWidth(format), compare && "hidden")}>
           <div className="overflow-hidden rounded-2xl border border-line bg-ink/5 shadow-soft">
             {file?.kind === "image" && (
               <div
@@ -289,6 +372,31 @@ export function ReviewWorkspace({
       </div>
 
       <aside className="grid content-start gap-4">
+        {compare && files.length > 1 && (
+          <div className="flex items-center justify-between gap-3 rounded-2xl border border-line bg-paper p-3">
+            <Button
+              variant="outline"
+              size="icon"
+              onClick={() => setSlide((index) => Math.max(0, index - 1))}
+              disabled={slide === 0}
+              aria-label={shareText.gallery.previous}
+            >
+              <ChevronLeft aria-hidden />
+            </Button>
+            <p className="text-sm text-ink/75" aria-live="polite">
+              {text.slide(slide + 1, files.length)}
+            </p>
+            <Button
+              variant="outline"
+              size="icon"
+              onClick={() => setSlide((index) => Math.min(files.length - 1, index + 1))}
+              disabled={slide === files.length - 1}
+              aria-label={shareText.gallery.next}
+            >
+              <ChevronRight aria-hidden />
+            </Button>
+          </div>
+        )}
         <section className="rounded-2xl border border-line bg-paper p-4">
           <div className="flex items-center justify-between gap-2">
             <p className="font-heading font-semibold">
@@ -327,7 +435,7 @@ export function ReviewWorkspace({
                   title={text.approveTitle}
                   description={text.approveDescription}
                   confirmLabel={text.approve}
-                  onConfirm={run(() => actions.approve!(version.id), text.approved)}
+                  onConfirm={run(() => actions.approve!(version.id), text.approved, true)}
                 />
                 {openComments.length > 0 ? (
                   <ConfirmDialog
@@ -341,7 +449,7 @@ export function ReviewWorkspace({
                     title={text.revisionTitle}
                     description={text.revisionDescription(openComments.length)}
                     confirmLabel={text.requestRevision}
-                    onConfirm={run(() => actions.revise!(version.id), text.revisionSent)}
+                    onConfirm={run(() => actions.revise!(version.id), text.revisionSent, true)}
                   />
                 ) : (
                   <p className="rounded-lg bg-canvas px-3 py-2 text-sm text-ink/75">
@@ -352,6 +460,28 @@ export function ReviewWorkspace({
             )}
           {!canComment && <p className="mt-3 text-sm text-ink/70">{text.readOnly}</p>}
         </section>
+
+        {hasCaption && (
+          <section
+            aria-labelledby="caption-heading"
+            className="rounded-2xl border border-line bg-paper p-4"
+          >
+            <div className="flex items-center justify-between gap-2">
+              <h2 id="caption-heading" className="font-heading text-base font-semibold">
+                {text.caption}
+              </h2>
+              {canComment && isLatest && (
+                <Button variant="ghost" size="sm" onClick={commentOnCaption}>
+                  <MessageSquareText aria-hidden />
+                  {text.commentCaption}
+                </Button>
+              )}
+            </div>
+            <p className="mt-2 max-h-48 overflow-y-auto text-sm whitespace-pre-line text-ink/85">
+              {caption}
+            </p>
+          </section>
+        )}
 
         <section
           aria-labelledby="comments-heading"
@@ -388,6 +518,10 @@ export function ReviewWorkspace({
                         {number ? (
                           <span className="flex size-5 shrink-0 items-center justify-center rounded-full bg-primary font-heading text-[11px] font-bold text-primary-foreground">
                             {number}
+                          </span>
+                        ) : comment.target === "caption" ? (
+                          <span className="rounded-sm bg-brand-soft px-1.5 text-[11px] font-semibold text-primary">
+                            {text.caption}
                           </span>
                         ) : (
                           <span className="text-xs text-ink/60">{adminText.general}</span>
@@ -442,10 +576,39 @@ export function ReviewWorkspace({
               }}
               className="mt-4 grid gap-2 border-t border-line pt-4"
             >
+              {hasCaption && (
+                <div
+                  role="radiogroup"
+                  aria-label={text.commentFor}
+                  className="grid grid-cols-2 gap-1 rounded-lg bg-canvas p-1"
+                >
+                  {(["design", "caption"] as const).map((option) => (
+                    <button
+                      key={option}
+                      type="button"
+                      role="radio"
+                      aria-checked={target === option}
+                      onClick={() =>
+                        option === "caption" ? commentOnCaption() : setTarget(option)
+                      }
+                      className={cn(
+                        "rounded-md px-3 py-1.5 text-sm font-medium text-ink/70",
+                        target === option && "bg-paper text-ink shadow-xs",
+                      )}
+                    >
+                      {option === "caption" ? text.caption : text.design}
+                    </button>
+                  ))}
+                </div>
+              )}
               <label htmlFor="review-comment" className="text-sm font-semibold">
-                {point ? text.pinComment(nextPin) : text.commentLabel}
+                {target === "caption"
+                  ? text.captionComment
+                  : point
+                    ? text.pinComment(nextPin)
+                    : text.commentLabel}
               </label>
-              {point && (
+              {point && target === "design" && (
                 <span className="flex items-center gap-2 text-xs text-ink/70">
                   <MapPin aria-hidden className="size-3.5 text-primary" />
                   {adminText.pin(nextPin)}
@@ -463,7 +626,9 @@ export function ReviewWorkspace({
                 id="review-comment"
                 rows={3}
                 value={body}
-                placeholder={text.commentPlaceholder}
+                placeholder={
+                  target === "caption" ? text.captionPlaceholder : text.commentPlaceholder
+                }
                 onChange={(event) => setBody(event.target.value)}
               />
               <Button type="submit" disabled={pending || !body.trim()} className="w-full">
@@ -476,4 +641,52 @@ export function ReviewWorkspace({
       </aside>
     </div>
   );
+}
+
+/** Satu file tanpa titik komentar (dipakai saat membandingkan versi). */
+function PlainFile({
+  file,
+  external,
+  format,
+}: {
+  file: SignedDesignFile | undefined;
+  external: string | null;
+  format: ContentFormat;
+}) {
+  if (file?.kind === "image") {
+    return (
+      <Image
+        src={file.url}
+        alt={file.name}
+        width={file.width ?? 1080}
+        height={file.height ?? 1350}
+        unoptimized
+        className="block h-auto w-full"
+      />
+    );
+  }
+  if (file?.kind === "video") {
+    return (
+      <video
+        src={file.url}
+        controls
+        playsInline
+        className={cn("block w-full bg-ink", formatAspect[format])}
+      />
+    );
+  }
+  if (file?.kind === "pdf") {
+    return <iframe src={file.url} title={file.name} className="aspect-[1/1.414] w-full bg-paper" />;
+  }
+  if (external) {
+    return (
+      <iframe
+        src={external}
+        title={text.openVideo}
+        allow="autoplay; fullscreen"
+        className={cn("block w-full bg-ink", formatAspect[format])}
+      />
+    );
+  }
+  return <p className="p-6 text-center text-sm text-ink/65">{text.noFile}</p>;
 }

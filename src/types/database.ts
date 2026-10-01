@@ -313,6 +313,7 @@ export type Database = {
           guest_name: string | null;
           share_link_id: string | null;
           slide: number;
+          target: string;
         };
         Insert: {
           id?: string;
@@ -326,6 +327,7 @@ export type Database = {
           guest_name?: string | null;
           share_link_id?: string | null;
           slide?: number;
+          target?: string;
         };
         Update: {
           id?: string;
@@ -339,6 +341,7 @@ export type Database = {
           guest_name?: string | null;
           share_link_id?: string | null;
           slide?: number;
+          target?: string;
         };
         Relationships: [
           {
@@ -944,6 +947,7 @@ export type Database = {
           created_at: string;
           active: boolean;
           team_role_id: string | null;
+          notifications_seen_at: string;
         };
         Insert: {
           id: string;
@@ -954,6 +958,7 @@ export type Database = {
           created_at?: string;
           active?: boolean;
           team_role_id?: string | null;
+          notifications_seen_at?: string;
         };
         Update: {
           id?: string;
@@ -964,6 +969,7 @@ export type Database = {
           created_at?: string;
           active?: boolean;
           team_role_id?: string | null;
+          notifications_seen_at?: string;
         };
         Relationships: [
           {

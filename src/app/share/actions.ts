@@ -1,13 +1,15 @@
 "use server";
 
 import { cookies } from "next/headers";
+import { after } from "next/server";
 import { revalidatePath } from "next/cache";
 import { z } from "zod";
 import { isId } from "@/lib/ids";
 import { shareText } from "@/content/workspace";
 import { logActivity } from "@/lib/activity";
 import { GUEST_COOKIE, getGuestName } from "@/lib/guest";
-import type { CommentPoint } from "@/lib/review";
+import { emailTeamDecision } from "@/lib/notify";
+import type { CommentPoint, CommentTarget } from "@/lib/review";
 import {
   ALREADY_DECIDED,
   decideVersion,
@@ -73,11 +75,12 @@ export async function guestComment(
   versionId: string,
   body: string,
   point: CommentPoint | null,
+  target?: CommentTarget,
 ): Promise<Result> {
   if (!isId(versionId)) return { ok: false, error: INVALID };
   const who = await actor(token, true);
   if ("error" in who) return { ok: false, error: who.error };
-  const comment = parseComment(body, point);
+  const comment = parseComment(body, point, target);
   if (!comment.ok) return comment;
 
   const version = await versionInScope(who.context, versionId);
@@ -91,6 +94,7 @@ export async function guestComment(
     x: comment.x,
     y: comment.y,
     slide: comment.slide,
+    target: comment.target,
   });
   if (error) return { ok: false, error: FAILED };
 
@@ -98,7 +102,7 @@ export async function guestComment(
     projectId: who.context.project.id,
     action: "comment.added",
     actorName: who.name,
-    meta: { title: version.design_assets.title },
+    meta: { title: version.design_assets.title, contentId: version.asset_id, by: "client" },
   });
   refresh(token, who.context.project.id);
   return { ok: true };
@@ -116,7 +120,18 @@ async function decide(
   if (!version) return { ok: false, error: ALREADY_DECIDED };
 
   const result = await decideVersion(who.context.db, version, decision, { name: who.name });
-  if (result.ok) refresh(token, who.context.project.id);
+  if (result.ok) {
+    refresh(token, who.context.project.id);
+    after(() =>
+      emailTeamDecision(who.context.db, {
+        projectId: who.context.project.id,
+        contentId: version.asset_id,
+        title: version.design_assets.title,
+        decision,
+        actorName: who.name,
+      }),
+    );
+  }
   return result;
 }
 

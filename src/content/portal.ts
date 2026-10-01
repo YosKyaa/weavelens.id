@@ -154,6 +154,10 @@ export const portal = {
       empty: "Tidak ada permintaan revisi yang tertunda.",
       item: (asset: string, version: number) => `${asset} · versi ${version}`,
     },
+    deadlines: {
+      heading: "Tenggat konten minggu ini",
+      empty: "Tidak ada konten yang tenggatnya lewat atau jatuh dalam 7 hari.",
+    },
     selections: {
       heading: "Pilihan foto sudah dikirim klien",
       empty: "Belum ada klien yang mengirim pilihan foto.",

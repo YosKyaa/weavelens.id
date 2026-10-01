@@ -3,7 +3,7 @@ import type { SupabaseClient } from "@supabase/supabase-js";
 import { z } from "zod";
 import { shareText } from "@/content/workspace";
 import { logActivity } from "@/lib/activity";
-import type { CommentPoint } from "@/lib/review";
+import type { CommentPoint, CommentTarget } from "@/lib/review";
 import type { Database } from "@/types/database";
 
 /**
@@ -91,7 +91,11 @@ export async function decideVersion(
     action: decision === "approved" ? "version.approved" : "version.changes_requested",
     actorId: actor.id ?? null,
     actorName: actor.name,
-    meta: { title: version.design_assets.title, version: version.version_no },
+    meta: {
+      title: version.design_assets.title,
+      version: version.version_no,
+      contentId: version.asset_id,
+    },
   });
   return { ok: true };
 }
@@ -107,15 +111,27 @@ const commentPoint = z.object({
 export function parseComment(
   body: string,
   point: CommentPoint | null,
+  target: CommentTarget = "design",
 ):
-  | { ok: true; body: string; x: number | null; y: number | null; slide: number }
+  | {
+      ok: true;
+      body: string;
+      x: number | null;
+      y: number | null;
+      slide: number;
+      target: CommentTarget;
+    }
   | { ok: false; error: string } {
   const message = commentBody.safeParse(body);
   if (!message.success) {
     return { ok: false, error: message.error.issues[0]?.message ?? "Komentar tidak valid." };
   }
-  if (!point) return { ok: true, body: message.data, x: null, y: null, slide: 0 };
+  // Komentar caption tidak punya titik di gambar.
+  const kind: CommentTarget = target === "caption" ? "caption" : "design";
+  if (!point || kind === "caption") {
+    return { ok: true, body: message.data, x: null, y: null, slide: 0, target: kind };
+  }
   const coords = commentPoint.safeParse(point);
   if (!coords.success) return { ok: false, error: "Titik komentar tidak valid. Coba lagi." };
-  return { ok: true, body: message.data, ...coords.data };
+  return { ok: true, body: message.data, ...coords.data, target: kind };
 }

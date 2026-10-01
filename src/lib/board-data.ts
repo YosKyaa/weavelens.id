@@ -103,3 +103,22 @@ export async function loadBoard(
     };
   });
 }
+
+/** Baris papan → item kalender (warna & nama brand). */
+export function toCalendarItems(
+  items: BoardRow[],
+  brands: { id: string; name: string; color: string }[],
+) {
+  const byId = new Map(brands.map((brand) => [brand.id, brand]));
+  return items.map((item) => {
+    const brand = item.brandId ? byId.get(item.brandId) : undefined;
+    return {
+      id: item.id,
+      title: item.title,
+      stage: item.stage,
+      publishDate: item.publishDate,
+      brandName: brand?.name ?? null,
+      brandColor: brand?.color ?? null,
+    };
+  });
+}

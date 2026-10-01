@@ -16,6 +16,8 @@ type PortalFrameProps = {
   badge: string;
   /** Nama atau email user yang login. */
   userLabel: string;
+  /** Tombol kecil di kanan atas (mis. lonceng notifikasi). */
+  headerAction?: ReactNode;
   children: ReactNode;
 };
 
@@ -45,19 +47,29 @@ function AccountFooter({ userLabel }: { userLabel: string }) {
  * Kerangka bersama AdminShell dan ClientShell.
  * Desktop (lg+): sidebar tetap di kiri. HP/tablet: bar atas + menu geser.
  */
-export function PortalFrame({ homeHref, nav, badge, userLabel, children }: PortalFrameProps) {
+export function PortalFrame({
+  homeHref,
+  nav,
+  badge,
+  userLabel,
+  headerAction,
+  children,
+}: PortalFrameProps) {
   const footer = <AccountFooter userLabel={userLabel} />;
 
   return (
     <div className="min-h-dvh bg-canvas">
       {/* Sidebar desktop */}
       <aside className="fixed inset-y-0 left-0 z-30 hidden w-64 flex-col border-r border-line bg-paper lg:flex">
-        <Link href={homeHref} className="flex flex-col gap-2 border-b border-line px-6 py-5">
-          <Logo className="h-8 self-start" />
-          <span className="w-fit truncate rounded-sm bg-sand px-2 py-0.5 font-heading text-xs font-semibold text-ink">
-            {badge}
-          </span>
-        </Link>
+        <div className="relative border-b border-line">
+          <Link href={homeHref} className="flex flex-col gap-2 px-6 py-5">
+            <Logo className="h-8 self-start" />
+            <span className="w-fit max-w-[11rem] truncate rounded-sm bg-sand px-2 py-0.5 font-heading text-xs font-semibold text-ink">
+              {badge}
+            </span>
+          </Link>
+          {headerAction && <div className="absolute top-4 right-3">{headerAction}</div>}
+        </div>
         <div className="flex-1 overflow-y-auto px-3 py-6">
           <PortalSidebar groups={nav} label={portal.shell.menuLabel} />
         </div>
@@ -78,6 +90,7 @@ export function PortalFrame({ homeHref, nav, badge, userLabel, children }: Porta
             {badge}
           </span>
         </Link>
+        {headerAction && <div className="ml-auto">{headerAction}</div>}
       </header>
 
       <main id="content" tabIndex={-1} className="outline-none lg:pl-64">

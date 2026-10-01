@@ -10,30 +10,11 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { workspaceText } from "@/content/workspace";
-import { DESIGN_BUCKET, type DesignFile } from "@/lib/design-files";
+import type { DesignFile } from "@/lib/design-files";
+import { DESIGN_ACCEPT, MAX_DESIGN_BYTES, designKind, uploadDesignFile } from "@/lib/design-upload";
 import { createBrowserSupabase } from "@/lib/supabase/browser";
 
 const text = workspaceText.content.versions;
-const MAX_BYTES = 50 * 1024 * 1024;
-
-function kindOf(file: File): DesignFile["kind"] | null {
-  if (file.type.startsWith("image/")) return "image";
-  if (file.type === "application/pdf") return "pdf";
-  if (file.type === "video/mp4" || file.type === "video/quicktime") return "video";
-  return null;
-}
-
-async function imageSize(file: File): Promise<{ width?: number; height?: number }> {
-  try {
-    const bitmap = await createImageBitmap(file);
-    const size = { width: bitmap.width, height: bitmap.height };
-    bitmap.close();
-    return size;
-  } catch {
-    return {};
-  }
-}
-
 /** Unggah versi baru: file langsung dari browser ke Storage, lalu versi dicatat & dikirim ke klien. */
 export function VersionUploader({
   projectId,
@@ -53,11 +34,11 @@ export function VersionUploader({
   function pick(list: FileList | null) {
     const picked = Array.from(list ?? []);
     for (const file of picked) {
-      if (!kindOf(file)) {
+      if (!designKind(file)) {
         toast.error(text.badType(file.name));
         return;
       }
-      if (file.size > MAX_BYTES) {
+      if (file.size > MAX_DESIGN_BYTES) {
         toast.error(text.tooLarge(file.name));
         return;
       }
@@ -71,28 +52,17 @@ export function VersionUploader({
       return;
     }
     startTransition(async () => {
-      const storage = createBrowserSupabase().storage.from(DESIGN_BUCKET);
+      const supabase = createBrowserSupabase();
       const uploaded: DesignFile[] = [];
       for (const [index, file] of files.entries()) {
         setProgress(text.uploading(index + 1, files.length));
-        const kind = kindOf(file)!;
-        const extension = file.name.split(".").pop()?.toLowerCase() ?? "bin";
-        const path = `${projectId}/${contentId}/${crypto.randomUUID()}.${extension}`;
-        const { error } = await storage.upload(path, file, {
-          contentType: file.type,
-          cacheControl: "31536000",
-        });
-        if (error) {
+        const result = await uploadDesignFile(supabase, projectId, contentId, file);
+        if (!result) {
           setProgress(null);
           toast.error(`Gagal mengunggah ${file.name}. Coba lagi.`);
           return;
         }
-        uploaded.push({
-          path,
-          kind,
-          name: file.name,
-          ...(kind === "image" ? await imageSize(file) : {}),
-        });
+        uploaded.push(result);
       }
       setProgress(null);
 
@@ -129,7 +99,7 @@ export function VersionUploader({
           id="version-files"
           type="file"
           multiple
-          accept="image/jpeg,image/png,image/webp,application/pdf,video/mp4,video/quicktime"
+          accept={DESIGN_ACCEPT}
           onChange={(event) => pick(event.target.files)}
           className="sr-only"
         />

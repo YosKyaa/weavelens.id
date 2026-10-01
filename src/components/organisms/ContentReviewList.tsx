@@ -1,5 +1,5 @@
 import Link from "next/link";
-import { CalendarDays, MessageSquareWarning } from "lucide-react";
+import { ArrowRight, CalendarDays, MessageSquareWarning } from "lucide-react";
 import { DesignThumb } from "@/components/atoms/DesignThumb";
 import { StatusBadge } from "@/components/atoms/StatusBadge";
 import { formatAspect, formatLabels, shareText, type Stage } from "@/content/workspace";
@@ -54,6 +54,10 @@ export function ContentReviewList({
     (item) => item.stage === "approved" || item.stage === "published",
   ).length;
   const waiting = items.filter((item) => item.stage === "client_review").length;
+  // Mode review berurutan dimulai dari desain menunggu pertama (urutan sama dengan antrean).
+  const firstWaiting = [...items]
+    .filter((item) => item.stage === "client_review")
+    .sort((a, b) => (a.publishDate ?? "").localeCompare(b.publishDate ?? "") || a.sort - b.sort)[0];
 
   return (
     <div className="grid gap-6">
@@ -76,15 +80,22 @@ export function ContentReviewList({
             />
           </div>
         </div>
-        <p
-          className={cn(
-            "inline-flex items-center gap-2 rounded-full px-3 py-1.5 text-sm font-semibold",
-            waiting ? "bg-brand-soft text-primary" : "bg-success-soft text-success",
-          )}
-        >
-          <MessageSquareWarning aria-hidden className="size-4" />
-          {shareText.progress.waiting(waiting)}
-        </p>
+        {firstWaiting ? (
+          // Satu tombol untuk mereview semua desain berurutan tanpa kembali ke daftar.
+          <Link
+            href={itemHref(firstWaiting.id)}
+            className="inline-flex h-11 items-center justify-center gap-2 rounded-lg bg-primary px-4 font-heading text-sm font-semibold text-primary-foreground shadow-soft transition-colors hover:bg-brand-hover"
+          >
+            <MessageSquareWarning aria-hidden className="size-4" />
+            {text.startReview(waiting)}
+            <ArrowRight aria-hidden className="size-4" />
+          </Link>
+        ) : (
+          <p className="inline-flex items-center gap-2 rounded-full bg-success-soft px-3 py-1.5 text-sm font-semibold text-success">
+            <MessageSquareWarning aria-hidden className="size-4" />
+            {shareText.progress.waiting(waiting)}
+          </p>
+        )}
       </section>
 
       {brands.length > 1 && (

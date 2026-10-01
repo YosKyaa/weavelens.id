@@ -13,7 +13,9 @@ export default async function ProjectSharePage({ params }: PageProps) {
     supabase.from("projects").select("title, client_id").eq("id", id).single(),
     supabase
       .from("share_links")
-      .select("id, token, label, can_review, expires_at, revoked_at, last_opened_at, brands(name)")
+      .select(
+        "id, token, label, brand_id, can_review, expires_at, revoked_at, last_opened_at, brands(name)",
+      )
       .eq("project_id", id)
       .order("created_at", { ascending: false }),
   ]);
@@ -46,6 +48,17 @@ export default async function ProjectSharePage({ params }: PageProps) {
         projectTitle={project?.title ?? ""}
         brands={brands ?? []}
         links={rows}
+        missingBrands={
+          (brands ?? []).filter(
+            (brand) =>
+              !(links ?? []).some(
+                (link) =>
+                  link.brand_id === brand.id &&
+                  !link.revoked_at &&
+                  (!link.expires_at || new Date(link.expires_at) >= now),
+              ),
+          ).length
+        }
       />
     </FormSection>
   );

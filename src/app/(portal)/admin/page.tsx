@@ -9,7 +9,9 @@ import { portal, projectTypes } from "@/content/portal";
 import { rangeWindow } from "@/lib/analytics-data";
 import { conversionRate } from "@/lib/analytics-insights";
 import { can, requireStaff } from "@/lib/auth";
+import { deadlineClass, deadlineOf } from "@/lib/deadline";
 import { formatDate, todayJakarta } from "@/lib/format";
+import { cn } from "@/lib/utils";
 import { computeTotals, formatRupiah } from "@/lib/invoice";
 
 const text = portal.adminHome;
@@ -40,8 +42,10 @@ export default async function AdminHomePage() {
   const none = { data: null, error: null };
   const today = todayJakarta();
   const week = rangeWindow(7);
+  const weekAhead = new Date(`${today}T00:00:00Z`);
+  weekAhead.setUTCDate(weekAhead.getUTCDate() + 7);
 
-  const [traffic, unpaid, revisions, selections, active] = await Promise.all([
+  const [traffic, unpaid, revisions, selections, active, deadlines] = await Promise.all([
     // Data tanpa izin tidak di-query sama sekali (lebih cepat, dan memang tidak boleh terlihat).
     seesAnalytics ? supabase.rpc("analytics_overview", { p_from: week.from, p_to: week.to }) : none,
     !isAdmin
@@ -70,6 +74,15 @@ export default async function AdminHomePage() {
       .select("id, title, type, event_date, status, clients(name)")
       .in("status", ACTIVE_STATUSES)
       .order("event_date", { ascending: true, nullsFirst: false }),
+    // Konten yang tenggatnya lewat atau jatuh dalam 7 hari ke depan (RLS: hanya proyek yang boleh).
+    supabase
+      .from("design_assets")
+      .select("id, title, stage, due_date, projects!inner(id, title, status, clients(name))")
+      .not("due_date", "is", null)
+      .lte("due_date", weekAhead.toISOString().slice(0, 10))
+      .not("stage", "in", "(approved,published)")
+      .order("due_date")
+      .limit(30),
   ]);
 
   // Revisi hanya menunggu jika versi itu masih yang terbaru untuk asset-nya.
@@ -146,6 +159,28 @@ export default async function AdminHomePage() {
     ),
   }));
 
+  const deadlineRows: InboxRow[] = (deadlines.data ?? [])
+    .filter((row) => row.projects.status !== "closed" && row.due_date)
+    .map((row) => {
+      const due = deadlineOf(row.due_date!, today, false);
+      return {
+        id: row.id,
+        href: `/admin/projects/${row.projects.id}/content/${row.id}`,
+        title: row.title,
+        meta: [row.projects.clients?.name, row.projects.title].filter(Boolean).join(" · "),
+        aside: (
+          <span
+            className={cn(
+              "inline-flex h-6 items-center rounded-full px-2.5 text-xs whitespace-nowrap",
+              deadlineClass[due.tone],
+            )}
+          >
+            {due.label}
+          </span>
+        ),
+      };
+    });
+
   const firstName = (profile.full_name ?? "").split(" ")[0];
 
   return (
@@ -220,6 +255,11 @@ export default async function AdminHomePage() {
           heading={text.revisions.heading}
           empty={text.revisions.empty}
           rows={revisionRows}
+        />
+        <InboxSection
+          heading={text.deadlines.heading}
+          empty={text.deadlines.empty}
+          rows={deadlineRows}
         />
         <InboxSection
           heading={text.selections.heading}

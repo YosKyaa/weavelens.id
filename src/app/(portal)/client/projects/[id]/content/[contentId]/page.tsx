@@ -4,6 +4,7 @@ import { ContentReviewDetail } from "@/components/organisms/ContentReviewDetail"
 import { FORMATS, type ContentFormat } from "@/content/workspace";
 import { isId } from "@/lib/ids";
 import { loadReviewVersions } from "@/lib/review-data";
+import { loadReviewQueue } from "@/lib/review-queue";
 import { loadClientProject } from "../../data";
 
 type PageProps = { params: Promise<{ id: string; contentId: string }> };
@@ -22,7 +23,10 @@ export default async function ClientContentPage({ params }: PageProps) {
     .maybeSingle();
   if (!content) notFound();
 
-  const versions = await loadReviewVersions(db, contentId);
+  const [versions, queue] = await Promise.all([
+    loadReviewVersions(db, contentId),
+    loadReviewQueue(db, project.id, null),
+  ]);
   const format = (FORMATS as readonly string[]).includes(content.format)
     ? (content.format as ContentFormat)
     : "other";
@@ -34,6 +38,8 @@ export default async function ClientContentPage({ params }: PageProps) {
       format={format}
       versions={versions}
       canReview
+      queue={queue}
+      hrefFor={(contentId) => `/client/projects/${project.id}/content/${contentId}`}
       actions={{ comment: clientComment, approve: clientApprove, revise: clientRequestRevision }}
     />
   );

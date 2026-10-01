@@ -7,6 +7,7 @@ import { CalendarDays, MessageSquare, MoreHorizontal, Plus } from "lucide-react"
 import { toast } from "sonner";
 import { moveContent } from "@/app/(portal)/admin/projects/actions";
 import { DesignThumb } from "@/components/atoms/DesignThumb";
+import { BulkUpload } from "@/components/organisms/BulkUpload";
 import { ContentCreate } from "@/components/organisms/ContentCreate";
 import { Button } from "@/components/ui/button";
 import {
@@ -27,7 +28,8 @@ import {
   type Stage,
 } from "@/content/workspace";
 import type { DesignPreview } from "@/lib/design-preview";
-import { formatDate } from "@/lib/format";
+import { deadlineClass, deadlineOf } from "@/lib/deadline";
+import { formatDate, todayJakarta } from "@/lib/format";
 import { cn } from "@/lib/utils";
 
 const text = workspaceText.board;
@@ -70,6 +72,7 @@ function sortBetween(before: number | undefined, after: number | undefined): num
 export function ContentBoard({ projectId, items: initialItems, brands }: ContentBoardProps) {
   const router = useRouter();
   const [items, setItems] = useState(initialItems);
+  const today = todayJakarta();
   const [brandFilter, setBrandFilter] = useState<string>("all");
   const [formatFilter, setFormatFilter] = useState<string>("all");
   const [dragging, setDragging] = useState<string | null>(null);
@@ -164,7 +167,8 @@ export function ContentBoard({ projectId, items: initialItems, brands }: Content
           ))}
         </select>
         <p className="hidden text-sm text-ink/60 lg:block">{text.dragHint}</p>
-        <div className="ml-auto">
+        <div className="ml-auto flex flex-wrap gap-2">
+          <BulkUpload projectId={projectId} brands={brands} />
           <ContentCreate projectId={projectId} brands={brands} stage="brief" />
         </div>
       </div>
@@ -257,12 +261,27 @@ export function ContentBoard({ projectId, items: initialItems, brands }: Content
                         </span>
                         <span className="px-1 font-medium text-ink">{item.title}</span>
                         <span className="flex flex-wrap items-center gap-3 px-1 text-xs text-ink/65">
-                          {item.dueDate && (
-                            <span className="inline-flex items-center gap-1">
-                              <CalendarDays aria-hidden className="size-3.5" />
-                              {formatDate(item.dueDate)}
-                            </span>
-                          )}
+                          {item.dueDate &&
+                            (() => {
+                              const due = deadlineOf(
+                                item.dueDate,
+                                today,
+                                stage === "approved" || stage === "published",
+                              );
+                              return (
+                                <span
+                                  title={`Tenggat ${formatDate(item.dueDate)}`}
+                                  className={cn(
+                                    "inline-flex items-center gap-1 rounded-full",
+                                    due.tone !== "normal" && due.tone !== "done" && "px-2 py-0.5",
+                                    deadlineClass[due.tone],
+                                  )}
+                                >
+                                  <CalendarDays aria-hidden className="size-3.5" />
+                                  {due.label}
+                                </span>
+                              );
+                            })()}
                           {item.versions > 0 && <span>{text.versions(item.versions)}</span>}
                           {item.openComments > 0 && (
                             <span className="inline-flex items-center gap-1 font-semibold text-primary">

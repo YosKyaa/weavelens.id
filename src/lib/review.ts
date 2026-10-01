@@ -11,6 +11,8 @@ export type ReviewComment = {
   slide: number;
   resolved: boolean;
   createdAt: string;
+  /** Komentar untuk desain (bawaan) atau untuk caption. */
+  target: CommentTarget;
 };
 
 export type ReviewVersion = {
@@ -29,9 +31,16 @@ export type ActionResult = { ok: true } | { ok: false; error: string };
 
 export type CommentPoint = { x: number; y: number; slide: number };
 
+export type CommentTarget = "design" | "caption";
+
 /** Aksi review yang tersedia; diisi server action yang sudah di-bind (projectId atau token). */
 export type ReviewActions = {
-  comment: (versionId: string, body: string, point: CommentPoint | null) => Promise<ActionResult>;
+  comment: (
+    versionId: string,
+    body: string,
+    point: CommentPoint | null,
+    target?: CommentTarget,
+  ) => Promise<ActionResult>;
   resolve?: (commentId: string, resolved: boolean) => Promise<ActionResult>;
   approve?: (versionId: string) => Promise<ActionResult>;
   revise?: (versionId: string) => Promise<ActionResult>;

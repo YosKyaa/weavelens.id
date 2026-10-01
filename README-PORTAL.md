@@ -169,3 +169,22 @@ Tombol **Lanjutkan dengan Google** di `/login` baru muncul setelah provider Goog
 2. **Supabase → Authentication → Sign In / Providers → Google:** aktifkan, lalu tempel Client ID dan Client Secret.
 3. **Supabase → Authentication → Sign In / Providers:** pastikan **Allow new users to sign up** dimatikan. Tanpa ini, siapa pun yang punya akun Google bisa membuat akun kosong. Akun tersebut tetap tidak bisa masuk portal, tapi lebih baik dicegah sejak awal.
 4. **Supabase → URL Configuration → Redirect URLs:** tambahkan `https://www.weavelens.id/auth/callback`.
+
+## 12. Review konten: fitur untuk klien & tim
+
+**Untuk klien** (link klien dan portal klien):
+- **Mode review berurutan:** tombol **Mulai review (N desain)** di daftar konten. Setelah menekan Setujui atau Minta revisi, desain berikutnya langsung terbuka. Penanda "2 dari 6" dan panah sebelumnya/berikutnya ada di kanan atas.
+- **Komentar caption:** caption tampil di samping desain. Klien memilih **Desain** atau **Caption** saat menulis komentar, jadi persetujuan mencakup visual dan teks.
+- **Bandingkan versi:** tombol **Bandingkan dengan versi N** menampilkan versi lama dan baru berdampingan.
+- **Kalender:** tampilan **Daftar | Kalender** berdasarkan tanggal tayang, berwarna per brand (di HP berupa agenda per hari).
+
+**Untuk tim:**
+- **Lonceng notifikasi** (kanan atas): klien menyetujui, minta revisi, atau berkomentar. Membuka lonceng = semua ditandai dibaca.
+- **Tenggat terlihat:** kartu kanban menampilkan "Lewat N hari" (merah), "Hari ini", atau "Besok". Ringkasan berisi **Tenggat konten minggu ini**.
+- **Kalender di proyek:** **Papan | Kalender**. Seret kartu ke tanggal lain untuk mengubah jadwal tayang, atau dari "Belum dijadwalkan".
+- **Unggah banyak:** di papan konten, **Unggah banyak** → pilih brand & format → seret banyak file. Setiap file menjadi satu kartu (judul dari nama file, bisa diedit) dan langsung masuk "Menunggu review". Klien menerima satu email ringkasan.
+- **Link per brand otomatis:** proyek konten baru langsung punya link klien "PIC <brand>" untuk setiap brand. Di tab **Link klien**, tombol **Buat link per brand** melengkapi brand yang belum punya link.
+
+**Email pemberitahuan (opsional, Resend):** isi `RESEND_API_KEY` dan `EMAIL_FROM` (mis. `WeaveLens <notifikasi@weavelens.id>`) di Vercel setelah domain diverifikasi di resend.com. Klien menerima email saat desain siap direview (ke kontak klien + akun portal klien); admin dan tim yang ditugaskan menerima email saat klien menyetujui atau minta revisi. Tanpa env ini, semua tetap jalan tanpa email.
+
+Migrasi: `0008_review_ux.sql` (penanda notifikasi dibaca, komentar caption).

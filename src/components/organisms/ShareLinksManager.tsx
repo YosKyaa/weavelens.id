@@ -2,9 +2,13 @@
 
 import { useState, useTransition } from "react";
 import { useRouter } from "next/navigation";
-import { Ban, Copy, Link2, Loader2, MessageCircle } from "lucide-react";
+import { Ban, Copy, Link2, Loader2, MessageCircle, Sparkles } from "lucide-react";
 import { toast } from "sonner";
-import { createShareLink, revokeShareLink } from "@/app/(portal)/admin/projects/actions";
+import {
+  createBrandLinks,
+  createShareLink,
+  revokeShareLink,
+} from "@/app/(portal)/admin/projects/actions";
 import { ConfirmDialog } from "@/components/molecules/ConfirmDialog";
 import { Field, selectClass } from "@/components/molecules/Field";
 import { Button } from "@/components/ui/button";
@@ -45,6 +49,8 @@ type ShareLinksManagerProps = {
   projectTitle: string;
   brands: { id: string; name: string }[];
   links: ShareLinkRow[];
+  /** Jumlah brand yang belum punya link aktif. */
+  missingBrands: number;
 };
 
 /** Buat, salin, kirim, dan cabut link akses klien. */
@@ -53,6 +59,7 @@ export function ShareLinksManager({
   projectTitle,
   brands,
   links,
+  missingBrands,
 }: ShareLinksManagerProps) {
   const router = useRouter();
   const [label, setLabel] = useState("");
@@ -81,8 +88,34 @@ export function ShareLinksManager({
     });
   }
 
+  function createForAllBrands() {
+    startTransition(async () => {
+      const result = await createBrandLinks(projectId);
+      if (!result.ok) {
+        toast.error(result.error);
+        return;
+      }
+      toast.success(
+        result.created ? `${result.created} link brand dibuat.` : "Semua brand sudah punya link.",
+      );
+      router.refresh();
+    });
+  }
+
   return (
     <div className="grid gap-6">
+      {missingBrands > 0 && (
+        <div className="flex flex-wrap items-center justify-between gap-3 rounded-2xl border border-primary/30 bg-brand-soft/50 p-4">
+          <p className="text-sm text-ink">
+            {missingBrands} brand belum punya link klien. Buat sekaligus satu link per brand (boleh
+            review), lalu kirim ke PIC masing-masing.
+          </p>
+          <Button onClick={createForAllBrands} disabled={pending}>
+            {pending ? <Loader2 className="animate-spin" aria-hidden /> : <Sparkles aria-hidden />}
+            Buat link per brand
+          </Button>
+        </div>
+      )}
       <form
         noValidate
         onSubmit={(event) => {

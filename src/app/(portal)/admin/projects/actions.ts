@@ -1,13 +1,18 @@
 "use server";
 
 import { revalidatePath } from "next/cache";
+import { after } from "next/server";
 import { z } from "zod";
 import { idSchema, isId } from "@/lib/ids";
 import { STAGES, FORMATS, PROJECT_TYPES } from "@/content/workspace";
 import { logActivity } from "@/lib/activity";
 import { requirePermission, requireStaff } from "@/lib/auth";
 import { drivePreviewUrl } from "@/lib/design-files";
+import { emailClientReviewReady } from "@/lib/notify";
+import type { CommentTarget } from "@/lib/review";
+import { parseComment } from "@/lib/review-decision";
 import { generateShareToken } from "@/lib/share";
+import { createServiceClient } from "@/lib/supabase/service";
 
 export type Result<T = object> = ({ ok: true } & T) | { ok: false; error: string };
 
@@ -32,6 +37,49 @@ function refreshProject(projectId: string) {
 }
 
 // ─── Proyek ────────────────────────────────────────────────────────────────
+
+type SessionDb = Awaited<ReturnType<typeof requireStaff>>["supabase"];
+
+/**
+ * Link klien otomatis: satu link per brand yang belum punya link aktif
+ * (atau satu link "Semua konten" jika klien belum punya brand). Mengembalikan jumlah link baru.
+ */
+async function ensureBrandLinks(
+  supabase: SessionDb,
+  projectId: string,
+  clientId: string,
+): Promise<number> {
+  const [{ data: brands }, { data: links }] = await Promise.all([
+    supabase.from("brands").select("id, name").eq("client_id", clientId).order("sort"),
+    supabase
+      .from("share_links")
+      .select("brand_id, expires_at")
+      .eq("project_id", projectId)
+      .is("revoked_at", null),
+  ]);
+  const now = Date.now();
+  const active = (links ?? []).filter(
+    (link) => !link.expires_at || new Date(link.expires_at).getTime() > now,
+  );
+  const covered = new Set(active.map((link) => link.brand_id));
+  const rows = (brands ?? []).length
+    ? (brands ?? [])
+        .filter((brand) => !covered.has(brand.id))
+        .map((brand) => ({ brand_id: brand.id, label: `PIC ${brand.name}` }))
+    : active.length
+      ? []
+      : [{ brand_id: null, label: "Semua konten" }];
+  if (rows.length === 0) return 0;
+  const { error } = await supabase.from("share_links").insert(
+    rows.map((row) => ({
+      ...row,
+      token: generateShareToken(),
+      project_id: projectId,
+      can_review: true,
+    })),
+  );
+  return error ? 0 : rows.length;
+}
 
 const projectSchema = z.object({
   clientId: uuid,
@@ -77,6 +125,10 @@ export async function saveProject(
     await supabase
       .from("project_members")
       .insert(value.memberIds.map((profileId) => ({ project_id: data.id, profile_id: profileId })));
+  }
+  // Proyek konten: link review klien per brand langsung tersedia di tab Link klien.
+  if (value.type === "design" || value.type === "mixed") {
+    await ensureBrandLinks(supabase, data.id, value.clientId);
   }
   refreshProject(data.id);
   return { ok: true, id: data.id };
@@ -191,6 +243,26 @@ export async function moveContent(
   return { ok: true };
 }
 
+/** Kalender: ubah (atau hapus) tanggal tayang dengan menyeret kartu. */
+export async function setPublishDate(
+  projectId: string,
+  contentId: string,
+  date: string | null,
+): Promise<Result> {
+  if (!isId(projectId) || !isId(contentId)) return { ok: false, error: FAILED };
+  const parsed = day.safeParse(date ?? "");
+  if (!parsed.success) return { ok: false, error: FAILED };
+  const { supabase } = await requireStaff();
+  const { error } = await supabase
+    .from("design_assets")
+    .update({ publish_date: parsed.data, updated_at: new Date().toISOString() })
+    .eq("id", contentId)
+    .eq("project_id", projectId);
+  if (error) return { ok: false, error: FAILED };
+  refreshProject(projectId);
+  return { ok: true };
+}
+
 export async function deleteContent(projectId: string, contentId: string): Promise<Result> {
   if (!isId(projectId)) return { ok: false, error: FAILED };
   if (!isId(contentId)) return { ok: false, error: FAILED };
@@ -258,6 +330,7 @@ export async function createVersion(
   projectId: string,
   contentId: string,
   input: VersionInput,
+  options: { notifyClient?: boolean } = {},
 ): Promise<Result<{ versionNo: number }>> {
   if (!isId(projectId)) return { ok: false, error: FAILED };
   if (!isId(contentId)) return { ok: false, error: FAILED };
@@ -302,7 +375,26 @@ export async function createVersion(
     meta: { contentId, version: versionNo },
   });
   refreshProject(projectId);
+  if (options.notifyClient !== false) {
+    after(async () => {
+      const db = createServiceClient();
+      if (db) await emailClientReviewReady(db, { projectId, contentIds: [contentId], versionNo });
+    });
+  }
   return { ok: true, versionNo };
+}
+
+/** Setelah unggah banyak: satu email ringkasan ke klien, bukan satu email per desain. */
+export async function notifyBulkUpload(projectId: string, contentIds: string[]): Promise<Result> {
+  if (!isId(projectId) || !contentIds.every(isId) || contentIds.length > 50) {
+    return { ok: false, error: FAILED };
+  }
+  await requireStaff();
+  after(async () => {
+    const db = createServiceClient();
+    if (db) await emailClientReviewReady(db, { projectId, contentIds, versionNo: 1 });
+  });
+  return { ok: true };
 }
 
 // ─── Komentar tim ──────────────────────────────────────────────────────────
@@ -312,30 +404,21 @@ export async function addTeamComment(
   versionId: string,
   body: string,
   point: { x: number; y: number; slide: number } | null,
+  target?: CommentTarget,
 ): Promise<Result> {
   if (!isId(projectId)) return { ok: false, error: FAILED };
   if (!isId(versionId)) return { ok: false, error: FAILED };
-  const message = z.string().trim().min(1, "Tulis komentar dulu.").max(2000).safeParse(body);
-  if (!message.success) return { ok: false, error: message.error.issues[0]?.message ?? FAILED };
+  const comment = parseComment(body, point, target);
+  if (!comment.ok) return comment;
   const { supabase, user } = await requireStaff();
-  const parsedPoint = point
-    ? z
-        .object({
-          x: z.number().min(0).max(1),
-          y: z.number().min(0).max(1),
-          slide: z.number().int().min(0).max(50),
-        })
-        .safeParse(point)
-    : null;
-  if (parsedPoint && !parsedPoint.success) return { ok: false, error: FAILED };
-  const coords = parsedPoint?.data ?? null;
   const { error } = await supabase.from("design_comments").insert({
     version_id: versionId,
     author_id: user.id,
-    body: message.data,
-    x: coords?.x ?? null,
-    y: coords?.y ?? null,
-    slide: coords?.slide ?? 0,
+    body: comment.body,
+    x: comment.x,
+    y: comment.y,
+    slide: comment.slide,
+    target: comment.target,
   });
   if (error) return { ok: false, error: FAILED };
   refreshProject(projectId);
@@ -477,6 +560,21 @@ export async function createShareLink(
   if (error) return { ok: false, error: FAILED };
   refreshProject(projectId);
   return { ok: true, token };
+}
+
+/** Tombol "Buat link untuk semua brand" di tab Link klien. */
+export async function createBrandLinks(projectId: string): Promise<Result<{ created: number }>> {
+  if (!isId(projectId)) return { ok: false, error: FAILED };
+  const { supabase } = await requireStaff();
+  const { data: project } = await supabase
+    .from("projects")
+    .select("client_id")
+    .eq("id", projectId)
+    .maybeSingle();
+  if (!project) return { ok: false, error: FAILED };
+  const created = await ensureBrandLinks(supabase, projectId, project.client_id);
+  refreshProject(projectId);
+  return { ok: true, created };
 }
 
 export async function revokeShareLink(projectId: string, linkId: string): Promise<Result> {

@@ -2,22 +2,26 @@ import Link from "next/link";
 import { ChevronLeft } from "lucide-react";
 import { EmptyState } from "@/components/atoms/EmptyState";
 import { StatusBadge } from "@/components/atoms/StatusBadge";
+import { ViewSwitch } from "@/components/molecules/ViewSwitch";
+import { ContentCalendar } from "@/components/organisms/ContentCalendar";
 import { ContentReviewList } from "@/components/organisms/ContentReviewList";
 import { portal } from "@/content/portal";
-import { loadBoard } from "@/lib/board-data";
+import { loadBoard, toCalendarItems } from "@/lib/board-data";
+import { isMonth, shiftMonth } from "@/lib/calendar";
+import { todayJakarta } from "@/lib/format";
 import { loadClientProject } from "./data";
 
 const text = portal.clientHome;
 
 type PageProps = {
   params: Promise<{ id: string }>;
-  searchParams: Promise<{ brand?: string }>;
+  searchParams: Promise<{ brand?: string; view?: string; month?: string }>;
 };
 
 /** Semua desain satu proyek; yang menunggu review klien tampil paling atas. */
 export default async function ClientProjectPage({ params, searchParams }: PageProps) {
   const { id } = await params;
-  const { brand } = await searchParams;
+  const { brand, view, month: monthParam } = await searchParams;
   const { supabase, db, project } = await loadClientProject(id);
 
   const [items, { data: brands }] = await Promise.all([
@@ -30,6 +34,9 @@ export default async function ClientProjectPage({ params, searchParams }: PagePr
   ]);
   const activeBrand = brand && brands?.some((item) => item.id === brand) ? brand : null;
   const base = `/client/projects/${project.id}`;
+  const calendar = view === "calendar";
+  const month = isMonth(monthParam) ? monthParam : todayJakarta().slice(0, 7);
+  const monthHref = (value: string) => `${base}?view=calendar&month=${value}`;
 
   return (
     <div className="grid gap-6">
@@ -47,8 +54,30 @@ export default async function ClientProjectPage({ params, searchParams }: PagePr
         </div>
         <StatusBadge kind="project" status={project.status} />
       </div>
+      {items.length > 0 && (
+        <ViewSwitch
+          label="Tampilan konten"
+          active={calendar ? "calendar" : "list"}
+          options={[
+            { id: "list", label: "Daftar", href: base },
+            { id: "calendar", label: "Kalender", href: monthHref(month) },
+          ]}
+        />
+      )}
       {items.length === 0 ? (
         <EmptyState message={text.noContent} />
+      ) : calendar ? (
+        <ContentCalendar
+          key={month}
+          items={toCalendarItems(items, brands ?? [])}
+          month={month}
+          monthHrefs={{
+            previous: monthHref(shiftMonth(month, -1)),
+            next: monthHref(shiftMonth(month, 1)),
+            current: monthHref(todayJakarta().slice(0, 7)),
+          }}
+          itemHrefPrefix={`${base}/content/`}
+        />
       ) : (
         <ContentReviewList
           items={items}

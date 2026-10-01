@@ -11,6 +11,7 @@ type AdminShellProps = {
   /** Nama peran untuk badge, mis. "Admin" atau "Editor CMS". */
   roleName: string;
   permissions: Permission[];
+  headerAction?: ReactNode;
   children: ReactNode;
 };
 
@@ -81,6 +82,7 @@ export function AdminShell({
   isAdmin,
   roleName,
   permissions,
+  headerAction,
   children,
 }: AdminShellProps) {
   return (
@@ -89,6 +91,7 @@ export function AdminShell({
       nav={buildNav(isAdmin, permissions)}
       badge={roleName}
       userLabel={userLabel}
+      headerAction={headerAction}
     >
       {children}
     </PortalFrame>
