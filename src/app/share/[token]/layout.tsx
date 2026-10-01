@@ -18,6 +18,7 @@ export async function generateMetadata({ params }: LayoutProps): Promise<Metadat
   return {
     title: context ? shareText.metaTitle(context.project.title) : shareText.invalid.title,
     robots: { index: false, follow: false },
+    other: { google: "notranslate" },
     referrer: "no-referrer",
   };
 }

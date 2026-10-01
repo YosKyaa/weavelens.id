@@ -11,6 +11,8 @@ export const dynamic = "force-dynamic";
 export const metadata: Metadata = {
   title: portal.name,
   robots: { index: false, follow: false },
+  // Terjemahan otomatis Chrome mengubah DOM diam-diam dan bisa membuat aplikasi crash.
+  other: { google: "notranslate" },
 };
 
 /** Sesi & peran dicek di layout admin/ dan c/, karena tiap peran punya shell sendiri. */

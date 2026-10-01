@@ -4,6 +4,7 @@ import { revalidatePath } from "next/cache";
 import { z } from "zod";
 import { isId } from "@/lib/ids";
 import { requirePermission } from "@/lib/auth";
+import { createServiceClient } from "@/lib/supabase/service";
 
 export type Result<T = object> = ({ ok: true } & T) | { ok: false; error: string };
 
@@ -130,6 +131,105 @@ export async function deleteBrand(clientId: string, brandId: string): Promise<Re
     .eq("id", brandId)
     .eq("client_id", clientId);
   if (error) return { ok: false, error: FAILED };
+  revalidatePath(`/admin/clients/${clientId}`);
+  return { ok: true };
+}
+
+// ─── Akses portal klien ────────────────────────────────────────────────────
+
+const inviteSchema = z.object({
+  fullName: z.string().trim().min(1, "Isi nama PIC.").max(80),
+  email: z.string().trim().toLowerCase().email("Format email tidak valid."),
+});
+
+export type InviteInput = z.input<typeof inviteSchema>;
+
+/**
+ * Buat (atau hubungkan) akun portal untuk PIC klien. Tanpa password: klien masuk dengan
+ * link email atau Google memakai email ini. Email tim WeaveLens tidak bisa dijadikan akun klien.
+ */
+export async function inviteClientUser(clientId: string, input: InviteInput): Promise<Result> {
+  if (!isId(clientId)) return { ok: false, error: FAILED };
+  const parsed = inviteSchema.safeParse(input);
+  if (!parsed.success) return { ok: false, error: parsed.error.issues[0]?.message ?? FAILED };
+  const { supabase } = await requirePermission("clients");
+  const db = createServiceClient();
+  if (!db) return { ok: false, error: "SUPABASE_SERVICE_ROLE_KEY belum diisi di server." };
+
+  const { data: client } = await supabase
+    .from("clients")
+    .select("id")
+    .eq("id", clientId)
+    .maybeSingle();
+  if (!client) return { ok: false, error: FAILED };
+
+  const { email, fullName } = parsed.data;
+  let userId: string | null = null;
+  const created = await db.auth.admin.createUser({
+    email,
+    email_confirm: true,
+    user_metadata: { full_name: fullName },
+  });
+  if (created.data.user) {
+    userId = created.data.user.id;
+  } else if (/already|registered|exists/i.test(created.error?.message ?? "")) {
+    // Akun sudah ada: cari, lalu pastikan bukan akun tim / klien lain.
+    for (let page = 1; page <= 10 && !userId; page++) {
+      const { data } = await db.auth.admin.listUsers({ page, perPage: 200 });
+      userId = data?.users.find((user) => user.email?.toLowerCase() === email)?.id ?? null;
+      if (!data || data.users.length < 200) break;
+    }
+  }
+  if (!userId) return { ok: false, error: FAILED };
+
+  const { data: existing } = await db
+    .from("profiles")
+    .select("role, client_id")
+    .eq("id", userId)
+    .maybeSingle();
+  if (existing && existing.role !== "client") {
+    return {
+      ok: false,
+      error: "Email ini dipakai akun tim WeaveLens. Pakai email lain untuk klien.",
+    };
+  }
+  if (existing?.client_id && existing.client_id !== clientId) {
+    return { ok: false, error: "Email ini sudah terhubung ke klien lain." };
+  }
+
+  const { error } = await db.from("profiles").upsert({
+    id: userId,
+    full_name: fullName,
+    role: "client",
+    client_id: clientId,
+    active: true,
+  });
+  if (error) return { ok: false, error: FAILED };
+  await db.auth.admin.updateUserById(userId, { ban_duration: "none" });
+
+  revalidatePath(`/admin/clients/${clientId}`);
+  return { ok: true };
+}
+
+/** Nonaktifkan / aktifkan lagi akun portal klien (data tetap tersimpan). */
+export async function setClientUserActive(
+  clientId: string,
+  userId: string,
+  active: boolean,
+): Promise<Result> {
+  if (!isId(clientId) || !isId(userId)) return { ok: false, error: FAILED };
+  await requirePermission("clients");
+  const db = createServiceClient();
+  if (!db) return { ok: false, error: "SUPABASE_SERVICE_ROLE_KEY belum diisi di server." };
+  const { data, error } = await db
+    .from("profiles")
+    .update({ active: active === true })
+    .eq("id", userId)
+    .eq("role", "client")
+    .eq("client_id", clientId)
+    .select("id");
+  if (error || !data?.length) return { ok: false, error: FAILED };
+  await db.auth.admin.updateUserById(userId, { ban_duration: active ? "none" : "876000h" });
   revalidatePath(`/admin/clients/${clientId}`);
   return { ok: true };
 }

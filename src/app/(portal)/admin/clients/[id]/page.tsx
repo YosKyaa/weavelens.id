@@ -5,10 +5,13 @@ import { FormSection } from "@/components/molecules/FormSection";
 import { PageHeader } from "@/components/molecules/PageHeader";
 import { BrandManager } from "@/components/organisms/BrandManager";
 import { ClientDangerZone } from "@/components/organisms/ClientDangerZone";
+import { ClientPortalAccess, type PortalUserRow } from "@/components/organisms/ClientPortalAccess";
 import { ClientForm } from "@/components/organisms/ClientForm";
 import { projectTypes } from "@/content/portal";
 import { workspaceText } from "@/content/workspace";
 import { requirePermission } from "@/lib/auth";
+import { googleEnabled } from "@/lib/supabase/providers";
+import { createServiceClient } from "@/lib/supabase/service";
 
 const text = workspaceText.clients;
 
@@ -27,6 +30,31 @@ export default async function ClientDetailPage({ params }: PageProps) {
     .eq("id", id)
     .maybeSingle();
   if (!client) notFound();
+
+  // Akun portal PIC klien (email & waktu masuk ada di auth.users → service role).
+  const db = createServiceClient();
+  const [{ data: portalProfiles }, google] = await Promise.all([
+    // RLS profil tim hanya membuka profil admin/tim; akses halaman ini sudah dicek requirePermission.
+    (db ?? supabase)
+      .from("profiles")
+      .select("id, full_name, active")
+      .eq("role", "client")
+      .eq("client_id", client.id)
+      .order("full_name"),
+    googleEnabled(),
+  ]);
+  const portalUsers: PortalUserRow[] = await Promise.all(
+    (portalProfiles ?? []).map(async (profile) => {
+      const user = db ? (await db.auth.admin.getUserById(profile.id)).data.user : null;
+      return {
+        id: profile.id,
+        name: profile.full_name || user?.email || "Tanpa nama",
+        email: user?.email ?? "",
+        active: profile.active,
+        lastSignIn: user?.last_sign_in_at ?? null,
+      };
+    }),
+  );
 
   const brands = [...client.brands].sort((a, b) => a.sort - b.sort);
   const projects = [...client.projects].sort((a, b) => b.created_at.localeCompare(a.created_at));
@@ -48,6 +76,22 @@ export default async function ClientDetailPage({ params }: PageProps) {
         </FormSection>
         <FormSection title={text.brands.title} description={text.brands.description}>
           <BrandManager clientId={client.id} brands={brands} />
+        </FormSection>
+        <FormSection
+          title="Akses portal klien"
+          description="Akun untuk PIC klien melihat semua proyeknya. Tanpa password: masuk lewat Google atau link email."
+          className="xl:col-span-2"
+        >
+          <ClientPortalAccess
+            clientId={client.id}
+            users={portalUsers}
+            contact={{
+              name: client.contact_name ?? "",
+              email: client.contact_email ?? "",
+              phone: client.contact_phone,
+            }}
+            google={google}
+          />
         </FormSection>
         <FormSection title="Proyek" className="xl:col-span-2">
           {projects.length === 0 ? (

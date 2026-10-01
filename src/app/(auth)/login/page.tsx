@@ -16,6 +16,8 @@ export const dynamic = "force-dynamic";
 export const metadata: Metadata = {
   title: "Masuk — WeaveLens",
   robots: { index: false, follow: false },
+  // Terjemahan otomatis Chrome mengubah DOM diam-diam dan bisa membuat aplikasi crash.
+  other: { google: "notranslate" },
 };
 
 type PageProps = { searchParams: Promise<{ next?: string; error?: string }> };

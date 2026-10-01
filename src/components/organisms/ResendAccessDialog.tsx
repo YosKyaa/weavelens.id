@@ -14,8 +14,10 @@ type ResendAccessDialogProps = {
   member: { name: string; email: string; phone: string | null };
   /** Login Google aktif → pesan menyarankan "Masuk dengan Google". */
   google: boolean;
-  /** Buka alur "buat password sementara" (password lama tidak bisa ditampilkan ulang). */
-  onNewPassword: () => void;
+  /** Tim: tawarkan "buat password sementara". Klien tidak punya password. */
+  onNewPassword?: () => void;
+  /** Tim (bawaan) atau PIC klien (masuk lewat tab Klien: link email / Google). */
+  audience?: "team" | "client";
 };
 
 /** "0812-3456 789" / "+62 812…" → "62812…"; kosong jika bukan nomor HP Indonesia yang wajar. */
@@ -25,8 +27,27 @@ function normalizePhone(value: string): string {
   return /^62\d{8,13}$/.test(local) ? local : "";
 }
 
-function accessMessage(name: string, email: string, origin: string, google: boolean): string {
+function accessMessage(
+  name: string,
+  email: string,
+  origin: string,
+  google: boolean,
+  audience: "team" | "client",
+): string {
   const firstName = name.split(" ")[0] || name;
+  if (audience === "client") {
+    return [
+      `Halo ${firstName}! Kamu sudah bisa masuk ke portal WeaveLens untuk melihat dan mereview desain.`,
+      "",
+      `Link: ${origin}/login?next=/client`,
+      `Email: ${email}`,
+      "",
+      google
+        ? 'Cara masuk: buka link, pilih tab "Klien", lalu tekan "Masuk dengan Google" memakai email di atas. Bisa juga isi email lalu tekan "Kirim link masuk" (cek email kamu).'
+        : 'Cara masuk: buka link, pilih tab "Klien", isi email di atas, lalu tekan "Kirim link masuk" dan buka link dari email kamu.',
+      "Tidak perlu password.",
+    ].join("\n");
+  }
   return [
     `Halo ${firstName}! Ini akses portal WeaveLens kamu:`,
     "",
@@ -50,10 +71,11 @@ export function ResendAccessDialog({
   member,
   google,
   onNewPassword,
+  audience = "team",
 }: ResendAccessDialogProps) {
   const [phone, setPhone] = useState(member.phone ?? "");
   const origin = typeof window === "undefined" ? "" : window.location.origin;
-  const message = accessMessage(member.name, member.email, origin, google);
+  const message = accessMessage(member.name, member.email, origin, google, audience);
   const number = normalizePhone(phone);
   const waHref = `https://wa.me/${number}?text=${encodeURIComponent(message)}`;
 
@@ -69,10 +91,13 @@ export function ResendAccessDialog({
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="max-h-[90dvh] overflow-y-auto sm:max-w-md">
-        <DialogTitle>Kirim ulang akses ke {member.name}</DialogTitle>
+        <DialogTitle>
+          {audience === "client" ? "Kirim akses portal ke" : "Kirim ulang akses ke"} {member.name}
+        </DialogTitle>
         <DialogDescription className="text-ink/75">
-          Kirim link masuk dan email akunnya lewat WhatsApp. Password tidak ikut dikirim dan tidak
-          berubah.
+          {audience === "client"
+            ? "Kirim link portal dan cara masuknya lewat WhatsApp."
+            : "Kirim link masuk dan email akunnya lewat WhatsApp. Password tidak ikut dikirim dan tidak berubah."}
         </DialogDescription>
 
         <Field
@@ -114,13 +139,15 @@ export function ResendAccessDialog({
           </Button>
         </div>
 
-        <div className="flex flex-wrap items-center justify-between gap-2 border-t border-line pt-4">
-          <p className="text-sm text-ink/70">Anggota lupa password?</p>
-          <Button variant="ghost" size="sm" onClick={onNewPassword}>
-            <KeyRound aria-hidden />
-            Buat password sementara
-          </Button>
-        </div>
+        {onNewPassword && (
+          <div className="flex flex-wrap items-center justify-between gap-2 border-t border-line pt-4">
+            <p className="text-sm text-ink/70">Anggota lupa password?</p>
+            <Button variant="ghost" size="sm" onClick={onNewPassword}>
+              <KeyRound aria-hidden />
+              Buat password sementara
+            </Button>
+          </div>
+        )}
       </DialogContent>
     </Dialog>
   );

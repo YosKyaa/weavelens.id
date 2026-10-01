@@ -189,3 +189,15 @@ Tombol **Lanjutkan dengan Google** di `/login` baru muncul setelah provider Goog
 **Email pemberitahuan (opsional, Resend):** isi `RESEND_API_KEY` dan `EMAIL_FROM` (mis. `WeaveLens <notifikasi@weavelens.id>`) di Vercel setelah domain diverifikasi di resend.com. Klien menerima email saat desain siap direview (ke kontak klien + akun portal klien); admin dan tim yang ditugaskan menerima email saat klien menyetujui atau minta revisi. Tanpa env ini, semua tetap jalan tanpa email.
 
 Migrasi: `0008_review_ux.sql` (penanda notifikasi dibaca, komentar caption).
+
+## 13. Akun portal klien
+
+Klien bisa mereview tanpa akun lewat **link klien**. Kalau PIC ingin melihat semua proyeknya di satu tempat:
+
+1. Buka **Klien & brand → (klien) → Akses portal klien → Undang ke portal**. Isi nama dan email PIC (sebaiknya Gmail). Akun dibuat tanpa password.
+2. Tekan **Kirim akses** untuk mengirim cara masuk lewat WhatsApp.
+3. PIC membuka weavelens.id/login → tab **Klien** → **Masuk dengan Google** (email sama), atau isi email → **Kirim link masuk**.
+
+Link masuk lewat email butuh SMTP sendiri (Resend), karena email bawaan Supabase hanya terkirim ke anggota tim project Supabase dan dibatasi beberapa email per jam. Login Google tidak butuh SMTP.
+
+**Halaman gagal dimuat setelah update:** aplikasi otomatis memuat ulang sekali bila tab lama memanggil versi yang sudah diganti. Halaman portal ditandai "jangan diterjemahkan" karena terjemahan otomatis Chrome bisa membuat aplikasi crash.

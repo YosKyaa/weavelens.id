@@ -112,6 +112,29 @@ export function LoginForm({
   const triggerClass =
     "h-10 rounded-md font-heading font-semibold text-ink/70 data-[state=active]:bg-paper data-[state=active]:text-ink data-[state=active]:shadow-soft";
 
+  // Tombol Google untuk tim & klien: akun yang terdaftar diarahkan sesuai perannya.
+  const googleBlock = googleOn ? (
+    <>
+      <Button
+        type="button"
+        variant="outline"
+        size="lg"
+        onClick={google}
+        disabled={googlePending}
+        className="h-12 w-full gap-3 border-line bg-paper font-heading text-[15px] font-semibold text-ink shadow-xs hover:bg-canvas"
+      >
+        {googlePending ? <Loader2 className="animate-spin" aria-hidden /> : <GoogleMark />}
+        {googlePending ? text.googleRedirecting : text.google}
+      </Button>
+
+      <div className="flex items-center gap-3 text-xs text-ink/55">
+        <span aria-hidden className="h-px flex-1 bg-line" />
+        {text.divider}
+        <span aria-hidden className="h-px flex-1 bg-line" />
+      </div>
+    </>
+  ) : null;
+
   return (
     <Tabs defaultValue={initialTab} className="gap-6">
       <TabsList className="grid h-12 w-full grid-cols-2 rounded-lg bg-sand/70 p-1">
@@ -126,27 +149,7 @@ export function LoginForm({
       <TabsContent value="team" className="grid gap-5">
         <Alert state={googleState.error ? googleState : teamState} />
 
-        {googleOn && (
-          <>
-            <Button
-              type="button"
-              variant="outline"
-              size="lg"
-              onClick={google}
-              disabled={googlePending}
-              className="h-12 w-full gap-3 border-line bg-paper font-heading text-[15px] font-semibold text-ink shadow-xs hover:bg-canvas"
-            >
-              {googlePending ? <Loader2 className="animate-spin" aria-hidden /> : <GoogleMark />}
-              {googlePending ? text.googleRedirecting : text.google}
-            </Button>
-
-            <div className="flex items-center gap-3 text-xs text-ink/55">
-              <span aria-hidden className="h-px flex-1 bg-line" />
-              {text.divider}
-              <span aria-hidden className="h-px flex-1 bg-line" />
-            </div>
-          </>
-        )}
+        {googleBlock}
 
         <form onSubmit={submitWith(teamAction)} noValidate className="grid gap-4">
           <input type="hidden" name="next" value={next ?? ""} />
@@ -205,6 +208,8 @@ export function LoginForm({
           <Info aria-hidden className="mt-0.5 size-4 shrink-0 text-primary" />
           {text.clientShareHint}
         </p>
+        {googleState.error && <Alert state={googleState} />}
+        {googleBlock}
         <form onSubmit={submitWith(linkAction)} noValidate className="grid gap-4">
           <Alert state={linkState} />
           <input type="hidden" name="next" value={next ?? ""} />
