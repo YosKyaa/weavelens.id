@@ -127,6 +127,7 @@ export const workspaceText = {
     allBrands: "Semua brand",
     allFormats: "Semua format",
     empty: "Kosong",
+    noDesign: "Belum ada desain",
     moveTo: "Pindahkan ke",
     dragHint: "Seret kartu untuk memindahkan tahap, atau pakai menu ⋯ di kartu.",
     moved: (stage: string) => `Dipindah ke ${stage}.`,

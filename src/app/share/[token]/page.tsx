@@ -17,7 +17,9 @@ export default async function ShareContentPage({ params, searchParams }: PagePro
   if (!context) notFound();
 
   const isDesign = context.project.type === "design" || context.project.type === "mixed";
-  const items = await loadBoard(context.db, context.project.id, context.brandId);
+  const items = await loadBoard(context.db, context.project.id, context.brandId, {
+    shareToken: token,
+  });
   if (!isDesign && items.length === 0) redirect(`/share/${token}/galleries`);
 
   const { data: brands } = context.brandId

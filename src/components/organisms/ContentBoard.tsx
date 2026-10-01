@@ -2,11 +2,11 @@
 
 import { useMemo, useState, useTransition, type DragEvent } from "react";
 import Link from "next/link";
-import Image from "next/image";
 import { useRouter } from "next/navigation";
 import { CalendarDays, MessageSquare, MoreHorizontal, Plus } from "lucide-react";
 import { toast } from "sonner";
 import { moveContent } from "@/app/(portal)/admin/projects/actions";
+import { DesignThumb } from "@/components/atoms/DesignThumb";
 import { ContentCreate } from "@/components/organisms/ContentCreate";
 import { Button } from "@/components/ui/button";
 import {
@@ -26,6 +26,7 @@ import {
   type ContentFormat,
   type Stage,
 } from "@/content/workspace";
+import type { DesignPreview } from "@/lib/design-preview";
 import { formatDate } from "@/lib/format";
 import { cn } from "@/lib/utils";
 
@@ -44,7 +45,8 @@ export type BoardItem = {
   publishDate: string | null;
   versions: number;
   openComments: number;
-  thumbnail: string | null;
+  preview: DesignPreview;
+  slides: number;
 };
 
 type ContentBoardProps = {
@@ -221,21 +223,24 @@ export function ContentBoard({ projectId, items: initialItems, brands }: Content
                     >
                       <Link
                         href={`/admin/projects/${projectId}/content/${item.id}`}
-                        className="flex flex-col gap-2 rounded-xl p-3 pr-10"
+                        className="flex flex-col gap-2 rounded-xl p-2 pb-3"
                       >
-                        {item.thumbnail && (
-                          <span className="relative block aspect-[4/3] overflow-hidden rounded-lg bg-placeholder">
-                            <Image
-                              src={item.thumbnail}
-                              alt=""
-                              fill
-                              sizes="272px"
-                              unoptimized
-                              className="object-cover"
-                            />
-                          </span>
-                        )}
-                        <span className="flex flex-wrap items-center gap-1.5 text-xs">
+                        {/* Pratinjau kecil supaya desainnya langsung dikenali. */}
+                        <DesignThumb
+                          preview={item.preview}
+                          slides={item.slides}
+                          emptyLabel={text.noDesign}
+                          className={cn(
+                            "rounded-lg",
+                            // Ada gambarnya: pratinjau penuh. Hanya ikon (belum ada / PDF): strip pendek.
+                            item.preview.kind === "image" ||
+                              item.preview.kind === "video" ||
+                              (item.preview.kind === "drive" && item.preview.url)
+                              ? "aspect-[16/10]"
+                              : "h-16",
+                          )}
+                        />
+                        <span className="flex flex-wrap items-center gap-1.5 px-1 text-xs">
                           {brand && (
                             <span className="inline-flex max-w-full items-center gap-1 truncate rounded-full bg-canvas px-2 py-0.5 font-semibold whitespace-nowrap text-ink">
                               <span
@@ -250,8 +255,8 @@ export function ContentBoard({ projectId, items: initialItems, brands }: Content
                             {formatLabels[item.format]}
                           </span>
                         </span>
-                        <span className="font-medium text-ink">{item.title}</span>
-                        <span className="flex flex-wrap items-center gap-3 text-xs text-ink/65">
+                        <span className="px-1 font-medium text-ink">{item.title}</span>
+                        <span className="flex flex-wrap items-center gap-3 px-1 text-xs text-ink/65">
                           {item.dueDate && (
                             <span className="inline-flex items-center gap-1">
                               <CalendarDays aria-hidden className="size-3.5" />
@@ -273,7 +278,7 @@ export function ContentBoard({ projectId, items: initialItems, brands }: Content
                           <Button
                             variant="ghost"
                             size="icon-sm"
-                            className="absolute top-2 right-2"
+                            className="absolute top-3 right-3 bg-paper/85 shadow-xs backdrop-blur-sm hover:bg-paper"
                             aria-label={`${text.moveTo}: ${item.title}`}
                           >
                             <MoreHorizontal aria-hidden />

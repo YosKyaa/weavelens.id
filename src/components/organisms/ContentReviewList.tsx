@@ -1,6 +1,6 @@
-import Image from "next/image";
 import Link from "next/link";
 import { CalendarDays, MessageSquareWarning } from "lucide-react";
+import { DesignThumb } from "@/components/atoms/DesignThumb";
 import { StatusBadge } from "@/components/atoms/StatusBadge";
 import { formatAspect, formatLabels, shareText, type Stage } from "@/content/workspace";
 import type { BoardRow } from "@/lib/board-data";
@@ -140,20 +140,12 @@ export function ContentReviewList({
                     "max-h-80 w-full",
                   )}
                 >
-                  {item.thumbnail ? (
-                    <Image
-                      src={item.thumbnail}
-                      alt=""
-                      fill
-                      sizes="(min-width: 1024px) 360px, 50vw"
-                      unoptimized
-                      className="object-cover"
-                    />
-                  ) : (
-                    <span className="absolute inset-0 flex items-center justify-center px-4 text-center text-sm text-ink/60">
-                      {text.noVersion}
-                    </span>
-                  )}
+                  <DesignThumb
+                    preview={item.preview}
+                    slides={item.slides}
+                    emptyLabel={text.noVersion}
+                    className="absolute inset-0"
+                  />
                   {needsReview && (
                     <span className="absolute top-3 left-3 rounded-full bg-primary px-3 py-1 text-xs font-semibold text-primary-foreground shadow-soft">
                       {text.waitingFirst}
