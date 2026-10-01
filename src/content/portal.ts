@@ -88,7 +88,7 @@ export const portal = {
       emailInvalid: "Tulis email yang valid, mis. nama@kampus.ac.id.",
       passwordMissing: "Isi password.",
       wrongCredentials: "Email atau password salah.",
-      notAdmin: "Akun ini bukan akun tim. Klien masuk lewat tab Klien.",
+      notAdmin: "Akun ini bukan akun tim atau sudah dinonaktifkan. Klien masuk lewat tab Klien.",
       linkFailed: "Link masuk tidak bisa dikirim. Coba lagi beberapa menit lagi.",
       linkExpired: "Link masuk sudah kedaluwarsa atau sudah dipakai. Minta link baru di bawah.",
       notConfigured: "Portal belum terhubung ke database.",
@@ -101,6 +101,7 @@ export const portal = {
     signOut: "Keluar",
     viewSite: "Lihat website",
     adminBadge: "Admin",
+    teamBadge: "Tim WeaveLens",
     /** Badge di header klien jika akun belum terhubung ke organisasi. */
     clientFallback: "Klien",
     menuLabel: "Menu portal",
@@ -133,7 +134,22 @@ export const portal = {
       {
         id: "data",
         label: "Data",
-        items: [{ href: "/admin/clients", label: "Klien & brand", icon: "users" }],
+        items: [
+          { href: "/admin/clients", label: "Klien & brand", icon: "users" },
+          { href: "/admin/team", label: "Tim & akses", icon: "shield" },
+        ],
+      },
+    ],
+    /** Anggota tim hanya melihat pekerjaan yang ditugaskan; menu admin tidak ditampilkan. */
+    team: [
+      { id: "main", items: [{ href: "/admin", label: "Ringkasan", icon: "home" }] },
+      {
+        id: "work",
+        label: "Pekerjaan",
+        items: [
+          { href: "/admin/projects", label: "Proyek saya", icon: "kanban" },
+          { href: "/admin/galleries", label: "Seleksi foto & video", icon: "images" },
+        ],
       },
     ],
     cmsGroup: {
@@ -144,8 +160,12 @@ export const portal = {
     },
     settings: {
       id: "system",
-      items: [{ href: "/admin/settings", label: "Pengaturan", icon: "settings" }],
+      items: [
+        { href: "/admin/settings", label: "Pengaturan", icon: "settings" },
+        { href: "/admin/account", label: "Akun saya", icon: "user" },
+      ],
     },
+    account: { id: "system", items: [{ href: "/admin/account", label: "Akun saya", icon: "user" }] },
     client: [{ id: "client", items: [{ href: "/client", label: "Proyek saya", icon: "folder" }] }],
   },
 

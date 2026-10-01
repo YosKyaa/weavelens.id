@@ -47,7 +47,7 @@ type DataTableProps<T> = {
 };
 
 const selectClass =
-  "h-9 rounded-md border border-input bg-paper px-3 text-sm shadow-xs outline-none focus-visible:border-ring focus-visible:ring-[3px] focus-visible:ring-ring/50";
+  "h-10 rounded-md border border-input bg-paper px-3 text-sm shadow-xs outline-none focus-visible:border-ring focus-visible:ring-[3px] focus-visible:ring-ring/50";
 
 /** Tabel data: cari, filter, urutkan, dan halaman. Di HP berubah menjadi daftar kartu. */
 export function DataTable<T>({

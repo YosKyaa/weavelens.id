@@ -6,6 +6,7 @@ import { Camera, Clapperboard, Images, Loader2, Palette, Save } from "lucide-rea
 import { toast } from "sonner";
 import { saveProject, type ProjectInput } from "@/app/(portal)/admin/projects/actions";
 import { Field, selectClass } from "@/components/molecules/Field";
+import { MemberPicker, type TeamOption } from "@/components/organisms/ProjectMembersForm";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
@@ -27,9 +28,11 @@ type ProjectFormProps = {
   projectId: string | null;
   initial: ProjectInput;
   clients: { id: string; name: string }[];
+  /** Diisi saat membuat proyek: pilih tim yang langsung ditugaskan. */
+  teamOptions?: TeamOption[];
 };
 
-export function ProjectForm({ projectId, initial, clients }: ProjectFormProps) {
+export function ProjectForm({ projectId, initial, clients, teamOptions }: ProjectFormProps) {
   const router = useRouter();
   const [values, setValues] = useState(initial);
   const [saved, setSaved] = useState(JSON.stringify(initial));
@@ -156,6 +159,22 @@ export function ProjectForm({ projectId, initial, clients }: ProjectFormProps) {
           </select>
         </Field>
       </div>
+
+      {!projectId && teamOptions && (
+        <fieldset>
+          <legend className="mb-1 font-heading text-sm font-semibold text-ink">
+            Tugaskan ke tim (opsional)
+          </legend>
+          <p className="mb-3 text-sm text-ink/70">
+            Anggota yang dipilih langsung bisa melihat dan mengerjakan proyek ini.
+          </p>
+          <MemberPicker
+            options={teamOptions}
+            selected={values.memberIds ?? []}
+            onChange={(memberIds) => update({ memberIds })}
+          />
+        </fieldset>
+      )}
 
       <Field id="project-description" label={text.fields.description}>
         <Textarea

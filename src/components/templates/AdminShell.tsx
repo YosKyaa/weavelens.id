@@ -6,6 +6,7 @@ import { CMS_BASE, collections } from "@/lib/cms/collections";
 
 type AdminShellProps = {
   userLabel: string;
+  role: "admin" | "team";
   children: ReactNode;
 };
 
@@ -24,11 +25,18 @@ const cmsGroup: PortalNavGroup = {
   ],
 };
 
-const nav: PortalNavGroup[] = [...portal.nav.admin, cmsGroup, portal.nav.settings];
+const adminNav: PortalNavGroup[] = [...portal.nav.admin, cmsGroup, portal.nav.settings];
+const teamNav: PortalNavGroup[] = [...portal.nav.team, portal.nav.account];
 
-export function AdminShell({ userLabel, children }: AdminShellProps) {
+/** Menu mengikuti peran: tim hanya melihat pekerjaan yang ditugaskan. */
+export function AdminShell({ userLabel, role, children }: AdminShellProps) {
   return (
-    <PortalFrame homeHref="/admin" nav={nav} badge={portal.shell.adminBadge} userLabel={userLabel}>
+    <PortalFrame
+      homeHref="/admin"
+      nav={role === "admin" ? adminNav : teamNav}
+      badge={role === "admin" ? portal.shell.adminBadge : portal.shell.teamBadge}
+      userLabel={userLabel}
+    >
       {children}
     </PortalFrame>
   );

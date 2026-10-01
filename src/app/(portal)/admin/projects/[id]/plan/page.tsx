@@ -1,13 +1,13 @@
 import { FormSection } from "@/components/molecules/FormSection";
 import { PlanEditor, type PlanRow } from "@/components/organisms/PlanEditor";
 import { workspaceText } from "@/content/workspace";
-import { requireAdmin } from "@/lib/auth";
+import { requireStaff } from "@/lib/auth";
 
 type PageProps = { params: Promise<{ id: string }> };
 
 export default async function ProjectPlanPage({ params }: PageProps) {
   const { id } = await params;
-  const { supabase } = await requireAdmin();
+  const { supabase } = await requireStaff();
   const { data } = await supabase
     .from("plan_items")
     .select("id, title, due_date, status")

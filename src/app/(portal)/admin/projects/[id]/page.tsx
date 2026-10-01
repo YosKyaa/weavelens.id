@@ -1,6 +1,6 @@
 import { redirect } from "next/navigation";
 import { ContentBoard } from "@/components/organisms/ContentBoard";
-import { requireAdmin } from "@/lib/auth";
+import { requireStaff } from "@/lib/auth";
 import { loadBoard } from "@/lib/board-data";
 
 type PageProps = { params: Promise<{ id: string }> };
@@ -8,7 +8,7 @@ type PageProps = { params: Promise<{ id: string }> };
 /** Papan konten (kanban). Proyek dokumentasi foto/video langsung dibuka di tab galeri. */
 export default async function ProjectBoardPage({ params }: PageProps) {
   const { id } = await params;
-  const { supabase } = await requireAdmin();
+  const { supabase } = await requireStaff();
 
   const { data: project } = await supabase
     .from("projects")

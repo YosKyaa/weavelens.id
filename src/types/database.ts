@@ -903,6 +903,7 @@ export type Database = {
           client_id: string | null;
           phone: string | null;
           created_at: string;
+          active: boolean;
         };
         Insert: {
           id: string;
@@ -911,6 +912,7 @@ export type Database = {
           client_id?: string | null;
           phone?: string | null;
           created_at?: string;
+          active?: boolean;
         };
         Update: {
           id?: string;
@@ -919,6 +921,7 @@ export type Database = {
           client_id?: string | null;
           phone?: string | null;
           created_at?: string;
+          active?: boolean;
         };
         Relationships: [
           {
@@ -926,6 +929,39 @@ export type Database = {
             columns: ["client_id"];
             isOneToOne: false;
             referencedRelation: "clients";
+            referencedColumns: ["id"];
+          },
+        ];
+      };
+      project_members: {
+        Row: {
+          project_id: string;
+          profile_id: string;
+          created_at: string;
+        };
+        Insert: {
+          project_id: string;
+          profile_id: string;
+          created_at?: string;
+        };
+        Update: {
+          project_id?: string;
+          profile_id?: string;
+          created_at?: string;
+        };
+        Relationships: [
+          {
+            foreignKeyName: "project_members_project_id_fkey";
+            columns: ["project_id"];
+            isOneToOne: false;
+            referencedRelation: "projects";
+            referencedColumns: ["id"];
+          },
+          {
+            foreignKeyName: "project_members_profile_id_fkey";
+            columns: ["profile_id"];
+            isOneToOne: false;
+            referencedRelation: "profiles";
             referencedColumns: ["id"];
           },
         ];
@@ -1197,6 +1233,14 @@ export type Database = {
       };
       can_view_project: {
         Args: { pid: string };
+        Returns: boolean;
+      };
+      can_work_on_project: {
+        Args: { pid: string };
+        Returns: boolean;
+      };
+      is_team: {
+        Args: Record<PropertyKey, never>;
         Returns: boolean;
       };
       next_invoice_number: {

@@ -5,7 +5,7 @@ import { z } from "zod";
 import { idSchema, isId } from "@/lib/ids";
 import { STAGES, FORMATS, PROJECT_TYPES } from "@/content/workspace";
 import { logActivity } from "@/lib/activity";
-import { requireAdmin } from "@/lib/auth";
+import { requireAdmin, requireStaff } from "@/lib/auth";
 import { drivePreviewUrl } from "@/lib/design-files";
 import { generateShareToken } from "@/lib/share";
 
@@ -40,6 +40,8 @@ const projectSchema = z.object({
   eventDate: day,
   description: text(1000),
   status: z.enum(["draft", "active", "in_review", "revision", "approved", "delivered", "closed"]),
+  /** Hanya saat membuat proyek: anggota tim yang langsung ditugaskan. */
+  memberIds: z.array(idSchema).max(50).optional(),
 });
 
 export type ProjectInput = z.input<typeof projectSchema>;
@@ -71,6 +73,11 @@ export async function saveProject(
   }
   const { data, error } = await supabase.from("projects").insert(row).select("id").single();
   if (error || !data) return { ok: false, error: FAILED };
+  if (value.memberIds?.length) {
+    await supabase
+      .from("project_members")
+      .insert(value.memberIds.map((profileId) => ({ project_id: data.id, profile_id: profileId })));
+  }
   refreshProject(data.id);
   return { ok: true, id: data.id };
 }
@@ -107,7 +114,7 @@ export async function saveContent(
   if (!isId(projectId)) return { ok: false, error: FAILED };
   const parsed = contentSchema.safeParse(input);
   if (!parsed.success) return { ok: false, error: parsed.error.issues[0]?.message ?? FAILED };
-  const { supabase, user } = await requireAdmin();
+  const { supabase, user } = await requireStaff();
   const value = parsed.data;
   const row = {
     title: value.title,
@@ -161,7 +168,7 @@ export async function moveContent(
   const parsedStage = z.enum(STAGES).safeParse(stage);
   if (!parsedStage.success || !Number.isFinite(sort)) return { ok: false, error: FAILED };
   const nextStage = parsedStage.data;
-  const { supabase, user } = await requireAdmin();
+  const { supabase, user } = await requireStaff();
   const { data, error } = await supabase
     .from("design_assets")
     .update({
@@ -187,7 +194,7 @@ export async function moveContent(
 export async function deleteContent(projectId: string, contentId: string): Promise<Result> {
   if (!isId(projectId)) return { ok: false, error: FAILED };
   if (!isId(contentId)) return { ok: false, error: FAILED };
-  const { supabase } = await requireAdmin();
+  const { supabase } = await requireStaff();
   const { data: versions } = await supabase
     .from("design_versions")
     .select("files")
@@ -256,7 +263,7 @@ export async function createVersion(
   if (!isId(contentId)) return { ok: false, error: FAILED };
   const parsed = versionSchema.safeParse(input);
   if (!parsed.success) return { ok: false, error: parsed.error.issues[0]?.message ?? FAILED };
-  const { supabase, user } = await requireAdmin();
+  const { supabase, user } = await requireStaff();
 
   // File harus berada di folder proyek ini (dibuat oleh uploader di browser).
   if (parsed.data.files.some((file) => !file.path.startsWith(`${projectId}/${contentId}/`))) {
@@ -310,7 +317,7 @@ export async function addTeamComment(
   if (!isId(versionId)) return { ok: false, error: FAILED };
   const message = z.string().trim().min(1, "Tulis komentar dulu.").max(2000).safeParse(body);
   if (!message.success) return { ok: false, error: message.error.issues[0]?.message ?? FAILED };
-  const { supabase, user } = await requireAdmin();
+  const { supabase, user } = await requireStaff();
   const parsedPoint = point
     ? z
         .object({
@@ -342,7 +349,7 @@ export async function setCommentResolved(
 ): Promise<Result> {
   if (!isId(projectId)) return { ok: false, error: FAILED };
   if (!isId(commentId)) return { ok: false, error: FAILED };
-  const { supabase } = await requireAdmin();
+  const { supabase } = await requireStaff();
   const { error } = await supabase
     .from("design_comments")
     .update({ resolved: resolved === true })
@@ -370,7 +377,7 @@ export async function savePlanItem(
   if (!isId(projectId)) return { ok: false, error: FAILED };
   const parsed = planSchema.safeParse(input);
   if (!parsed.success) return { ok: false, error: parsed.error.issues[0]?.message ?? FAILED };
-  const { supabase } = await requireAdmin();
+  const { supabase } = await requireStaff();
   const row = {
     title: parsed.data.title,
     due_date: parsed.data.dueDate,
@@ -402,7 +409,7 @@ export async function savePlanItem(
 export async function deletePlanItem(projectId: string, itemId: string): Promise<Result> {
   if (!isId(projectId)) return { ok: false, error: FAILED };
   if (!isId(itemId)) return { ok: false, error: FAILED };
-  const { supabase } = await requireAdmin();
+  const { supabase } = await requireStaff();
   const { error } = await supabase
     .from("plan_items")
     .delete()
@@ -420,7 +427,7 @@ export async function movePlanItem(
 ): Promise<Result> {
   if (!isId(projectId)) return { ok: false, error: FAILED };
   if (!isId(itemId)) return { ok: false, error: FAILED };
-  const { supabase } = await requireAdmin();
+  const { supabase } = await requireStaff();
   const { data } = await supabase
     .from("plan_items")
     .select("id")
@@ -456,7 +463,7 @@ export async function createShareLink(
   if (!isId(projectId)) return { ok: false, error: FAILED };
   const parsed = shareSchema.safeParse(input);
   if (!parsed.success) return { ok: false, error: parsed.error.issues[0]?.message ?? FAILED };
-  const { supabase } = await requireAdmin();
+  const { supabase } = await requireStaff();
   const token = generateShareToken();
   const { error } = await supabase.from("share_links").insert({
     token,
@@ -475,7 +482,7 @@ export async function createShareLink(
 export async function revokeShareLink(projectId: string, linkId: string): Promise<Result> {
   if (!isId(projectId)) return { ok: false, error: FAILED };
   if (!isId(linkId)) return { ok: false, error: FAILED };
-  const { supabase } = await requireAdmin();
+  const { supabase } = await requireStaff();
   const { error } = await supabase
     .from("share_links")
     .update({ revoked_at: new Date().toISOString() })

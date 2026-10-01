@@ -1,13 +1,13 @@
 import { FormSection } from "@/components/molecules/FormSection";
 import { ShareLinksManager, type ShareLinkRow } from "@/components/organisms/ShareLinksManager";
 import { workspaceText } from "@/content/workspace";
-import { requireAdmin } from "@/lib/auth";
+import { requireStaff } from "@/lib/auth";
 
 type PageProps = { params: Promise<{ id: string }> };
 
 export default async function ProjectSharePage({ params }: PageProps) {
   const { id } = await params;
-  const { supabase } = await requireAdmin();
+  const { supabase } = await requireStaff();
 
   const [{ data: project }, { data: links }] = await Promise.all([
     supabase.from("projects").select("title, client_id").eq("id", id).single(),

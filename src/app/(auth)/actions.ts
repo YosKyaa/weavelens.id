@@ -62,10 +62,10 @@ export async function signInWithPassword(_prev: AuthState, formData: FormData): 
 
   const { data: profile } = await supabase
     .from("profiles")
-    .select("role")
+    .select("role, active")
     .eq("id", data.user.id)
     .maybeSingle();
-  if (profile?.role !== "admin") {
+  if ((profile?.role !== "admin" && profile?.role !== "team") || !profile.active) {
     await supabase.auth.signOut();
     return { error: text.notAdmin };
   }

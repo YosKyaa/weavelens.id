@@ -127,7 +127,7 @@ export function ContentBoard({ projectId, items: initialItems, brands }: Content
   }
 
   const filterClass =
-    "h-9 rounded-md border border-input bg-paper px-3 text-sm shadow-xs focus-visible:ring-[3px] focus-visible:ring-ring/50";
+    "h-10 rounded-md border border-input bg-paper px-3 text-sm shadow-xs focus-visible:ring-[3px] focus-visible:ring-ring/50";
 
   return (
     <div className="grid gap-4">

@@ -370,7 +370,7 @@ export function InvoiceEditor({ id, initial, company, clients }: InvoiceEditorPr
                   id="inv-client"
                   value={draft.clientId ?? ""}
                   onChange={(event) => pickClient(event.target.value)}
-                  className="h-9 rounded-md border border-input bg-paper px-3 text-sm shadow-xs"
+                  className="h-10 rounded-md border border-input bg-paper px-3 text-sm shadow-xs"
                 >
                   <option value="">{text.pickClientNone}</option>
                   {clients.map((client) => (

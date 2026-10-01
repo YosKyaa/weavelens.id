@@ -14,11 +14,25 @@ export type ProjectListRow = {
   type: string;
   eventDate: string | null;
   status: string;
+  /** Nama anggota tim yang ditugaskan (hanya ditampilkan untuk admin). */
+  team: string[];
 };
 
 const text = portal.projects;
 
-const columns: ColumnDef<ProjectListRow, unknown>[] = [
+const teamColumn: ColumnDef<ProjectListRow, unknown> = {
+  id: "team",
+  accessorFn: (row) => row.team.join(", "),
+  header: "Tim",
+  cell: ({ row }) =>
+    row.original.team.length ? (
+      <span className="line-clamp-2 text-sm">{row.original.team.join(" · ")}</span>
+    ) : (
+      <span className="text-sm text-ink/60">Belum ditugaskan</span>
+    ),
+};
+
+const baseColumns: ColumnDef<ProjectListRow, unknown>[] = [
   {
     accessorKey: "title",
     header: text.columns.title,
@@ -53,7 +67,18 @@ const columns: ColumnDef<ProjectListRow, unknown>[] = [
   },
 ];
 
-export function ProjectTable({ rows }: { rows: ProjectListRow[] }) {
+export function ProjectTable({
+  rows,
+  showTeam = false,
+  emptyMessage = text.empty,
+}: {
+  rows: ProjectListRow[];
+  showTeam?: boolean;
+  emptyMessage?: string;
+}) {
+  const columns = showTeam
+    ? [...baseColumns.slice(0, 1), teamColumn, ...baseColumns.slice(1)]
+    : baseColumns;
   return (
     <DataTable
       columns={columns}
@@ -68,7 +93,7 @@ export function ProjectTable({ rows }: { rows: ProjectListRow[] }) {
           label: def.label,
         })),
       }}
-      emptyMessage={text.empty}
+      emptyMessage={emptyMessage}
       renderCard={(row) => (
         <Link
           href={`/admin/projects/${row.id}`}

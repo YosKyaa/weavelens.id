@@ -8,7 +8,7 @@ import { PageHeader } from "@/components/molecules/PageHeader";
 import { portal, projectTypes } from "@/content/portal";
 import { rangeWindow } from "@/lib/analytics-data";
 import { conversionRate } from "@/lib/analytics-insights";
-import { requireAdmin } from "@/lib/auth";
+import { requireStaff } from "@/lib/auth";
 import { formatDate, todayJakarta } from "@/lib/format";
 import { computeTotals, formatRupiah } from "@/lib/invoice";
 
@@ -25,19 +25,24 @@ const quickActions = [
 
 /** Ringkasan: angka 7 hari terakhir, jalan pintas, lalu daftar yang menunggu tindakan. */
 export default async function AdminHomePage() {
-  const { supabase, profile } = await requireAdmin();
+  const { supabase, profile } = await requireStaff();
+  const isAdmin = profile.role === "admin";
+  const none = { data: null, error: null };
   const today = todayJakarta();
   const week = rangeWindow(7);
 
   const [traffic, unpaid, revisions, selections, active] = await Promise.all([
-    supabase.rpc("analytics_overview", { p_from: week.from, p_to: week.to }),
-    supabase
-      .from("invoices")
-      .select(
-        "id, number, due_date, discount, tax_rate, bill_to_name, clients(name), invoice_items(qty, unit_price)",
-      )
-      .eq("status", "sent")
-      .order("due_date"),
+    // Analitik & invoice khusus admin: tidak di-query sama sekali untuk tim (lebih cepat).
+    isAdmin ? supabase.rpc("analytics_overview", { p_from: week.from, p_to: week.to }) : none,
+    !isAdmin
+      ? none
+      : supabase
+          .from("invoices")
+          .select(
+            "id, number, due_date, discount, tax_rate, bill_to_name, clients(name), invoice_items(qty, unit_price)",
+          )
+          .eq("status", "sent")
+          .order("due_date"),
     supabase
       .from("design_versions")
       .select(
@@ -137,48 +142,58 @@ export default async function AdminHomePage() {
     <>
       <PageHeader
         title={firstName ? `Halo, ${firstName}` : "Ringkasan"}
-        description="Angka 7 hari terakhir dan hal yang menunggu tindak lanjut."
+        description={
+          isAdmin
+            ? "Angka 7 hari terakhir dan hal yang menunggu tindak lanjut."
+            : "Pekerjaan di proyek yang ditugaskan kepadamu."
+        }
       />
 
-      <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
-        <StatTile
-          label="Pengunjung website"
-          value={number.format(overview.visitors)}
-          hint="7 hari terakhir"
-        />
-        <StatTile
-          label="Klik WhatsApp"
-          value={number.format(overview.ctaClicks)}
-          hint={`Konversi ${conversionRate(overview).toFixed(1)}%`}
-        />
-        <StatTile
-          label="Invoice belum dibayar"
-          value={formatRupiah(unpaidRows.reduce((sum, invoice) => sum + invoice.total, 0))}
-          hint={`${unpaidRows.length} invoice · ${overdueRows.length} lewat jatuh tempo`}
-        />
-        <StatTile label="Proyek berjalan" value={number.format(activeRows.length)} />
-      </div>
+      {isAdmin && (
+        <>
+          <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
+            <StatTile
+              label="Pengunjung website"
+              value={number.format(overview.visitors)}
+              hint="7 hari terakhir"
+            />
+            <StatTile
+              label="Klik WhatsApp"
+              value={number.format(overview.ctaClicks)}
+              hint={`Konversi ${conversionRate(overview).toFixed(1)}%`}
+            />
+            <StatTile
+              label="Invoice belum dibayar"
+              value={formatRupiah(unpaidRows.reduce((sum, invoice) => sum + invoice.total, 0))}
+              hint={`${unpaidRows.length} invoice · ${overdueRows.length} lewat jatuh tempo`}
+            />
+            <StatTile label="Proyek berjalan" value={number.format(activeRows.length)} />
+          </div>
 
-      <nav aria-label="Jalan pintas" className="mt-6 flex flex-wrap gap-2">
-        {quickActions.map(({ href, label, icon: Icon }) => (
-          <Link
-            key={href}
-            href={href}
-            className="inline-flex h-10 items-center gap-2 rounded-lg border border-line bg-paper px-4 text-sm font-medium text-ink transition-colors hover:border-sand-deep hover:bg-sand/40"
-          >
-            <Icon aria-hidden className="size-4 text-primary" />
-            {label}
-          </Link>
-        ))}
-      </nav>
+          <nav aria-label="Jalan pintas" className="mt-6 flex flex-wrap gap-2">
+            {quickActions.map(({ href, label, icon: Icon }) => (
+              <Link
+                key={href}
+                href={href}
+                className="inline-flex h-10 items-center gap-2 rounded-lg border border-line bg-paper px-4 text-sm font-medium text-ink transition-colors hover:border-sand-deep hover:bg-sand/40"
+              >
+                <Icon aria-hidden className="size-4 text-primary" />
+                {label}
+              </Link>
+            ))}
+          </nav>
+        </>
+      )}
 
-      <h2 className="mt-10 mb-4 text-xl">{text.heading}</h2>
+      <h2 className={isAdmin ? "mt-10 mb-4 text-xl" : "mb-4 text-xl"}>{text.heading}</h2>
       <div className="grid gap-8 xl:grid-cols-2">
-        <InboxSection
-          heading={text.overdue.heading}
-          empty={text.overdue.empty}
-          rows={overdueRows}
-        />
+        {isAdmin && (
+          <InboxSection
+            heading={text.overdue.heading}
+            empty={text.overdue.empty}
+            rows={overdueRows}
+          />
+        )}
         <InboxSection
           heading={text.revisions.heading}
           empty={text.revisions.empty}

@@ -14,7 +14,7 @@ import {
   type ContentFormat,
   type Stage,
 } from "@/content/workspace";
-import { requireAdmin } from "@/lib/auth";
+import { requireStaff } from "@/lib/auth";
 import { loadReviewVersions } from "@/lib/review-data";
 
 const text = workspaceText.content;
@@ -24,7 +24,7 @@ type PageProps = { params: Promise<{ id: string; contentId: string }> };
 export default async function ContentPage({ params }: PageProps) {
   const { id, contentId } = await params;
   if (!/^[0-9a-f-]{36}$/i.test(contentId)) notFound();
-  const { supabase } = await requireAdmin();
+  const { supabase } = await requireStaff();
 
   const { data: content } = await supabase
     .from("design_assets")

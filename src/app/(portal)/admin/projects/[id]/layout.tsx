@@ -5,7 +5,7 @@ import { PageHeader } from "@/components/molecules/PageHeader";
 import { TabNav } from "@/components/molecules/TabNav";
 import { projectTypes } from "@/content/portal";
 import { workspaceText } from "@/content/workspace";
-import { requireAdmin } from "@/lib/auth";
+import { requireStaff } from "@/lib/auth";
 
 const text = workspaceText.projects;
 
@@ -14,11 +14,14 @@ type LayoutProps = { children: ReactNode; params: Promise<{ id: string }> };
 export default async function ProjectLayout({ children, params }: LayoutProps) {
   const { id } = await params;
   if (!/^[0-9a-f-]{36}$/i.test(id)) notFound();
-  const { supabase } = await requireAdmin();
+  const { supabase, profile } = await requireStaff();
+  const isAdmin = profile.role === "admin";
 
   const { data: project } = await supabase
     .from("projects")
-    .select("id, title, type, status, clients(name), photo_sets(count), share_links(count)")
+    .select(
+      "id, title, type, status, clients(name), photo_sets(count), share_links(count), project_members(count)",
+    )
     .eq("id", id)
     .maybeSingle();
   if (!project) notFound();
@@ -41,7 +44,13 @@ export default async function ProjectLayout({ children, params }: LayoutProps) {
     { href: `${base}/plan`, label: text.tabs.plan },
     { href: `${base}/share`, label: text.tabs.share, count: project.share_links[0]?.count },
     { href: `${base}/activity`, label: text.tabs.activity },
-    { href: `${base}/settings`, label: text.tabs.settings },
+    // Penugasan tim & pengaturan proyek hanya untuk admin.
+    ...(isAdmin
+      ? [
+          { href: `${base}/team`, label: text.tabs.team, count: project.project_members[0]?.count },
+          { href: `${base}/settings`, label: text.tabs.settings },
+        ]
+      : []),
   ];
 
   return (

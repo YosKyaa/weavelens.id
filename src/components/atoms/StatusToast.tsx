@@ -9,6 +9,7 @@ const messages: Record<string, { text: string; error?: boolean }> = {
   saved: { text: "Perubahan tersimpan dan sudah tampil di website." },
   deleted: { text: "Item dihapus." },
   error: { text: "Aksi gagal. Coba lagi atau muat ulang halaman.", error: true },
+  forbidden: { text: "Halaman itu khusus admin. Hubungi admin jika kamu butuh akses.", error: true },
 };
 
 /** Menampilkan notifikasi dari `?status=` setelah redirect, lalu membersihkan URL. */

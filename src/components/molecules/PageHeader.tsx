@@ -28,7 +28,12 @@ export function PageHeader({ title, description, actions, back }: PageHeaderProp
           <h1 className="text-2xl md:text-3xl">{title}</h1>
           {description && <p className="mt-2 max-w-[65ch] text-ink/75">{description}</p>}
         </div>
-        {actions && <div className="flex flex-wrap items-center gap-2">{actions}</div>}
+        {/* Di HP aksi utama selebar layar (mudah diketuk); di desktop rata kanan. */}
+        {actions && (
+          <div className="flex w-full flex-wrap items-center gap-2 sm:w-auto [&>a]:flex-1 [&>button]:flex-1 sm:[&>a]:flex-none sm:[&>button]:flex-none">
+            {actions}
+          </div>
+        )}
       </div>
     </div>
   );

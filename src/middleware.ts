@@ -7,7 +7,7 @@ const PROTECTED = ["/admin", "/client"];
 
 /**
  * Menyegarkan sesi Supabase dan mengarahkan tamu dari halaman portal ke login.
- * Pemeriksaan peran (admin/klien) dilakukan di layout masing-masing dan di setiap Server Action.
+ * Pemeriksaan peran (admin/tim/klien) dilakukan di layout masing-masing dan di setiap Server Action.
  */
 export async function middleware(request: NextRequest) {
   const env = supabaseEnv();
@@ -25,9 +25,9 @@ export async function middleware(request: NextRequest) {
     },
   });
 
-  const {
-    data: { user },
-  } = await supabase.auth.getUser();
+  // getClaims memverifikasi JWT (lokal bila signing key asimetris) dan menyegarkan sesi bila perlu.
+  const { data } = await supabase.auth.getClaims();
+  const user = data?.claims?.sub ?? null;
 
   const { pathname, search } = request.nextUrl;
   const isProtected = PROTECTED.some(

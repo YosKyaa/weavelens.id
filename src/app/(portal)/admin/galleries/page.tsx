@@ -1,14 +1,14 @@
 import { PageHeader } from "@/components/molecules/PageHeader";
 import { GalleryList } from "@/components/organisms/GalleryList";
 import { workspaceText } from "@/content/workspace";
-import { requireAdmin } from "@/lib/auth";
+import { requireStaff } from "@/lib/auth";
 import { loadGalleries } from "@/lib/gallery-data";
 
 const text = workspaceText.galleries;
 
 /** Semua galeri seleksi dari semua proyek. Galeri baru dibuat dari halaman proyek. */
 export default async function GalleriesPage() {
-  const { supabase } = await requireAdmin();
+  const { supabase } = await requireStaff();
   const galleries = await loadGalleries(supabase);
 
   return (

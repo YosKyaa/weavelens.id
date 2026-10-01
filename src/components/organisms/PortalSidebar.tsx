@@ -15,6 +15,8 @@ import {
   LayoutTemplate,
   type LucideIcon,
   Settings,
+  ShieldCheck,
+  UserRound,
   Users,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
@@ -43,6 +45,8 @@ const icons: Record<string, LucideIcon> = {
   layout: LayoutTemplate,
   invoice: FileText,
   settings: Settings,
+  shield: ShieldCheck,
+  user: UserRound,
 };
 
 const STORAGE_KEY = "wl_nav_groups";

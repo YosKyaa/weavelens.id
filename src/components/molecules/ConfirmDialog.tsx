@@ -15,8 +15,11 @@ import {
 import { cn } from "@/lib/utils";
 
 type ConfirmDialogProps = {
-  /** Tombol pemicu (dirender dengan asChild). */
-  trigger: ReactNode;
+  /** Tombol pemicu (dirender dengan asChild). Kosongkan jika dibuka dari luar (`open`). */
+  trigger?: ReactNode;
+  /** Mode terkendali, mis. dibuka dari item menu dropdown. */
+  open?: boolean;
+  onOpenChange?: (open: boolean) => void;
   title: string;
   /** Jelaskan akibatnya, bukan sekadar "Apakah kamu yakin?". */
   description: string;
@@ -39,8 +42,15 @@ export function ConfirmDialog({
   tone = "danger",
   children,
   onConfirm,
+  open: controlledOpen,
+  onOpenChange,
 }: ConfirmDialogProps) {
-  const [open, setOpen] = useState(false);
+  const [localOpen, setLocalOpen] = useState(false);
+  const open = controlledOpen ?? localOpen;
+  const setOpen = (next: boolean) => {
+    setLocalOpen(next);
+    onOpenChange?.(next);
+  };
   const [pending, startTransition] = useTransition();
 
   function confirm() {
@@ -52,7 +62,7 @@ export function ConfirmDialog({
 
   return (
     <Dialog open={open} onOpenChange={(next) => !pending && setOpen(next)}>
-      <DialogTrigger asChild>{trigger}</DialogTrigger>
+      {trigger && <DialogTrigger asChild>{trigger}</DialogTrigger>}
       <DialogContent className="sm:max-w-md">
         <DialogTitle>{title}</DialogTitle>
         <DialogDescription className="text-ink/75">{description}</DialogDescription>

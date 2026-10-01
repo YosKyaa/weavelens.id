@@ -4,7 +4,7 @@ import { PageHeader } from "@/components/molecules/PageHeader";
 import { GalleryDangerZone } from "@/components/organisms/GalleryDangerZone";
 import { GalleryForm } from "@/components/organisms/GalleryForm";
 import { GalleryManager } from "@/components/organisms/GalleryManager";
-import { requireAdmin } from "@/lib/auth";
+import { requireStaff } from "@/lib/auth";
 import { driveConfigured, folderUrl, serviceAccountEmail } from "@/lib/drive";
 import { loadGalleryPhotos } from "@/lib/gallery-data";
 
@@ -13,7 +13,7 @@ type PageProps = { params: Promise<{ galleryId: string }> };
 export default async function GalleryPage({ params }: PageProps) {
   const { galleryId } = await params;
   if (!/^[0-9a-f-]{36}$/i.test(galleryId)) notFound();
-  const { supabase } = await requireAdmin();
+  const { supabase, profile } = await requireStaff();
 
   const { data: gallery } = await supabase
     .from("photo_sets")
@@ -65,7 +65,9 @@ export default async function GalleryPage({ params }: PageProps) {
             }}
           />
         </FormSection>
-        <GalleryDangerZone galleryId={gallery.id} title={gallery.title} />
+        {profile.role === "admin" && (
+          <GalleryDangerZone galleryId={gallery.id} title={gallery.title} />
+        )}
       </div>
     </>
   );

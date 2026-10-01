@@ -38,4 +38,4 @@ export function Field({ id, label, required, hint, error, children }: FieldProps
 }
 
 export const selectClass =
-  "h-9 w-full rounded-md border border-input bg-paper px-3 text-base shadow-xs outline-none focus-visible:border-ring focus-visible:ring-[3px] focus-visible:ring-ring/50 md:text-sm";
+  "h-10 w-full rounded-md border border-input bg-paper px-3 text-base shadow-xs outline-none focus-visible:border-ring focus-visible:ring-[3px] focus-visible:ring-ring/50 md:text-sm";

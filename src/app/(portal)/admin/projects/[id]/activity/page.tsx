@@ -1,6 +1,6 @@
 import { EmptyState } from "@/components/atoms/EmptyState";
 import { workspaceText } from "@/content/workspace";
-import { requireAdmin } from "@/lib/auth";
+import { requireStaff } from "@/lib/auth";
 import { formatDate } from "@/lib/format";
 
 const text = workspaceText.activity;
@@ -23,7 +23,7 @@ function detail(meta: unknown): string {
 /** Jejak siapa melakukan apa: tim maupun klien (lewat link). */
 export default async function ProjectActivityPage({ params }: PageProps) {
   const { id } = await params;
-  const { supabase } = await requireAdmin();
+  const { supabase } = await requireStaff();
   const { data } = await supabase
     .from("activity_log")
     .select("id, action, actor_name, meta, created_at, profiles(full_name)")

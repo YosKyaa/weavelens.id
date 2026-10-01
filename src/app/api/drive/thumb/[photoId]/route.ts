@@ -6,7 +6,7 @@ import { createServiceClient } from "@/lib/supabase/service";
 
 /**
  * Thumbnail foto/video dari Google Drive, lewat server (browser tidak pernah menyentuh Drive).
- * Akses: admin yang login, atau pemegang link klien untuk proyek pemilik foto.
+ * Akses: tim yang ditugaskan (atau admin), atau pemegang link klien untuk proyek pemilik foto.
  * Hasil di-cache CDN supaya galeri ratusan foto tetap cepat & hemat kuota Drive.
  */
 const SIZES = [400, 1600] as const;
@@ -37,8 +37,12 @@ export async function GET(request: NextRequest, { params }: { params: Promise<{ 
     }
     publicCache = true;
   } else {
+    // Tim WeaveLens: admin, atau anggota tim yang ditugaskan ke proyek pemilik foto.
     const session = await getSession();
-    if (session?.profile.role !== "admin") return new NextResponse(null, { status: 403 });
+    const { data: allowed } = session
+      ? await session.supabase.rpc("can_work_on_project", { pid: photo.photo_sets.project_id })
+      : { data: false };
+    if (allowed !== true) return new NextResponse(null, { status: 403 });
   }
 
   const thumbnail = await fetchThumbnail(photo.drive_file_id, size);

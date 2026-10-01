@@ -35,7 +35,7 @@ export async function GET(request: NextRequest) {
     .select("role")
     .eq("id", user.id)
     .maybeSingle();
-  const role = profile?.role === "admin" ? "admin" : "client";
+  const role = profile?.role === "admin" || profile?.role === "team" ? "admin" : "client";
   const home = role === "admin" ? ADMIN_HOME : CLIENT_HOME;
   const target = safeNext(searchParams.get("next"), role) ?? home;
 

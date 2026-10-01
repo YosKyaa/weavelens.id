@@ -131,3 +131,15 @@ npm run db:types
 - Token link terdiri dari 192 bit acak, sehingga tidak bisa ditebak. Link bisa diberi masa berlaku dan **dicabut kapan saja**; aksesnya langsung terputus.
 - Setiap aksi dari link diperiksa ulang di server: token masih aktif, izin review, dan data yang disentuh memang milik proyek/brand link itu.
 - Link "hanya lihat" tidak bisa memberi komentar atau persetujuan.
+
+## 10. Peran & akses tim
+
+| Peran | Bisa |
+|---|---|
+| **Admin** | Semuanya, termasuk invoice, analitik, CMS, klien & brand, pengaturan, membuat/menghapus proyek, dan **menugaskan tim**. |
+| **Tim** | Hanya **proyek yang ditugaskan**: papan konten, review desain, galeri seleksi, rencana kerja, link klien, dan aktivitas. Tidak melihat invoice, analitik, CMS, data klien lain, maupun pengaturan. |
+
+- **Tambah anggota:** buka **Tim & akses**, lalu **Tambah anggota**. Akun langsung aktif dengan password sementara yang tampil **sekali**. Kirim lewat tombol WhatsApp; anggota menggantinya di **Akun saya**.
+- **Tugaskan ke proyek:** saat **Buat proyek** (centang anggota), atau lewat tab **Tim** di halaman proyek.
+- **Nonaktifkan akses:** akun tidak bisa login dan semua aksesnya langsung hilang. Data tetap tersimpan dan bisa diaktifkan lagi. Sistem selalu menyisakan minimal satu admin aktif.
+- **Penegakan akses:** aturan dijaga Row Level Security di database (migrasi `0005_team_roles.sql`), jadi tetap aman walau seseorang mengetik URL halaman admin secara langsung.

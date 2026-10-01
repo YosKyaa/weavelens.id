@@ -86,6 +86,9 @@ export const workspaceText = {
 
   projects: {
     title: "Proyek & konten",
+    teamTitle: "Proyek saya",
+    teamDescription: "Proyek yang ditugaskan admin kepadamu.",
+    teamEmpty: "Belum ada proyek yang ditugaskan kepadamu. Hubungi admin.",
     description: "Buat proyek, susun konten di papan kerja, lalu kirim link ke klien untuk review.",
     create: "Buat proyek",
     back: "Semua proyek",
@@ -105,6 +108,7 @@ export const workspaceText = {
       plan: "Rencana kerja",
       share: "Link klien",
       activity: "Aktivitas",
+      team: "Tim",
       settings: "Pengaturan",
     },
     deleteTitle: (title: string) => `Hapus proyek “${title}”?`,

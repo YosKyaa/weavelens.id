@@ -3,7 +3,7 @@ import { EmptyState } from "@/components/atoms/EmptyState";
 import { StatusBadge } from "@/components/atoms/StatusBadge";
 import { GalleryCreate } from "@/components/organisms/GalleryCreate";
 import { workspaceText } from "@/content/workspace";
-import { requireAdmin } from "@/lib/auth";
+import { requireStaff } from "@/lib/auth";
 import { serviceAccountEmail } from "@/lib/drive";
 import { loadGalleries } from "@/lib/gallery-data";
 
@@ -13,7 +13,7 @@ type PageProps = { params: Promise<{ id: string }> };
 
 export default async function ProjectGalleriesPage({ params }: PageProps) {
   const { id } = await params;
-  const { supabase } = await requireAdmin();
+  const { supabase } = await requireStaff();
   const galleries = await loadGalleries(supabase, id);
 
   return (

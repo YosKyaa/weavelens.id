@@ -4,7 +4,7 @@ import { revalidatePath } from "next/cache";
 import { z } from "zod";
 import { isId } from "@/lib/ids";
 import { logActivity } from "@/lib/activity";
-import { requireAdmin } from "@/lib/auth";
+import { requireAdmin, requireStaff } from "@/lib/auth";
 import {
   driveConfigured,
   driveIdFromUrl,
@@ -54,7 +54,7 @@ export async function saveGallery(
   if (!isId(projectId)) return { ok: false, error: FAILED };
   const parsed = gallerySchema.safeParse(input);
   if (!parsed.success) return { ok: false, error: parsed.error.issues[0]?.message ?? FAILED };
-  const { supabase } = await requireAdmin();
+  const { supabase } = await requireStaff();
   const row = {
     title: parsed.data.title,
     drive_folder_id: parsed.data.driveFolder,
@@ -112,7 +112,7 @@ export async function syncGallery(
         "Google Drive belum terhubung. Isi GOOGLE_SERVICE_ACCOUNT_JSON (lihat README-PORTAL.md).",
     };
   }
-  const { supabase, user } = await requireAdmin();
+  const { supabase, user } = await requireStaff();
 
   const staleLock = new Date(Date.now() - 5 * 60 * 1000).toISOString();
   const { data: locked } = await supabase
@@ -210,7 +210,7 @@ export async function setGalleryStatus(galleryId: string, status: string): Promi
   const parsedStatus = z.enum(["selecting", "selection_closed", "editing"]).safeParse(status);
   if (!parsedStatus.success) return { ok: false, error: FAILED };
   const next = parsedStatus.data;
-  const { supabase } = await requireAdmin();
+  const { supabase } = await requireStaff();
   const { data, error } = await supabase
     .from("photo_sets")
     .update({
@@ -238,7 +238,7 @@ export async function deliverGallery(galleryId: string, editedFolder: string): P
   if (!isId(galleryId)) return { ok: false, error: FAILED };
   const folderId = driveIdFromUrl(editedFolder);
   if (!folderId) return { ok: false, error: "Tempel link folder Google Drive hasil edit." };
-  const { supabase, user } = await requireAdmin();
+  const { supabase, user } = await requireStaff();
 
   if (driveConfigured()) {
     await shareFolderWithLink(folderId).catch((cause) =>

@@ -15,7 +15,7 @@ type AdminFieldProps = {
 };
 
 const selectClass =
-  "h-9 w-full rounded-md border border-input bg-transparent px-3 text-base shadow-xs outline-none focus-visible:border-ring focus-visible:ring-[3px] focus-visible:ring-ring/50 aria-invalid:border-red-700 md:text-sm";
+  "h-10 w-full rounded-md border border-input bg-transparent px-3 text-base shadow-xs outline-none focus-visible:border-ring focus-visible:ring-[3px] focus-visible:ring-ring/50 aria-invalid:border-red-700 md:text-sm";
 
 function asText(value: unknown): string {
   if (Array.isArray(value)) return value.join("\n");
