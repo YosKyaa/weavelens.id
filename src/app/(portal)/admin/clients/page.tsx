@@ -2,12 +2,12 @@ import { PageHeader } from "@/components/molecules/PageHeader";
 import { ClientCreate } from "@/components/organisms/ClientCreate";
 import { ClientTable } from "@/components/organisms/ClientTable";
 import { workspaceText } from "@/content/workspace";
-import { requireAdmin } from "@/lib/auth";
+import { requirePermission } from "@/lib/auth";
 
 const text = workspaceText.clients;
 
 export default async function AdminClientsPage() {
-  const { supabase } = await requireAdmin();
+  const { supabase } = await requirePermission("clients");
   const { data } = await supabase
     .from("clients")
     .select("id, name, contact_name, contact_email, projects(count), brands(name)")

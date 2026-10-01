@@ -6,6 +6,7 @@ import { z } from "zod";
 import { portal } from "@/content/portal";
 import { ADMIN_HOME, CLIENT_HOME, LOGIN_PATH } from "@/lib/auth";
 import { safeNext } from "@/lib/auth-redirect";
+import { googleEnabled } from "@/lib/supabase/providers";
 import { createSessionClient } from "@/lib/supabase/server";
 
 export type AuthState = { error?: string; notice?: string };
@@ -96,6 +97,27 @@ export async function sendMagicLink(_prev: AuthState, formData: FormData): Promi
   if (error) console.info("[auth] magic link tidak dikirim:", error.message);
 
   return { notice: portal.login.linkSent(parsed.data.email) };
+}
+
+/**
+ * Tim WeaveLens: masuk dengan akun Google. Hanya email yang sudah didaftarkan admin
+ * (pendaftaran baru dimatikan di Supabase); akun Google otomatis tertaut ke email yang sama.
+ */
+export async function signInWithGoogle(next: string | null): Promise<AuthState> {
+  const supabase = await createSessionClient();
+  if (!supabase) return { error: text.notConfigured };
+  if (!(await googleEnabled())) return { error: text.googleFailed };
+
+  const callback = new URL("/auth/callback", await siteOrigin());
+  const target = safeNext(next, "admin") ?? safeNext(next, "client");
+  if (target) callback.searchParams.set("next", target);
+
+  const { data, error } = await supabase.auth.signInWithOAuth({
+    provider: "google",
+    options: { redirectTo: callback.toString(), queryParams: { prompt: "select_account" } },
+  });
+  if (error || !data.url) return { error: text.googleFailed };
+  redirect(data.url);
 }
 
 export async function signOut() {

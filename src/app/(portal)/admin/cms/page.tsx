@@ -1,12 +1,12 @@
 import Link from "next/link";
 import { ArrowRight } from "lucide-react";
-import { requireAdmin } from "@/lib/auth";
+import { requirePermission } from "@/lib/auth";
 import { CMS_BASE, collections } from "@/lib/cms/collections";
 import { cmsFrom } from "@/lib/cms/untyped";
 
 /** Ringkasan konten landing page: jumlah item per koleksi. */
 export default async function CmsHomePage() {
-  const { supabase } = await requireAdmin();
+  const { supabase } = await requirePermission("cms");
   const counts = await Promise.all(
     collections.map(async (collection) => {
       if (collection.singleton) return null;

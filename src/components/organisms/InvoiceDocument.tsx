@@ -8,6 +8,7 @@ import {
   type CompanyInfo,
   type InvoiceDraft,
 } from "@/lib/invoice";
+import { completeAccounts, formatAccount } from "@/lib/payment";
 import { cn } from "@/lib/utils";
 
 const t = invoiceText.document;
@@ -43,6 +44,7 @@ function Tinted({ src, className }: { src: string; className: string }) {
 export function InvoiceDocument({ invoice, company, className }: InvoiceDocumentProps) {
   const totals = computeTotals(invoice.items, invoice.discount, invoice.taxRate);
   const items = invoice.items.filter((item) => item.description.trim() || item.unitPrice > 0);
+  const accounts = completeAccounts(invoice.paymentAccounts);
   const stamp =
     invoice.status === "paid" ? t.paidStamp : invoice.status === "void" ? t.voidStamp : null;
 
@@ -155,14 +157,27 @@ export function InvoiceDocument({ invoice, company, className }: InvoiceDocument
               {company.address}
             </p>
           )}
-          {(invoice.paymentMethods || invoice.paymentDetails) && (
+          {accounts.length > 0 ? (
             <div className="mt-3">
               <p className="font-heading font-semibold">{t.paymentMethod}</p>
-              {invoice.paymentMethods && <p>{invoice.paymentMethods}</p>}
-              {invoice.paymentDetails && (
-                <p className="whitespace-pre-line opacity-90">{invoice.paymentDetails}</p>
-              )}
+              <ul className="mt-1 grid gap-0.5">
+                {accounts.map((account, index) => (
+                  <li key={index} className="opacity-90">
+                    {formatAccount(account)}
+                  </li>
+                ))}
+              </ul>
             </div>
+          ) : (
+            (invoice.paymentMethods || invoice.paymentDetails) && (
+              <div className="mt-3">
+                <p className="font-heading font-semibold">{t.paymentMethod}</p>
+                {invoice.paymentMethods && <p>{invoice.paymentMethods}</p>}
+                {invoice.paymentDetails && (
+                  <p className="whitespace-pre-line opacity-90">{invoice.paymentDetails}</p>
+                )}
+              </div>
+            )
           )}
         </div>
 

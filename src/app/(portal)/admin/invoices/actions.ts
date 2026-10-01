@@ -5,6 +5,8 @@ import { z } from "zod";
 import { invoiceText } from "@/content/invoice";
 import { requireAdmin } from "@/lib/auth";
 import { todayJakarta } from "@/lib/format";
+import { completeAccounts, summarizeAccounts } from "@/lib/payment";
+import { paymentAccountsSchema } from "@/lib/payment-schema";
 
 const text = invoiceText.editor;
 const date = z.string().regex(/^\d{4}-\d{2}-\d{2}$/);
@@ -34,6 +36,7 @@ const invoiceSchema = z
     discount: z.number().int().min(0).max(999_999_999_999),
     taxRate: z.union([z.literal(0), z.literal(11)]),
     notes: trimmed(1000),
+    paymentAccounts: paymentAccountsSchema,
     paymentMethods: trimmed(200),
     paymentDetails: trimmed(400),
     signerName: trimmed(120),
@@ -66,6 +69,8 @@ export async function saveInvoice(id: string | null, input: InvoiceInput): Promi
     return { ok: false, error: parsed.error.issues[0]?.message ?? text.toast.failed };
   const { supabase } = await requireAdmin();
   const value = parsed.data;
+  const accounts = completeAccounts(value.paymentAccounts);
+  const summary = summarizeAccounts(accounts);
 
   const row = {
     client_id: value.clientId,
@@ -78,8 +83,10 @@ export async function saveInvoice(id: string | null, input: InvoiceInput): Promi
     discount: value.discount,
     tax_rate: value.taxRate,
     notes: value.notes || null,
-    payment_methods: value.paymentMethods || null,
-    payment_details: value.paymentDetails || null,
+    payment_accounts: accounts,
+    // Ringkasan teks tetap diisi; invoice lama tanpa metode terstruktur memakai teks aslinya.
+    payment_methods: (accounts.length ? summary.methods : value.paymentMethods) || null,
+    payment_details: (accounts.length ? summary.details : value.paymentDetails) || null,
     signer_name: value.signerName || null,
     signer_role: value.signerRole || null,
     updated_at: new Date().toISOString(),

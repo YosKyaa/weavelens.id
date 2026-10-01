@@ -3,8 +3,9 @@
 import { randomInt } from "node:crypto";
 import { revalidatePath } from "next/cache";
 import { z } from "zod";
-import { requireAdmin } from "@/lib/auth";
+import { requireAdmin, requirePermission } from "@/lib/auth";
 import { isId } from "@/lib/ids";
+import { PERMISSION_KEYS, type Permission } from "@/lib/permissions";
 import { createServiceClient } from "@/lib/supabase/service";
 
 /**
@@ -27,10 +28,19 @@ function refresh() {
   revalidatePath("/admin/team");
 }
 
+/** Akses anggota: "admin" (akses penuh) atau id peran tim. */
+const accessSchema = z.string().refine((value) => value === "admin" || isId(value), "Pilih peran.");
+
+function accessColumns(access: string) {
+  return access === "admin"
+    ? { role: "admin", team_role_id: null }
+    : { role: "team", team_role_id: access };
+}
+
 const memberSchema = z.object({
   fullName: z.string().trim().min(1, "Isi nama.").max(80),
   email: z.string().trim().toLowerCase().email("Format email tidak valid."),
-  role: z.enum(["admin", "team"]),
+  access: accessSchema,
 });
 
 export type MemberInput = z.input<typeof memberSchema>;
@@ -61,7 +71,7 @@ export async function createMember(input: MemberInput): Promise<Result<{ passwor
   const { error: profileError } = await db.from("profiles").upsert({
     id: data.user.id,
     full_name: parsed.data.fullName,
-    role: parsed.data.role,
+    ...accessColumns(parsed.data.access),
     client_id: null,
     active: true,
   });
@@ -82,21 +92,21 @@ async function wouldRemoveLastAdmin(memberId: string): Promise<boolean> {
 
 export async function updateMember(
   memberId: string,
-  input: { fullName: string; role: "admin" | "team" },
+  input: { fullName: string; access: string },
 ): Promise<Result> {
   if (!isId(memberId)) return { ok: false, error: FAILED };
-  const parsed = memberSchema.pick({ fullName: true, role: true }).safeParse(input);
+  const parsed = memberSchema.pick({ fullName: true, access: true }).safeParse(input);
   if (!parsed.success) return { ok: false, error: parsed.error.issues[0]?.message ?? FAILED };
   await requireAdmin();
   const db = createServiceClient();
   if (!db) return { ok: false, error: NO_SERVICE };
 
-  if (parsed.data.role !== "admin" && (await wouldRemoveLastAdmin(memberId))) {
+  if (parsed.data.access !== "admin" && (await wouldRemoveLastAdmin(memberId))) {
     return { ok: false, error: "Harus ada minimal satu admin aktif." };
   }
   const { error } = await db
     .from("profiles")
-    .update({ full_name: parsed.data.fullName, role: parsed.data.role })
+    .update({ full_name: parsed.data.fullName, ...accessColumns(parsed.data.access) })
     .eq("id", memberId)
     .in("role", ["admin", "team"]);
   if (error) return { ok: false, error: FAILED };
@@ -142,7 +152,7 @@ export async function resetMemberPassword(memberId: string): Promise<Result<{ pa
 /** Atur siapa saja anggota tim yang bisa mengerjakan satu proyek. */
 export async function setProjectMembers(projectId: string, memberIds: string[]): Promise<Result> {
   if (!isId(projectId) || !memberIds.every(isId)) return { ok: false, error: FAILED };
-  const { supabase } = await requireAdmin();
+  const { supabase } = await requirePermission("projects.manage");
 
   const { data: current } = await supabase
     .from("project_members")
@@ -170,5 +180,49 @@ export async function setProjectMembers(projectId: string, memberIds: string[]):
   revalidatePath(`/admin/projects/${projectId}`, "layout");
   revalidatePath("/admin/projects");
   refresh();
+  return { ok: true };
+}
+
+// ─── Peran tim (kumpulan izin) ─────────────────────────────────────────────
+
+const roleSchema = z.object({
+  name: z.string().trim().min(1, "Isi nama peran.").max(40),
+  description: z
+    .string()
+    .trim()
+    .max(160)
+    .transform((value) => value || null),
+  permissions: z.array(z.enum(PERMISSION_KEYS as [Permission, ...Permission[]])).max(10),
+});
+
+export type TeamRoleInput = z.input<typeof roleSchema>;
+
+export async function saveTeamRole(roleId: string | null, input: TeamRoleInput): Promise<Result> {
+  if (roleId !== null && !isId(roleId)) return { ok: false, error: FAILED };
+  const parsed = roleSchema.safeParse(input);
+  if (!parsed.success) return { ok: false, error: parsed.error.issues[0]?.message ?? FAILED };
+  const { supabase } = await requireAdmin();
+  const row = { ...parsed.data, permissions: [...new Set(parsed.data.permissions)] };
+
+  const { error } = roleId
+    ? await supabase.from("team_roles").update(row).eq("id", roleId)
+    : await supabase.from("team_roles").insert(row);
+  if (error) {
+    return {
+      ok: false,
+      error: error.code === "23505" ? "Nama peran sudah dipakai. Pilih nama lain." : FAILED,
+    };
+  }
+  revalidatePath("/admin", "layout");
+  return { ok: true };
+}
+
+/** Anggota yang memakai peran ini kembali ke akses dasar (hanya proyek yang ditugaskan). */
+export async function deleteTeamRole(roleId: string): Promise<Result> {
+  if (!isId(roleId)) return { ok: false, error: FAILED };
+  const { supabase } = await requireAdmin();
+  const { error } = await supabase.from("team_roles").delete().eq("id", roleId);
+  if (error) return { ok: false, error: FAILED };
+  revalidatePath("/admin", "layout");
   return { ok: true };
 }

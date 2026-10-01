@@ -5,7 +5,7 @@ import { PageHeader } from "@/components/molecules/PageHeader";
 import { RangeFilter } from "@/components/molecules/RangeFilter";
 import { TrendChart } from "@/components/organisms/TrendChart";
 import { site } from "@/content/site";
-import { requireAdmin } from "@/lib/auth";
+import { requirePermission } from "@/lib/auth";
 import { loadAnalytics, parseRange, RANGES, type Overview } from "@/lib/analytics-data";
 import {
   buildInsights,
@@ -65,7 +65,7 @@ function tiles(current: Overview, previous: Overview) {
 export default async function AnalyticsPage({ searchParams }: PageProps) {
   const { days: daysParam } = await searchParams;
   const days = parseRange(daysParam);
-  const { supabase } = await requireAdmin();
+  const { supabase } = await requirePermission("analytics");
   const [data, cms] = await Promise.all([loadAnalytics(supabase, days), getCms()]);
 
   const adminName = (id: string) => {

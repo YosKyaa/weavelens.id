@@ -4,7 +4,7 @@ import { Plus } from "lucide-react";
 import { AdminCollectionTable } from "@/components/organisms/AdminCollectionTable";
 import { AdminItemForm } from "@/components/organisms/AdminItemForm";
 import { Button } from "@/components/ui/button";
-import { requireAdmin } from "@/lib/auth";
+import { requirePermission } from "@/lib/auth";
 import { CMS_BASE, findCollection } from "@/lib/cms/collections";
 import { cmsFrom } from "@/lib/cms/untyped";
 
@@ -14,7 +14,7 @@ export default async function CollectionPage({ params }: PageProps) {
   const { collection: slug } = await params;
   const collection = findCollection(slug);
   if (!collection) notFound();
-  const { supabase } = await requireAdmin();
+  const { supabase } = await requirePermission("cms");
 
   const query = cmsFrom(supabase, collection.table).select("*");
   const { data, error } = collection.singleton

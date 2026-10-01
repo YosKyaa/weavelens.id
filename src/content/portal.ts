@@ -72,25 +72,49 @@ export const portal = {
 
   login: {
     heading: "Masuk ke portal",
-    sub: "Pantau proyek, review desain, pilih foto, dan unduh invoice.",
-    clientTab: "Klien",
+    sub: "Kelola proyek, review desain, dan seleksi foto di satu tempat.",
     teamTab: "Tim WeaveLens",
+    clientTab: "Klien",
+    google: "Masuk dengan Google",
+    googleRedirecting: "Membuka Google…",
+    divider: "atau dengan email",
     emailLabel: "Email",
+    emailPlaceholder: "nama@email.com",
     passwordLabel: "Password",
+    showPassword: "Tampilkan password",
+    hidePassword: "Sembunyikan password",
+    forgot: "Lupa password? Minta admin membuat password sementara di menu Tim & akses.",
     clientHint: "Kami kirim link masuk ke email ini. Tidak perlu password.",
+    clientShareHint:
+      "Dapat link proyek dari WeaveLens lewat WhatsApp? Buka link itu langsung, tidak perlu masuk di sini.",
     sendLink: "Kirim link masuk",
     sending: "Mengirim…",
     signIn: "Masuk",
     checking: "Memeriksa…",
     linkSent: (email: string) =>
       `Kalau ${email} terdaftar, link masuk sudah kami kirim. Cek kotak masuk atau folder spam; link berlaku 10 menit.`,
+    brand: {
+      eyebrow: "Portal WeaveLens",
+      title: "Satu tempat untuk semua pekerjaan visual",
+      points: [
+        "Papan konten & review desain bersama klien",
+        "Seleksi foto dan video langsung dari Google Drive",
+        "Invoice, analitik, dan konten website",
+      ],
+      footer: "Catch the Moment, Remember Forever",
+    },
     errors: {
-      emailInvalid: "Tulis email yang valid, mis. nama@kampus.ac.id.",
+      emailInvalid: "Tulis email yang valid, mis. nama@email.com.",
       passwordMissing: "Isi password.",
       wrongCredentials: "Email atau password salah.",
       notAdmin: "Akun ini bukan akun tim atau sudah dinonaktifkan. Klien masuk lewat tab Klien.",
       linkFailed: "Link masuk tidak bisa dikirim. Coba lagi beberapa menit lagi.",
       linkExpired: "Link masuk sudah kedaluwarsa atau sudah dipakai. Minta link baru di bawah.",
+      session: "Proses masuk tidak selesai. Silakan coba lagi.",
+      googleFailed:
+        "Login Google belum bisa dipakai. Coba lagi, atau masuk dengan email dan password.",
+      account:
+        "Akun Google ini belum terdaftar di portal atau sudah dinonaktifkan. Minta admin menambahkan email kamu di menu Tim & akses.",
       notConfigured: "Portal belum terhubung ke database.",
       serviceDown:
         "Portal sedang tidak bisa terhubung ke server login. Coba lagi sebentar; jika tetap gagal, hubungi admin teknis.",
@@ -113,59 +137,17 @@ export const portal = {
    * Menu dikelompokkan per jenis pekerjaan. Grup `cms` diisi otomatis dari daftar koleksi CMS
    * (lihat AdminShell) dan bisa dibuka-tutup supaya menu tetap ringkas saat fitur bertambah.
    */
+  /**
+   * Menu admin/tim disusun dari izin di AdminShell. Di sini hanya grup CMS (anaknya diisi dari
+   * daftar koleksi) dan menu klien.
+   */
   nav: {
-    admin: [
-      {
-        id: "main",
-        items: [
-          { href: "/admin", label: "Ringkasan", icon: "home" },
-          { href: "/admin/analytics", label: "Analitik website", icon: "chart" },
-        ],
-      },
-      {
-        id: "work",
-        label: "Pekerjaan",
-        items: [
-          { href: "/admin/projects", label: "Proyek & konten", icon: "kanban" },
-          { href: "/admin/galleries", label: "Seleksi foto & video", icon: "images" },
-          { href: "/admin/invoices", label: "Invoice", icon: "invoice" },
-        ],
-      },
-      {
-        id: "data",
-        label: "Data",
-        items: [
-          { href: "/admin/clients", label: "Klien & brand", icon: "users" },
-          { href: "/admin/team", label: "Tim & akses", icon: "shield" },
-        ],
-      },
-    ],
-    /** Anggota tim hanya melihat pekerjaan yang ditugaskan; menu admin tidak ditampilkan. */
-    team: [
-      { id: "main", items: [{ href: "/admin", label: "Ringkasan", icon: "home" }] },
-      {
-        id: "work",
-        label: "Pekerjaan",
-        items: [
-          { href: "/admin/projects", label: "Proyek saya", icon: "kanban" },
-          { href: "/admin/galleries", label: "Seleksi foto & video", icon: "images" },
-        ],
-      },
-    ],
     cmsGroup: {
       id: "cms",
       label: "Konten website (CMS)",
       icon: "layout",
       overview: "Ringkasan CMS",
     },
-    settings: {
-      id: "system",
-      items: [
-        { href: "/admin/settings", label: "Pengaturan", icon: "settings" },
-        { href: "/admin/account", label: "Akun saya", icon: "user" },
-      ],
-    },
-    account: { id: "system", items: [{ href: "/admin/account", label: "Akun saya", icon: "user" }] },
     client: [{ id: "client", items: [{ href: "/client", label: "Proyek saya", icon: "folder" }] }],
   },
 

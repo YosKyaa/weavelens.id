@@ -1,6 +1,7 @@
 import "server-only";
 import { cache } from "react";
 import { redirect } from "next/navigation";
+import { PERMISSION_KEYS, type Permission } from "@/lib/permissions";
 import { createSessionClient } from "@/lib/supabase/server";
 
 export const LOGIN_PATH = "/login";
@@ -24,15 +25,26 @@ export const getSession = cache(async () => {
 
   const { data: profile } = await supabase
     .from("profiles")
-    .select("id, full_name, role, client_id, phone, active")
+    .select("id, full_name, role, client_id, phone, active, team_roles(name, permissions)")
     .eq("id", claims.sub)
     .maybeSingle();
   if (!profile || !profile.active) return null;
 
+  const role = profile.role as Role;
+  // Admin punya semua izin; tim sesuai peran timnya; klien tidak punya izin portal.
+  const permissions: Permission[] =
+    role === "admin"
+      ? PERMISSION_KEYS
+      : role === "team"
+        ? PERMISSION_KEYS.filter((key) => profile.team_roles?.permissions.includes(key))
+        : [];
+
   return {
     supabase,
     user: { id: claims.sub, email: typeof claims.email === "string" ? claims.email : null },
-    profile: { ...profile, role: profile.role as Role },
+    profile: { ...profile, role },
+    permissions,
+    teamRoleName: role === "admin" ? "Admin" : (profile.team_roles?.name ?? "Tim"),
   };
 });
 
@@ -61,6 +73,17 @@ export async function requireAdmin(): Promise<Session> {
   if (!session) redirect(LOGIN_PATH);
   if (session.profile.role === "team") redirect(`${ADMIN_HOME}?status=forbidden`);
   if (session.profile.role !== "admin") redirect(CLIENT_HOME);
+  return session;
+}
+
+export function can(session: Session, permission: Permission): boolean {
+  return session.permissions.includes(permission);
+}
+
+/** Wajib izin tertentu (admin selalu lolos). Tanpa izin: kembali ke Ringkasan dengan pesan. */
+export async function requirePermission(permission: Permission): Promise<Session> {
+  const session = await requireStaff();
+  if (!can(session, permission)) redirect(`${ADMIN_HOME}?status=forbidden`);
   return session;
 }
 

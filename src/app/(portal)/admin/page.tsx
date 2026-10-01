@@ -8,7 +8,7 @@ import { PageHeader } from "@/components/molecules/PageHeader";
 import { portal, projectTypes } from "@/content/portal";
 import { rangeWindow } from "@/lib/analytics-data";
 import { conversionRate } from "@/lib/analytics-insights";
-import { requireStaff } from "@/lib/auth";
+import { can, requireStaff } from "@/lib/auth";
 import { formatDate, todayJakarta } from "@/lib/format";
 import { computeTotals, formatRupiah } from "@/lib/invoice";
 
@@ -17,23 +17,33 @@ const ACTIVE_STATUSES = ["active", "in_review", "revision", "approved"];
 const number = new Intl.NumberFormat("id-ID");
 
 const quickActions = [
-  { href: "/admin/projects/new", label: "Buat proyek", icon: FolderPlus },
-  { href: "/admin/invoices/new", label: "Buat invoice", icon: FilePlus2 },
-  { href: "/admin/analytics", label: "Lihat analitik", icon: BarChart3 },
-  { href: "/admin/cms", label: "Ubah konten website", icon: LayoutTemplate },
-];
+  {
+    href: "/admin/projects/new",
+    label: "Buat proyek",
+    icon: FolderPlus,
+    permission: "projects.manage",
+  },
+  { href: "/admin/invoices/new", label: "Buat invoice", icon: FilePlus2, permission: "admin" },
+  { href: "/admin/analytics", label: "Lihat analitik", icon: BarChart3, permission: "analytics" },
+  { href: "/admin/cms", label: "Ubah konten website", icon: LayoutTemplate, permission: "cms" },
+] as const;
 
 /** Ringkasan: angka 7 hari terakhir, jalan pintas, lalu daftar yang menunggu tindakan. */
 export default async function AdminHomePage() {
-  const { supabase, profile } = await requireStaff();
+  const session = await requireStaff();
+  const { supabase, profile } = session;
   const isAdmin = profile.role === "admin";
+  const seesAnalytics = can(session, "analytics");
+  const actions = quickActions.filter((action) =>
+    action.permission === "admin" ? isAdmin : can(session, action.permission),
+  );
   const none = { data: null, error: null };
   const today = todayJakarta();
   const week = rangeWindow(7);
 
   const [traffic, unpaid, revisions, selections, active] = await Promise.all([
-    // Analitik & invoice khusus admin: tidak di-query sama sekali untuk tim (lebih cepat).
-    isAdmin ? supabase.rpc("analytics_overview", { p_from: week.from, p_to: week.to }) : none,
+    // Data tanpa izin tidak di-query sama sekali (lebih cepat, dan memang tidak boleh terlihat).
+    seesAnalytics ? supabase.rpc("analytics_overview", { p_from: week.from, p_to: week.to }) : none,
     !isAdmin
       ? none
       : supabase
@@ -143,49 +153,61 @@ export default async function AdminHomePage() {
       <PageHeader
         title={firstName ? `Halo, ${firstName}` : "Ringkasan"}
         description={
-          isAdmin
+          isAdmin || seesAnalytics
             ? "Angka 7 hari terakhir dan hal yang menunggu tindak lanjut."
             : "Pekerjaan di proyek yang ditugaskan kepadamu."
         }
       />
 
-      {isAdmin && (
-        <>
-          <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
-            <StatTile
-              label="Pengunjung website"
-              value={number.format(overview.visitors)}
-              hint="7 hari terakhir"
-            />
-            <StatTile
-              label="Klik WhatsApp"
-              value={number.format(overview.ctaClicks)}
-              hint={`Konversi ${conversionRate(overview).toFixed(1)}%`}
-            />
+      {(isAdmin || seesAnalytics) && (
+        <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
+          {seesAnalytics && (
+            <>
+              <StatTile
+                label="Pengunjung website"
+                value={number.format(overview.visitors)}
+                hint="7 hari terakhir"
+              />
+              <StatTile
+                label="Klik WhatsApp"
+                value={number.format(overview.ctaClicks)}
+                hint={`Konversi ${conversionRate(overview).toFixed(1)}%`}
+              />
+            </>
+          )}
+          {isAdmin && (
             <StatTile
               label="Invoice belum dibayar"
               value={formatRupiah(unpaidRows.reduce((sum, invoice) => sum + invoice.total, 0))}
               hint={`${unpaidRows.length} invoice · ${overdueRows.length} lewat jatuh tempo`}
             />
-            <StatTile label="Proyek berjalan" value={number.format(activeRows.length)} />
-          </div>
-
-          <nav aria-label="Jalan pintas" className="mt-6 flex flex-wrap gap-2">
-            {quickActions.map(({ href, label, icon: Icon }) => (
-              <Link
-                key={href}
-                href={href}
-                className="inline-flex h-10 items-center gap-2 rounded-lg border border-line bg-paper px-4 text-sm font-medium text-ink transition-colors hover:border-sand-deep hover:bg-sand/40"
-              >
-                <Icon aria-hidden className="size-4 text-primary" />
-                {label}
-              </Link>
-            ))}
-          </nav>
-        </>
+          )}
+          <StatTile label="Proyek berjalan" value={number.format(activeRows.length)} />
+        </div>
       )}
 
-      <h2 className={isAdmin ? "mt-10 mb-4 text-xl" : "mb-4 text-xl"}>{text.heading}</h2>
+      {actions.length > 0 && (
+        <nav aria-label="Jalan pintas" className="mt-6 flex flex-wrap gap-2">
+          {actions.map(({ href, label, icon: Icon }) => (
+            <Link
+              key={href}
+              href={href}
+              className="inline-flex h-10 items-center gap-2 rounded-lg border border-line bg-paper px-4 text-sm font-medium text-ink transition-colors hover:border-sand-deep hover:bg-sand/40"
+            >
+              <Icon aria-hidden className="size-4 text-primary" />
+              {label}
+            </Link>
+          ))}
+        </nav>
+      )}
+
+      <h2
+        className={
+          isAdmin || seesAnalytics || actions.length ? "mt-10 mb-4 text-xl" : "mb-4 text-xl"
+        }
+      >
+        {text.heading}
+      </h2>
       <div className="grid gap-8 xl:grid-cols-2">
         {isAdmin && (
           <InboxSection

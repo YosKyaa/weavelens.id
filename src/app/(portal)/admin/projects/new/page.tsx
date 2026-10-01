@@ -5,7 +5,7 @@ import { PageHeader } from "@/components/molecules/PageHeader";
 import { ProjectForm } from "@/components/organisms/ProjectForm";
 import { Button } from "@/components/ui/button";
 import { workspaceText } from "@/content/workspace";
-import { requireAdmin } from "@/lib/auth";
+import { requirePermission } from "@/lib/auth";
 import { loadTeamOptions } from "@/lib/team-data";
 
 const text = workspaceText.projects;
@@ -14,7 +14,7 @@ type PageProps = { searchParams: Promise<{ client?: string }> };
 
 export default async function NewProjectPage({ searchParams }: PageProps) {
   const { client } = await searchParams;
-  const { supabase } = await requireAdmin();
+  const { supabase } = await requirePermission("projects.manage");
   const [{ data: clients }, teamOptions] = await Promise.all([
     supabase.from("clients").select("id, name").order("name"),
     loadTeamOptions(supabase),

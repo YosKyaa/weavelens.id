@@ -2,7 +2,7 @@ import Link from "next/link";
 import { notFound } from "next/navigation";
 import { ChevronLeft } from "lucide-react";
 import { AdminItemForm } from "@/components/organisms/AdminItemForm";
-import { requireAdmin } from "@/lib/auth";
+import { requirePermission } from "@/lib/auth";
 import { CMS_BASE, findCollection } from "@/lib/cms/collections";
 import { cmsFrom } from "@/lib/cms/untyped";
 
@@ -15,7 +15,7 @@ export default async function ItemPage({ params }: PageProps) {
   const { collection: slug, id: rawId } = await params;
   const collection = findCollection(slug);
   if (!collection || collection.singleton) notFound();
-  const { supabase } = await requireAdmin();
+  const { supabase } = await requirePermission("cms");
 
   const id = decodeURIComponent(rawId);
   const isNew = id === NEW_ID;

@@ -205,6 +205,7 @@ export type Database = {
           updated_at: string;
           email: string | null;
           bank_details: string | null;
+          payment_accounts: Json;
         };
         Insert: {
           id?: number;
@@ -218,6 +219,7 @@ export type Database = {
           updated_at?: string;
           email?: string | null;
           bank_details?: string | null;
+          payment_accounts?: Json;
         };
         Update: {
           id?: number;
@@ -231,6 +233,7 @@ export type Database = {
           updated_at?: string;
           email?: string | null;
           bank_details?: string | null;
+          payment_accounts?: Json;
         };
         Relationships: [];
       };
@@ -522,6 +525,7 @@ export type Database = {
           discount: number;
           payment_details: string | null;
           updated_at: string;
+          payment_accounts: Json;
         };
         Insert: {
           id?: string;
@@ -546,6 +550,7 @@ export type Database = {
           discount?: number;
           payment_details?: string | null;
           updated_at?: string;
+          payment_accounts?: Json;
         };
         Update: {
           id?: string;
@@ -570,6 +575,7 @@ export type Database = {
           discount?: number;
           payment_details?: string | null;
           updated_at?: string;
+          payment_accounts?: Json;
         };
         Relationships: [
           {
@@ -904,6 +910,7 @@ export type Database = {
           phone: string | null;
           created_at: string;
           active: boolean;
+          team_role_id: string | null;
         };
         Insert: {
           id: string;
@@ -913,6 +920,7 @@ export type Database = {
           phone?: string | null;
           created_at?: string;
           active?: boolean;
+          team_role_id?: string | null;
         };
         Update: {
           id?: string;
@@ -922,6 +930,7 @@ export type Database = {
           phone?: string | null;
           created_at?: string;
           active?: boolean;
+          team_role_id?: string | null;
         };
         Relationships: [
           {
@@ -929,6 +938,13 @@ export type Database = {
             columns: ["client_id"];
             isOneToOne: false;
             referencedRelation: "clients";
+            referencedColumns: ["id"];
+          },
+          {
+            foreignKeyName: "profiles_team_role_id_fkey";
+            columns: ["team_role_id"];
+            isOneToOne: false;
+            referencedRelation: "team_roles";
             referencedColumns: ["id"];
           },
         ];
@@ -1151,6 +1167,30 @@ export type Database = {
         };
         Relationships: [];
       };
+      team_roles: {
+        Row: {
+          id: string;
+          name: string;
+          description: string | null;
+          permissions: string[];
+          created_at: string;
+        };
+        Insert: {
+          id?: string;
+          name: string;
+          description?: string | null;
+          permissions?: string[];
+          created_at?: string;
+        };
+        Update: {
+          id?: string;
+          name?: string;
+          description?: string | null;
+          permissions?: string[];
+          created_at?: string;
+        };
+        Relationships: [];
+      };
       testimonials: {
         Row: {
           id: string;
@@ -1241,6 +1281,10 @@ export type Database = {
       };
       is_team: {
         Args: Record<PropertyKey, never>;
+        Returns: boolean;
+      };
+      has_permission: {
+        Args: { permission: string };
         Returns: boolean;
       };
       next_invoice_number: {

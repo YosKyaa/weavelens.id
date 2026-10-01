@@ -3,7 +3,7 @@
 import { revalidatePath } from "next/cache";
 import { z } from "zod";
 import { isId } from "@/lib/ids";
-import { requireAdmin } from "@/lib/auth";
+import { requirePermission } from "@/lib/auth";
 
 export type Result<T = object> = ({ ok: true } & T) | { ok: false; error: string };
 
@@ -38,7 +38,7 @@ export async function saveClient(
 ): Promise<Result<{ id: string }>> {
   const parsed = clientSchema.safeParse(input);
   if (!parsed.success) return { ok: false, error: parsed.error.issues[0]?.message ?? FAILED };
-  const { supabase } = await requireAdmin();
+  const { supabase } = await requirePermission("clients");
   const row = {
     name: parsed.data.name,
     contact_name: parsed.data.contactName,
@@ -63,7 +63,7 @@ export async function saveClient(
 
 export async function deleteClient(clientId: string): Promise<Result> {
   if (!isId(clientId)) return { ok: false, error: FAILED };
-  const { supabase } = await requireAdmin();
+  const { supabase } = await requirePermission("clients");
   const { error } = await supabase.from("clients").delete().eq("id", clientId);
   // Invoice memakai ON DELETE RESTRICT: klien yang punya invoice tidak bisa dihapus.
   if (error) {
@@ -95,7 +95,7 @@ export async function saveBrand(
   if (!isId(clientId)) return { ok: false, error: FAILED };
   const parsed = brandSchema.safeParse(input);
   if (!parsed.success) return { ok: false, error: parsed.error.issues[0]?.message ?? FAILED };
-  const { supabase } = await requireAdmin();
+  const { supabase } = await requirePermission("clients");
   const row = { ...parsed.data, client_id: clientId };
 
   let savedId = brandId;
@@ -123,7 +123,7 @@ export async function saveBrand(
 export async function deleteBrand(clientId: string, brandId: string): Promise<Result> {
   if (!isId(clientId)) return { ok: false, error: FAILED };
   if (!isId(brandId)) return { ok: false, error: FAILED };
-  const { supabase } = await requireAdmin();
+  const { supabase } = await requirePermission("clients");
   const { error } = await supabase
     .from("brands")
     .delete()

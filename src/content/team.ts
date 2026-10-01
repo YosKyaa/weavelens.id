@@ -2,14 +2,13 @@
 export const teamText = {
   title: "Tim & akses",
   description:
-    "Admin mengakses semuanya. Anggota tim hanya melihat proyek yang ditugaskan kepadanya, tanpa invoice, analitik, CMS, dan pengaturan.",
+    "Atur siapa saja yang bisa masuk ke portal dan apa yang boleh mereka kerjakan. Admin mengakses semuanya; anggota tim mengikuti izin dari perannya.",
   add: "Tambah anggota",
   addDescription:
     "Akun langsung aktif dengan password sementara. Kirim password ke anggota lewat WhatsApp; mereka bisa menggantinya di menu Akun saya.",
   search: "Cari nama atau email…",
   empty: "Belum ada anggota tim.",
   fields: { fullName: "Nama", email: "Email", role: "Peran" },
-  roles: { admin: "Admin", team: "Tim" } as Record<string, string>,
   roleHints: {
     admin: "Akses penuh, termasuk invoice, analitik, CMS, klien, dan penugasan proyek.",
     team: "Hanya proyek yang ditugaskan: papan konten, galeri, rencana kerja, dan link klien.",
@@ -19,8 +18,9 @@ export const teamText = {
   you: "kamu",
   actions: {
     menu: (name: string) => `Aksi untuk ${name}`,
-    makeAdmin: "Jadikan admin",
-    makeTeam: "Jadikan tim",
+    changeRole: "Ubah peran",
+    changeRoleTitle: (name: string) => `Ubah peran ${name}`,
+    changeRoleHint: "Izin langsung berlaku saat anggota membuka halaman berikutnya.",
     resetPassword: "Buat password sementara",
     deactivate: "Nonaktifkan akses",
     activate: "Aktifkan lagi",
@@ -67,17 +67,31 @@ export const teamText = {
     save: "Simpan",
     saved: "Akun diperbarui.",
   },
-  access: {
-    title: "Siapa bisa apa",
-    rows: [
-      ["Proyek, papan konten, review desain", "Semua proyek", "Proyek yang ditugaskan"],
-      ["Galeri seleksi foto & video", "Semua", "Proyek yang ditugaskan"],
-      ["Link akses klien", "Semua", "Proyek yang ditugaskan"],
-      ["Buat/hapus proyek & tugaskan tim", "Ya", "Tidak"],
-      ["Klien & brand", "Ya", "Hanya lihat (proyeknya)"],
-      ["Invoice", "Ya", "Tidak"],
-      ["Analitik website & CMS", "Ya", "Tidak"],
-      ["Tim & akses, Pengaturan", "Ya", "Tidak"],
-    ],
+  roles: {
+    title: "Peran tim",
+    description:
+      "Kumpulan izin yang bisa dipakai ulang. Ubah izin satu peran, semua anggotanya ikut berubah. Setiap anggota tim selalu bisa mengerjakan proyek yang ditugaskan kepadanya.",
+    add: "Buat peran",
+    edit: "Ubah izin",
+    editTitle: "Ubah peran",
+    editorHint: "Centang hal yang boleh dikerjakan anggota dengan peran ini.",
+    name: "Nama peran",
+    namePlaceholder: "Mis. Editor CMS",
+    descriptionLabel: "Keterangan singkat (opsional)",
+    permissions: "Izin",
+    base: "Dasar (selalu): proyek yang ditugaskan, papan konten, galeri, link klien.",
+    adminOnly: "Invoice, Pengaturan, dan Tim & akses selalu khusus admin.",
+    save: "Simpan peran",
+    saved: "Peran tersimpan.",
+    delete: "Hapus",
+    deleteTitle: (name: string) => `Hapus peran “${name}”?`,
+    deleteDescription: (members: number) =>
+      members
+        ? `${members} anggota memakai peran ini. Mereka kembali ke akses dasar (hanya proyek yang ditugaskan) sampai diberi peran lain.`
+        : "Peran ini belum dipakai siapa pun.",
+    deleted: "Peran dihapus.",
+    assignedProjects: "Proyek yang ditugaskan",
+    adminDescription: "Akses penuh: semua menu, termasuk invoice, pengaturan, dan Tim & akses.",
+    adminLocked: "Peran bawaan, tidak bisa diubah.",
   },
 };

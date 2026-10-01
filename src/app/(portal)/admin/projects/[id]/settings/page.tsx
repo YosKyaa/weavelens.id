@@ -1,13 +1,13 @@
 import { FormSection } from "@/components/molecules/FormSection";
 import { ProjectDangerZone } from "@/components/organisms/ProjectDangerZone";
 import { ProjectForm } from "@/components/organisms/ProjectForm";
-import { requireAdmin } from "@/lib/auth";
+import { requirePermission } from "@/lib/auth";
 
 type PageProps = { params: Promise<{ id: string }> };
 
 export default async function ProjectSettingsPage({ params }: PageProps) {
   const { id } = await params;
-  const { supabase } = await requireAdmin();
+  const { supabase } = await requirePermission("projects.manage");
   const [{ data: project }, { data: clients }] = await Promise.all([
     supabase
       .from("projects")

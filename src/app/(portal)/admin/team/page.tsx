@@ -1,6 +1,7 @@
 import { TeamManager, type MemberRow } from "@/components/organisms/TeamManager";
-import { teamText } from "@/content/team";
+import type { TeamRoleRow } from "@/components/organisms/TeamRolesManager";
 import { requireAdmin } from "@/lib/auth";
+import { PERMISSION_KEYS, type Permission } from "@/lib/permissions";
 import { createServiceClient } from "@/lib/supabase/service";
 
 /** Email ada di auth.users (bukan tabel profil), jadi dibaca lewat service role. */
@@ -13,13 +14,16 @@ async function emailsById(): Promise<Map<string, string>> {
 
 export default async function TeamPage() {
   const { supabase, user } = await requireAdmin();
-  const [{ data: profiles }, emails] = await Promise.all([
+  const [{ data: profiles }, { data: teamRoles }, emails] = await Promise.all([
     supabase
       .from("profiles")
-      .select("id, full_name, role, active, project_members(projects(title))")
+      .select(
+        "id, full_name, role, active, team_role_id, team_roles(name), project_members(projects(title))",
+      )
       .in("role", ["admin", "team"])
       .order("role")
       .order("full_name"),
+    supabase.from("team_roles").select("id, name, description, permissions").order("created_at"),
     emailsById(),
   ]);
 
@@ -27,7 +31,8 @@ export default async function TeamPage() {
     id: profile.id,
     name: profile.full_name || emails.get(profile.id) || "Tanpa nama",
     email: emails.get(profile.id) ?? "",
-    role: profile.role === "admin" ? "admin" : "team",
+    access: profile.role === "admin" ? "admin" : (profile.team_role_id ?? ""),
+    roleName: profile.role === "admin" ? "Admin" : (profile.team_roles?.name ?? "Tanpa peran"),
     active: profile.active,
     projects: profile.project_members.flatMap((member) =>
       member.projects ? [member.projects.title] : [],
@@ -35,40 +40,15 @@ export default async function TeamPage() {
     isSelf: profile.id === user.id,
   }));
 
-  return (
-    <>
-      <div className="grid gap-8">
-        <TeamManager members={members} />
+  const roles: TeamRoleRow[] = (teamRoles ?? []).map((role) => ({
+    id: role.id,
+    name: role.name,
+    description: role.description,
+    permissions: role.permissions.filter((key): key is Permission =>
+      (PERMISSION_KEYS as string[]).includes(key),
+    ),
+    members: members.filter((member) => member.access === role.id).length,
+  }));
 
-        <section
-          aria-labelledby="access-heading"
-          className="overflow-hidden rounded-2xl border border-line bg-paper"
-        >
-          <h2 id="access-heading" className="border-b border-line px-5 py-4 text-base">
-            {teamText.access.title}
-          </h2>
-          <div className="overflow-x-auto">
-            <table className="w-full min-w-[34rem] text-sm">
-              <thead>
-                <tr className="bg-sand/40 text-left font-heading">
-                  <th className="px-5 py-3 font-semibold">Fitur</th>
-                  <th className="px-5 py-3 font-semibold">Admin</th>
-                  <th className="px-5 py-3 font-semibold">Tim</th>
-                </tr>
-              </thead>
-              <tbody>
-                {teamText.access.rows.map(([feature, admin, team]) => (
-                  <tr key={feature} className="border-t border-line">
-                    <td className="px-5 py-3 font-medium text-ink">{feature}</td>
-                    <td className="px-5 py-3 text-ink/80">{admin}</td>
-                    <td className="px-5 py-3 text-ink/80">{team}</td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
-          </div>
-        </section>
-      </div>
-    </>
-  );
+  return <TeamManager members={members} roles={roles} />;
 }

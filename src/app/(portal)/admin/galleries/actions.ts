@@ -4,7 +4,7 @@ import { revalidatePath } from "next/cache";
 import { z } from "zod";
 import { isId } from "@/lib/ids";
 import { logActivity } from "@/lib/activity";
-import { requireAdmin, requireStaff } from "@/lib/auth";
+import { requirePermission, requireStaff } from "@/lib/auth";
 import {
   driveConfigured,
   driveIdFromUrl,
@@ -85,7 +85,7 @@ export async function saveGallery(
 
 export async function deleteGallery(galleryId: string): Promise<Result<{ projectId: string }>> {
   if (!isId(galleryId)) return { ok: false, error: FAILED };
-  const { supabase } = await requireAdmin();
+  const { supabase } = await requirePermission("projects.manage");
   const { data, error } = await supabase
     .from("photo_sets")
     .delete()

@@ -3,7 +3,7 @@
 import { revalidatePath, revalidateTag } from "next/cache";
 import { redirect } from "next/navigation";
 import { z } from "zod";
-import { requireAdmin } from "@/lib/auth";
+import { requirePermission } from "@/lib/auth";
 import { CMS_BASE, findCollection, type CmsCollection } from "@/lib/cms/collections";
 import { CMS_TAG } from "@/lib/cms/data";
 import { parseForm, type FieldErrors } from "@/lib/cms/validate";
@@ -32,7 +32,7 @@ async function prepare(slug: string, id: string | null = null) {
   const args = argsSchema.parse({ slug, id });
   const collection = findCollection(args.slug);
   if (!collection) throw new Error(`Koleksi "${args.slug}" tidak dikenal.`);
-  const { supabase } = await requireAdmin();
+  const { supabase } = await requirePermission("cms");
   return { collection, supabase, table: () => cmsFrom(supabase, collection.table) };
 }
 

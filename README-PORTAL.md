@@ -79,7 +79,8 @@ npm run db:types
 - **Cetak / simpan PDF:** memakai dokumen yang sama dengan pratinjau. Di jendela cetak, pilih "Simpan sebagai PDF". Ukurannya A4 dengan latar brand penuh.
 - **Status:** Draf, lalu Belum dibayar ("Tandai terkirim", bisa diurungkan), lalu Lunas atau Dibatalkan. Kedua status terakhir dikunci dan harus dikonfirmasi.
 - **Duplikat:** menyalin penerima dan item ke invoice baru.
-- **Data bawaan:** perusahaan, rekening, dan penanda tangan diatur di `/admin/settings`.
+- **Data bawaan:** perusahaan, metode pembayaran, dan penanda tangan diatur di `/admin/settings`.
+- **Metode pembayaran:** pilih dari dropdown (BCA, Mandiri, BNI, BRI, BSI, bank lain, QRIS, GoPay, OVO, DANA, ShopeePay, tunai), lalu isi nomor rekening/HP dan atas nama. Bisa lebih dari satu (maks. 6). Baris bank/e-wallet tanpa nomor tidak dicetak. Invoice lama yang masih berupa teks bebas tetap tampil apa adanya.
 
 ## 7. Alur kerja harian
 
@@ -134,12 +135,33 @@ npm run db:types
 
 ## 10. Peran & akses tim
 
-| Peran | Bisa |
-|---|---|
-| **Admin** | Semuanya, termasuk invoice, analitik, CMS, klien & brand, pengaturan, membuat/menghapus proyek, dan **menugaskan tim**. |
-| **Tim** | Hanya **proyek yang ditugaskan**: papan konten, review desain, galeri seleksi, rencana kerja, link klien, dan aktivitas. Tidak melihat invoice, analitik, CMS, data klien lain, maupun pengaturan. |
+**Admin** selalu punya akses penuh. Hanya admin yang bisa membuka **Invoice**, **Pengaturan**, dan **Tim & akses**.
 
-- **Tambah anggota:** buka **Tim & akses**, lalu **Tambah anggota**. Akun langsung aktif dengan password sementara yang tampil **sekali**. Kirim lewat tombol WhatsApp; anggota menggantinya di **Akun saya**.
+**Anggota tim** selalu bisa mengerjakan **proyek yang ditugaskan**: papan konten, review desain, galeri seleksi, rencana kerja, link klien, dan aktivitas. Izin tambahan berasal dari **peran tim** yang dipilih admin. Peran ini bisa dibuat dan diubah sendiri di **Tim & akses → Peran tim**:
+
+| Izin | Membuka |
+|---|---|
+| Semua proyek | Semua proyek tanpa perlu ditugaskan satu per satu |
+| Kelola proyek | Membuat, mengubah, dan menghapus proyek, serta menugaskan tim |
+| Klien & brand | Data klien dan brand |
+| Konten website (CMS) | Menu CMS: testimoni, galeri, layanan, harga, FAQ, kontak |
+| Analitik website | Pengunjung dan klik WhatsApp |
+
+Peran bawaan dari migrasi: **Tim proyek** (tanpa izin tambahan), **Editor CMS** (CMS), dan **Project manager** (semua proyek, kelola proyek, klien). Kalau izin sebuah peran diubah, semua anggotanya langsung ikut berubah. Peran yang dihapus membuat anggotanya kembali ke akses dasar.
+
+- **Tambah anggota:** buka **Tim & akses**, lalu **Tambah anggota**, dan pilih perannya. Akun langsung aktif dengan password sementara yang tampil **sekali**. Kirim lewat tombol WhatsApp; anggota menggantinya di **Akun saya**.
+- **Ubah peran anggota:** menu **⋯** di baris anggota, lalu **Ubah peran**.
 - **Tugaskan ke proyek:** saat **Buat proyek** (centang anggota), atau lewat tab **Tim** di halaman proyek.
 - **Nonaktifkan akses:** akun tidak bisa login dan semua aksesnya langsung hilang. Data tetap tersimpan dan bisa diaktifkan lagi. Sistem selalu menyisakan minimal satu admin aktif.
-- **Penegakan akses:** aturan dijaga Row Level Security di database (migrasi `0005_team_roles.sql`), jadi tetap aman walau seseorang mengetik URL halaman admin secara langsung.
+- **Penegakan akses:** aturan dijaga Row Level Security di database (migrasi `0005_team_roles.sql` dan `0006_team_permissions.sql`), jadi tetap aman walau seseorang mengetik URL halaman secara langsung.
+
+## 11. Login dengan Google
+
+Tombol **Lanjutkan dengan Google** di `/login` baru muncul setelah provider Google aktif di Supabase. Hanya akun yang **sudah didaftarkan** di Tim & akses (dengan email Google yang sama) yang bisa masuk.
+
+1. **Google Cloud Console:** buka APIs & Services → Credentials → Create OAuth client ID (Web application).
+   - *Authorized redirect URI*: `https://<project-ref>.supabase.co/auth/v1/callback`.
+   - Selesaikan juga OAuth consent screen (nama aplikasi WeaveLens, domain `weavelens.id`).
+2. **Supabase → Authentication → Sign In / Providers → Google:** aktifkan, lalu tempel Client ID dan Client Secret.
+3. **Supabase → Authentication → Sign In / Providers:** pastikan **Allow new users to sign up** dimatikan. Tanpa ini, siapa pun yang punya akun Google bisa membuat akun kosong. Akun tersebut tetap tidak bisa masuk portal, tapi lebih baik dicegah sejak awal.
+4. **Supabase → URL Configuration → Redirect URLs:** tambahkan `https://www.weavelens.id/auth/callback`.

@@ -27,6 +27,7 @@ import { StatusBadge } from "@/components/atoms/StatusBadge";
 import { ConfirmDialog } from "@/components/molecules/ConfirmDialog";
 import { FormSection } from "@/components/molecules/FormSection";
 import { InvoiceItemsField } from "@/components/molecules/InvoiceItemsField";
+import { PaymentAccountsField } from "@/components/molecules/PaymentAccountsField";
 import { PageHeader } from "@/components/molecules/PageHeader";
 import { ScaledPage } from "@/components/molecules/ScaledPage";
 import { InvoiceDocument } from "@/components/organisms/InvoiceDocument";
@@ -230,6 +231,7 @@ export function InvoiceEditor({ id, initial, company, clients }: InvoiceEditorPr
       discount: draft.discount,
       taxRate: draft.taxRate,
       notes: draft.notes,
+      paymentAccounts: draft.paymentAccounts,
       paymentMethods: draft.paymentMethods,
       paymentDetails: draft.paymentDetails,
       signerName: draft.signerName,
@@ -506,21 +508,20 @@ export function InvoiceEditor({ id, initial, company, clients }: InvoiceEditorPr
           </FormSection>
 
           <FormSection title={text.sections.payment}>
-            <Field id="inv-methods" label={text.fields.paymentMethods}>
-              <Input
-                id="inv-methods"
-                value={draft.paymentMethods}
-                onChange={(event) => update({ paymentMethods: event.target.value })}
-              />
-            </Field>
-            <Field id="inv-details" label={text.fields.paymentDetails}>
-              <Textarea
-                id="inv-details"
-                rows={2}
-                value={draft.paymentDetails}
-                onChange={(event) => update({ paymentDetails: event.target.value })}
-              />
-            </Field>
+            <PaymentAccountsField
+              idPrefix="inv-pay"
+              accounts={draft.paymentAccounts}
+              disabled={locked}
+              onChange={(paymentAccounts) =>
+                // Begitu memakai metode terstruktur, teks lama tidak dipakai lagi.
+                update({ paymentAccounts, paymentMethods: "", paymentDetails: "" })
+              }
+            />
+            {draft.paymentAccounts.length === 0 && draft.paymentDetails && (
+              <p className="text-sm text-ink/65">
+                Invoice lama: {draft.paymentMethods} {draft.paymentDetails}
+              </p>
+            )}
           </FormSection>
 
           <FormSection title={text.sections.signer}>

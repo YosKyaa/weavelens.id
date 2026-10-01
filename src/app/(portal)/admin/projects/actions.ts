@@ -5,7 +5,7 @@ import { z } from "zod";
 import { idSchema, isId } from "@/lib/ids";
 import { STAGES, FORMATS, PROJECT_TYPES } from "@/content/workspace";
 import { logActivity } from "@/lib/activity";
-import { requireAdmin, requireStaff } from "@/lib/auth";
+import { requirePermission, requireStaff } from "@/lib/auth";
 import { drivePreviewUrl } from "@/lib/design-files";
 import { generateShareToken } from "@/lib/share";
 
@@ -52,7 +52,7 @@ export async function saveProject(
 ): Promise<Result<{ id: string }>> {
   const parsed = projectSchema.safeParse(input);
   if (!parsed.success) return { ok: false, error: parsed.error.issues[0]?.message ?? FAILED };
-  const { supabase } = await requireAdmin();
+  const { supabase } = await requirePermission("projects.manage");
   const value = parsed.data;
   const row = {
     client_id: value.clientId,
@@ -84,7 +84,7 @@ export async function saveProject(
 
 export async function deleteProject(projectId: string): Promise<Result> {
   if (!isId(projectId)) return { ok: false, error: FAILED };
-  const { supabase } = await requireAdmin();
+  const { supabase } = await requirePermission("projects.manage");
   const { error } = await supabase.from("projects").delete().eq("id", projectId);
   if (error) return { ok: false, error: FAILED };
   revalidatePath("/admin/projects");

@@ -4,14 +4,16 @@ import { PageHeader } from "@/components/molecules/PageHeader";
 import { ProjectTable } from "@/components/organisms/ProjectTable";
 import { Button } from "@/components/ui/button";
 import { workspaceText } from "@/content/workspace";
-import { requireStaff } from "@/lib/auth";
+import { can, requireStaff } from "@/lib/auth";
 
 const text = workspaceText.projects;
 
 /** Admin melihat semua proyek + timnya; anggota tim hanya proyek yang ditugaskan (dibatasi RLS). */
 export default async function AdminProjectsPage() {
-  const { supabase, profile } = await requireStaff();
-  const isAdmin = profile.role === "admin";
+  const session = await requireStaff();
+  const { supabase } = session;
+  const canManage = can(session, "projects.manage");
+  const seesAll = can(session, "projects.all");
   const { data } = await supabase
     .from("projects")
     .select(
@@ -34,10 +36,10 @@ export default async function AdminProjectsPage() {
   return (
     <>
       <PageHeader
-        title={isAdmin ? text.title : text.teamTitle}
-        description={isAdmin ? text.description : text.teamDescription}
+        title={seesAll ? text.title : text.teamTitle}
+        description={seesAll ? text.description : text.teamDescription}
         actions={
-          isAdmin && (
+          canManage && (
             <Button asChild size="lg">
               <Link href="/admin/projects/new">
                 <Plus aria-hidden />
@@ -49,8 +51,8 @@ export default async function AdminProjectsPage() {
       />
       <ProjectTable
         rows={rows}
-        showTeam={isAdmin}
-        emptyMessage={isAdmin ? undefined : text.teamEmpty}
+        showTeam={canManage}
+        emptyMessage={seesAll ? undefined : text.teamEmpty}
       />
     </>
   );

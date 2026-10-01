@@ -5,7 +5,7 @@ import { PageHeader } from "@/components/molecules/PageHeader";
 import { TabNav } from "@/components/molecules/TabNav";
 import { projectTypes } from "@/content/portal";
 import { workspaceText } from "@/content/workspace";
-import { requireStaff } from "@/lib/auth";
+import { can, requireStaff } from "@/lib/auth";
 
 const text = workspaceText.projects;
 
@@ -14,8 +14,9 @@ type LayoutProps = { children: ReactNode; params: Promise<{ id: string }> };
 export default async function ProjectLayout({ children, params }: LayoutProps) {
   const { id } = await params;
   if (!/^[0-9a-f-]{36}$/i.test(id)) notFound();
-  const { supabase, profile } = await requireStaff();
-  const isAdmin = profile.role === "admin";
+  const session = await requireStaff();
+  const { supabase } = session;
+  const canManage = can(session, "projects.manage");
 
   const { data: project } = await supabase
     .from("projects")
@@ -45,7 +46,7 @@ export default async function ProjectLayout({ children, params }: LayoutProps) {
     { href: `${base}/share`, label: text.tabs.share, count: project.share_links[0]?.count },
     { href: `${base}/activity`, label: text.tabs.activity },
     // Penugasan tim & pengaturan proyek hanya untuk admin.
-    ...(isAdmin
+    ...(canManage
       ? [
           { href: `${base}/team`, label: text.tabs.team, count: project.project_members[0]?.count },
           { href: `${base}/settings`, label: text.tabs.settings },

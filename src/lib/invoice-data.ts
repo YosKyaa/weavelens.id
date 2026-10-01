@@ -1,6 +1,7 @@
 import "server-only";
 import { todayJakarta } from "@/lib/format";
 import { newItemKey, type CompanyInfo, type InvoiceDraft } from "@/lib/invoice";
+import { parseAccounts } from "@/lib/payment";
 import type { SessionClient } from "@/lib/supabase/server";
 import type { Tables } from "@/types/db";
 
@@ -10,6 +11,7 @@ const EMPTY_COMPANY: CompanyInfo = {
   email: "",
   website: "weavelens.id",
   address: "",
+  paymentAccounts: [],
   paymentMethods: "",
   bankDetails: "",
   signerName: "",
@@ -25,6 +27,7 @@ export async function loadCompany(supabase: SessionClient): Promise<CompanyInfo>
     email: data.email ?? "",
     website: data.website,
     address: data.address,
+    paymentAccounts: parseAccounts(data.payment_accounts),
     paymentMethods: data.payment_methods,
     bankDetails: data.bank_details ?? "",
     signerName: data.signer_name,
@@ -52,8 +55,10 @@ export function blankInvoice(company: CompanyInfo): InvoiceDraft {
     discount: 0,
     taxRate: 0,
     notes: "",
-    paymentMethods: company.paymentMethods,
-    paymentDetails: company.bankDetails,
+    paymentAccounts: company.paymentAccounts,
+    // Bawaan lama hanya dipakai bila belum ada metode terstruktur.
+    paymentMethods: company.paymentAccounts.length ? "" : company.paymentMethods,
+    paymentDetails: company.paymentAccounts.length ? "" : company.bankDetails,
     signerName: company.signerName,
     signerRole: company.signerRole,
     paidAt: null,
@@ -86,6 +91,7 @@ export function rowToDraft(row: InvoiceRow): InvoiceDraft {
     discount: row.discount,
     taxRate: row.tax_rate === 11 ? 11 : 0,
     notes: row.notes ?? "",
+    paymentAccounts: parseAccounts(row.payment_accounts),
     paymentMethods: row.payment_methods ?? "",
     paymentDetails: row.payment_details ?? "",
     signerName: row.signer_name ?? "",

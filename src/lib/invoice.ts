@@ -1,3 +1,5 @@
+import type { PaymentAccount } from "@/lib/payment";
+
 /**
  * Model dan hitungan invoice. Satu-satunya tempat rumus total: dipakai editor, pratinjau,
  * dokumen cetak, daftar invoice, dan server action, supaya angkanya selalu sama.
@@ -25,6 +27,9 @@ export type InvoiceDraft = {
   discount: number;
   taxRate: 0 | 11;
   notes: string;
+  /** Metode pembayaran terstruktur (dropdown + nomor rekening). */
+  paymentAccounts: PaymentAccount[];
+  /** Teks lama; dipakai dokumen hanya jika `paymentAccounts` kosong (invoice lama). */
   paymentMethods: string;
   paymentDetails: string;
   signerName: string;
@@ -38,6 +43,7 @@ export type CompanyInfo = {
   email: string;
   website: string;
   address: string;
+  paymentAccounts: PaymentAccount[];
   paymentMethods: string;
   bankDetails: string;
   signerName: string;

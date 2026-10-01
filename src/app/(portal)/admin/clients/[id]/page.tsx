@@ -8,7 +8,7 @@ import { ClientDangerZone } from "@/components/organisms/ClientDangerZone";
 import { ClientForm } from "@/components/organisms/ClientForm";
 import { projectTypes } from "@/content/portal";
 import { workspaceText } from "@/content/workspace";
-import { requireAdmin } from "@/lib/auth";
+import { requirePermission } from "@/lib/auth";
 
 const text = workspaceText.clients;
 
@@ -17,7 +17,7 @@ type PageProps = { params: Promise<{ id: string }> };
 export default async function ClientDetailPage({ params }: PageProps) {
   const { id } = await params;
   if (!/^[0-9a-f-]{36}$/i.test(id)) notFound();
-  const { supabase } = await requireAdmin();
+  const { supabase } = await requirePermission("clients");
 
   const { data: client } = await supabase
     .from("clients")
