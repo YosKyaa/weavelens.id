@@ -21,6 +21,7 @@ export const teamText = {
   you: "kamu",
   actions: {
     menu: (name: string) => `Aksi untuk ${name}`,
+    resend: "Kirim ulang akses",
     changeRole: "Ubah peran",
     changeRoleTitle: (name: string) => `Ubah peran ${name}`,
     changeRoleHint: "Izin langsung berlaku saat anggota membuka halaman berikutnya.",

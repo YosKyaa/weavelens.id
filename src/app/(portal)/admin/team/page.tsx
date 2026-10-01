@@ -2,6 +2,7 @@ import { TeamManager, type MemberRow } from "@/components/organisms/TeamManager"
 import type { TeamRoleRow } from "@/components/organisms/TeamRolesManager";
 import { requireAdmin } from "@/lib/auth";
 import { PERMISSION_KEYS, type Permission } from "@/lib/permissions";
+import { googleEnabled } from "@/lib/supabase/providers";
 import { createServiceClient } from "@/lib/supabase/service";
 
 /** Email ada di auth.users (bukan tabel profil), jadi dibaca lewat service role. */
@@ -14,17 +15,18 @@ async function emailsById(): Promise<Map<string, string>> {
 
 export default async function TeamPage() {
   const { supabase, user } = await requireAdmin();
-  const [{ data: profiles }, { data: teamRoles }, emails] = await Promise.all([
+  const [{ data: profiles }, { data: teamRoles }, emails, google] = await Promise.all([
     supabase
       .from("profiles")
       .select(
-        "id, full_name, role, active, profile_team_roles(team_role_id, team_roles(name, created_at)), project_members(projects(title))",
+        "id, full_name, role, phone, active, profile_team_roles(team_role_id, team_roles(name, created_at)), project_members(projects(title))",
       )
       .in("role", ["admin", "team"])
       .order("role")
       .order("full_name"),
     supabase.from("team_roles").select("id, name, description, permissions").order("created_at"),
     emailsById(),
+    googleEnabled(),
   ]);
 
   const members: MemberRow[] = (profiles ?? []).map((profile) => ({
@@ -42,6 +44,7 @@ export default async function TeamPage() {
             .flatMap((item) => (item.team_roles ? [item.team_roles] : []))
             .sort((a, b) => a.created_at.localeCompare(b.created_at))
             .map((role) => role.name),
+    phone: profile.phone,
     active: profile.active,
     projects: profile.project_members.flatMap((member) =>
       member.projects ? [member.projects.title] : [],
@@ -61,5 +64,5 @@ export default async function TeamPage() {
     ).length,
   }));
 
-  return <TeamManager members={members} roles={roles} />;
+  return <TeamManager members={members} roles={roles} google={google} />;
 }

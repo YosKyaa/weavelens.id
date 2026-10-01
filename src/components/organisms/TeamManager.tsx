@@ -6,6 +6,7 @@ import type { ColumnDef } from "@tanstack/react-table";
 import {
   KeyRound,
   Loader2,
+  MessageCircle,
   MoreHorizontal,
   Power,
   ShieldCheck,
@@ -25,6 +26,7 @@ import { Field } from "@/components/molecules/Field";
 import { PageHeader } from "@/components/molecules/PageHeader";
 import { DataTable } from "@/components/organisms/DataTable";
 import { PasswordReveal } from "@/components/organisms/PasswordReveal";
+import { ResendAccessDialog } from "@/components/organisms/ResendAccessDialog";
 import { TeamRolesManager, type TeamRoleRow } from "@/components/organisms/TeamRolesManager";
 import { Button } from "@/components/ui/button";
 import { Dialog, DialogContent, DialogDescription, DialogTitle } from "@/components/ui/dialog";
@@ -52,6 +54,8 @@ export type MemberRow = {
   access: Access;
   /** Nama peran untuk tampilan & filter (["Admin"] untuk admin). */
   roleNames: string[];
+  /** Nomor HP dari profil (opsional), untuk kirim akses via WhatsApp. */
+  phone: string | null;
   active: boolean;
   projects: string[];
   isSelf: boolean;
@@ -211,15 +215,17 @@ function AccessPicker({
 function MemberActions({
   member,
   roles,
+  google,
   onPassword,
 }: {
   member: MemberRow;
   roles: TeamRoleRow[];
+  google: boolean;
   onPassword: (credential: Credential) => void;
 }) {
   const router = useRouter();
   const [pending, startTransition] = useTransition();
-  const [dialog, setDialog] = useState<"role" | "reset" | "deactivate" | null>(null);
+  const [dialog, setDialog] = useState<"role" | "resend" | "reset" | "deactivate" | null>(null);
   const [access, setAccess] = useState<Access>(member.access);
 
   function saveRole() {
@@ -265,6 +271,10 @@ function MemberActions({
           </Button>
         </DropdownMenuTrigger>
         <DropdownMenuContent align="end" className="w-56">
+          <DropdownMenuItem onSelect={() => setDialog("resend")} disabled={!member.active}>
+            <MessageCircle aria-hidden />
+            {text.actions.resend}
+          </DropdownMenuItem>
           <DropdownMenuItem
             onSelect={() => {
               setAccess(member.access);
@@ -320,6 +330,14 @@ function MemberActions({
           </div>
         </DialogContent>
       </Dialog>
+
+      <ResendAccessDialog
+        open={dialog === "resend"}
+        onOpenChange={(open) => !open && setDialog(null)}
+        member={member}
+        google={google}
+        onNewPassword={() => setDialog("reset")}
+      />
 
       <ConfirmDialog
         open={dialog === "reset"}
@@ -465,7 +483,16 @@ function projectsLabel(member: MemberRow, roles: TeamRoleRow[]): string | null {
   return member.projects.length ? null : text.assign.none;
 }
 
-export function TeamManager({ members, roles }: { members: MemberRow[]; roles: TeamRoleRow[] }) {
+export function TeamManager({
+  members,
+  roles,
+  google,
+}: {
+  members: MemberRow[];
+  roles: TeamRoleRow[];
+  /** Login Google aktif (memengaruhi isi pesan kirim ulang akses). */
+  google: boolean;
+}) {
   const [credential, setCredential] = useState<Credential | null>(null);
 
   const columns: ColumnDef<MemberRow, unknown>[] = [
@@ -517,7 +544,12 @@ export function TeamManager({ members, roles }: { members: MemberRow[]; roles: T
       enableSorting: false,
       meta: { align: "right" },
       cell: ({ row }) => (
-        <MemberActions member={row.original} roles={roles} onPassword={setCredential} />
+        <MemberActions
+          member={row.original}
+          roles={roles}
+          google={google}
+          onPassword={setCredential}
+        />
       ),
     },
   ];
@@ -561,7 +593,12 @@ export function TeamManager({ members, roles }: { members: MemberRow[]; roles: T
                   </span>
                 )}
               </div>
-              <MemberActions member={member} roles={roles} onPassword={setCredential} />
+              <MemberActions
+                member={member}
+                roles={roles}
+                google={google}
+                onPassword={setCredential}
+              />
             </div>
           )}
         />
