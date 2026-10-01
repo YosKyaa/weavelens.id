@@ -1,3 +1,4 @@
+import { ProjectAvatar } from "@/components/atoms/ProjectAvatar";
 import type { Metadata } from "next";
 import type { ReactNode } from "react";
 import { Logo } from "@/components/atoms/Logo";
@@ -96,8 +97,17 @@ export default async function ShareLayout({ children, params }: LayoutProps) {
         tabIndex={-1}
         className="mx-auto max-w-6xl px-4 py-6 outline-none md:px-8 md:py-10"
       >
-        <p className="text-sm text-ink/70">{context.project.clients?.name}</p>
-        <h1 className="mt-1 text-2xl md:text-3xl">{context.project.title}</h1>
+        <div className="flex items-center gap-4">
+          <ProjectAvatar
+            title={context.project.title}
+            logoPath={context.project.logo_path}
+            size="lg"
+          />
+          <div className="min-w-0">
+            <p className="text-sm text-ink/70">{context.project.clients?.name}</p>
+            <h1 className="mt-1 text-2xl md:text-3xl">{context.project.title}</h1>
+          </div>
+        </div>
         {context.project.description && (
           <p className="mt-2 max-w-[65ch] whitespace-pre-line text-ink/80">
             {context.project.description}

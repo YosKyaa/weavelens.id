@@ -1,8 +1,13 @@
 import Link from "next/link";
-import { CalendarDays, Columns3, LayoutGrid } from "lucide-react";
+import { CalendarDays, Columns3, LayoutGrid, ListChecks } from "lucide-react";
 import { cn } from "@/lib/utils";
 
-const ICONS = { board: Columns3, list: LayoutGrid, calendar: CalendarDays } as const;
+const ICONS = {
+  board: Columns3,
+  list: LayoutGrid,
+  calendar: CalendarDays,
+  plan: ListChecks,
+} as const;
 
 type ViewSwitchProps = {
   label: string;

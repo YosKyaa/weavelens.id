@@ -201,3 +201,17 @@ Klien bisa mereview tanpa akun lewat **link klien**. Kalau PIC ingin melihat sem
 Link masuk lewat email butuh SMTP sendiri (Resend), karena email bawaan Supabase hanya terkirim ke anggota tim project Supabase dan dibatasi beberapa email per jam. Login Google tidak butuh SMTP.
 
 **Halaman gagal dimuat setelah update:** aplikasi otomatis memuat ulang sekali bila tab lama memanggil versi yang sudah diganti. Halaman portal ditandai "jangan diterjemahkan" karena terjemahan otomatis Chrome bisa membuat aplikasi crash.
+
+## 14. Import rencana konten & rencana kerja
+
+**Rencana konten → papan:** di papan konten, **Import rencana**. Susun di Google Sheets/Excel, blok tabel (termasuk baris judul kolom), salin, lalu tempel. Atau pilih file CSV, atau unduh template.
+- Kolom dikenali dari judulnya: Tanggal tayang, Brand, Format, Judul, Brief, Caption, Tenggat. Penulisan bebas, mis. "Tgl Tayang", "Akun", "Jenis", "Deadline".
+- Tanggal: `05/11/2026`, `2026-11-05`, `5 Nov 2026`, `5 Nov` (tahun berjalan). Format: Feed, Carousel, Story, Reels (juga "IG Feed", "Reels TikTok", "slide", …).
+- Pratinjau sebelum disimpan: baris bermasalah ditandai merah dan dilewati; duplikat (judul + tanggal sama dengan kartu yang ada) tidak dicentang; brand yang belum terdaftar bisa langsung dibuat.
+- Semua baris masuk ke kolom **Brief**. Kolom Brief = rencana konten; geser ke **Dikerjakan** saat mulai digarap. Kalender otomatis menampilkan semuanya.
+
+**Rencana kerja:** di tab Rencana kerja, **Import tahapan** (kolom Tahap, Target, Status, Keterangan). Klien melihat rencana kerja di link klien (tab Rencana) dan di portal klien (tampilan **Rencana kerja**).
+
+## 15. Logo proyek
+
+Opsional, di **Pengaturan proyek → Logo proyek** (PNG/JPG/WebP, maks. 2 MB). Tampil di daftar proyek, header proyek, beranda & halaman proyek portal klien, dan link klien. Tanpa logo, proyek tampil dengan inisial berwarna. Migrasi: `0009_project_logo.sql` (kolom `projects.logo_path` + bucket publik `logos`).

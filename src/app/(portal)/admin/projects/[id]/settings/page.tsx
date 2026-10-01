@@ -1,6 +1,7 @@
 import { FormSection } from "@/components/molecules/FormSection";
 import { ProjectDangerZone } from "@/components/organisms/ProjectDangerZone";
 import { ProjectForm } from "@/components/organisms/ProjectForm";
+import { ProjectLogoField } from "@/components/organisms/ProjectLogoField";
 import { requirePermission } from "@/lib/auth";
 
 type PageProps = { params: Promise<{ id: string }> };
@@ -11,7 +12,7 @@ export default async function ProjectSettingsPage({ params }: PageProps) {
   const [{ data: project }, { data: clients }] = await Promise.all([
     supabase
       .from("projects")
-      .select("id, client_id, title, type, event_date, description, status")
+      .select("id, client_id, title, type, event_date, description, status, logo_path")
       .eq("id", id)
       .single(),
     supabase.from("clients").select("id, name").order("name"),
@@ -20,6 +21,13 @@ export default async function ProjectSettingsPage({ params }: PageProps) {
 
   return (
     <div className="grid gap-5">
+      <FormSection
+        title="Logo proyek"
+        description="Membantu membedakan proyek di daftar, portal klien, dan link klien."
+        className="max-w-3xl"
+      >
+        <ProjectLogoField projectId={id} title={project.title} logoPath={project.logo_path} />
+      </FormSection>
       <FormSection title="Detail proyek" className="max-w-3xl">
         <ProjectForm
           projectId={id}

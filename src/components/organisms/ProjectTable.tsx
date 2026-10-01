@@ -2,6 +2,7 @@
 
 import Link from "next/link";
 import type { ColumnDef } from "@tanstack/react-table";
+import { ProjectAvatar } from "@/components/atoms/ProjectAvatar";
 import { StatusBadge } from "@/components/atoms/StatusBadge";
 import { DataTable } from "@/components/organisms/DataTable";
 import { portal, projectTypes, statuses } from "@/content/portal";
@@ -14,6 +15,7 @@ export type ProjectListRow = {
   type: string;
   eventDate: string | null;
   status: string;
+  logoPath: string | null;
   /** Nama anggota tim yang ditugaskan (hanya ditampilkan untuk admin). */
   team: string[];
 };
@@ -37,14 +39,17 @@ const baseColumns: ColumnDef<ProjectListRow, unknown>[] = [
     accessorKey: "title",
     header: text.columns.title,
     cell: ({ row }) => (
-      <span>
-        <Link
-          href={`/admin/projects/${row.original.id}`}
-          className="block font-medium text-primary hover:underline"
-        >
-          {row.original.title}
-        </Link>
-        <span className="block text-sm text-ink/65">{row.original.client}</span>
+      <span className="flex items-center gap-3">
+        <ProjectAvatar title={row.original.title} logoPath={row.original.logoPath} size="sm" />
+        <span className="min-w-0">
+          <Link
+            href={`/admin/projects/${row.original.id}`}
+            className="block font-medium text-primary hover:underline"
+          >
+            {row.original.title}
+          </Link>
+          <span className="block text-sm text-ink/65">{row.original.client}</span>
+        </span>
       </span>
     ),
   },
@@ -100,7 +105,10 @@ export function ProjectTable({
           className="flex flex-col gap-2 rounded-2xl border border-line bg-paper p-4 active:bg-sand/40"
         >
           <span className="flex items-start justify-between gap-3">
-            <span className="font-medium text-primary">{row.title}</span>
+            <span className="flex min-w-0 items-center gap-3">
+              <ProjectAvatar title={row.title} logoPath={row.logoPath} size="sm" />
+              <span className="font-medium text-primary">{row.title}</span>
+            </span>
             <StatusBadge kind="project" status={row.status} />
           </span>
           <span className="text-sm text-ink/70">

@@ -1,10 +1,12 @@
 import Link from "next/link";
 import { ChevronLeft } from "lucide-react";
 import { EmptyState } from "@/components/atoms/EmptyState";
+import { ProjectAvatar } from "@/components/atoms/ProjectAvatar";
 import { StatusBadge } from "@/components/atoms/StatusBadge";
 import { ViewSwitch } from "@/components/molecules/ViewSwitch";
 import { ContentCalendar } from "@/components/organisms/ContentCalendar";
 import { ContentReviewList } from "@/components/organisms/ContentReviewList";
+import { PlanTimeline } from "@/components/organisms/PlanTimeline";
 import { portal } from "@/content/portal";
 import { loadBoard, toCalendarItems } from "@/lib/board-data";
 import { isMonth, shiftMonth } from "@/lib/calendar";
@@ -24,17 +26,23 @@ export default async function ClientProjectPage({ params, searchParams }: PagePr
   const { brand, view, month: monthParam } = await searchParams;
   const { supabase, db, project } = await loadClientProject(id);
 
-  const [items, { data: brands }] = await Promise.all([
+  const [items, { data: brands }, { data: plan }] = await Promise.all([
     loadBoard(db, project.id),
     supabase
       .from("brands")
       .select("id, name, color")
       .eq("client_id", project.client_id)
       .order("sort"),
+    db
+      .from("plan_items")
+      .select("id, title, due_date, status, description")
+      .eq("project_id", project.id)
+      .order("order"),
   ]);
   const activeBrand = brand && brands?.some((item) => item.id === brand) ? brand : null;
   const base = `/client/projects/${project.id}`;
   const calendar = view === "calendar";
+  const planView = view === "plan";
   const month = isMonth(monthParam) ? monthParam : todayJakarta().slice(0, 7);
   const monthHref = (value: string) => `${base}?view=calendar&month=${value}`;
 
@@ -48,23 +56,27 @@ export default async function ClientProjectPage({ params, searchParams }: PagePr
         {text.backToProjects}
       </Link>
       <div className="flex flex-wrap items-start justify-between gap-3">
-        <div>
-          <h1 className="text-3xl">{project.title}</h1>
-          <p className="mt-2 max-w-2xl text-ink/75">{text.contentSub}</p>
+        <div className="flex min-w-0 items-center gap-4">
+          <ProjectAvatar title={project.title} logoPath={project.logo_path} size="lg" />
+          <div className="min-w-0">
+            <h1 className="text-3xl">{project.title}</h1>
+            <p className="mt-2 max-w-2xl text-ink/75">{text.contentSub}</p>
+          </div>
         </div>
         <StatusBadge kind="project" status={project.status} />
       </div>
-      {items.length > 0 && (
-        <ViewSwitch
-          label="Tampilan konten"
-          active={calendar ? "calendar" : "list"}
-          options={[
-            { id: "list", label: "Daftar", href: base },
-            { id: "calendar", label: "Kalender", href: monthHref(month) },
-          ]}
-        />
-      )}
-      {items.length === 0 ? (
+      <ViewSwitch
+        label="Tampilan proyek"
+        active={planView ? "plan" : calendar ? "calendar" : "list"}
+        options={[
+          { id: "list", label: "Konten", href: base },
+          { id: "calendar", label: "Kalender", href: monthHref(month) },
+          { id: "plan", label: "Rencana kerja", href: `${base}?view=plan` },
+        ]}
+      />
+      {planView ? (
+        <PlanTimeline plan={plan ?? []} />
+      ) : items.length === 0 ? (
         <EmptyState message={text.noContent} />
       ) : calendar ? (
         <ContentCalendar

@@ -8,10 +8,12 @@ type PageHeaderProps = {
   /** Aksi utama halaman (satu tombol primer), rata kanan di desktop. */
   actions?: ReactNode;
   back?: { href: string; label: string };
+  /** Mis. logo proyek, tampil di kiri judul. */
+  icon?: ReactNode;
 };
 
 /** Judul halaman portal yang konsisten: kembali, judul, keterangan, aksi. */
-export function PageHeader({ title, description, actions, back }: PageHeaderProps) {
+export function PageHeader({ title, description, actions, back, icon }: PageHeaderProps) {
   return (
     <div className="mb-8">
       {back && (
@@ -24,9 +26,12 @@ export function PageHeader({ title, description, actions, back }: PageHeaderProp
         </Link>
       )}
       <div className="flex flex-wrap items-end justify-between gap-4">
-        <div className="min-w-0">
-          <h1 className="text-2xl md:text-3xl">{title}</h1>
-          {description && <p className="mt-2 max-w-[65ch] text-ink/75">{description}</p>}
+        <div className="flex min-w-0 items-center gap-4">
+          {icon}
+          <div className="min-w-0">
+            <h1 className="text-2xl md:text-3xl">{title}</h1>
+            {description && <p className="mt-2 max-w-[65ch] text-ink/75">{description}</p>}
+          </div>
         </div>
         {/* Di HP aksi utama selebar layar (mudah diketuk); di desktop rata kanan. */}
         {actions && (

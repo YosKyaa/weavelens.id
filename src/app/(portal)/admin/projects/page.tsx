@@ -17,7 +17,7 @@ export default async function AdminProjectsPage() {
   const { data } = await supabase
     .from("projects")
     .select(
-      "id, title, type, event_date, status, clients(name), project_members(profiles(full_name))",
+      "id, title, type, event_date, status, logo_path, clients(name), project_members(profiles(full_name))",
     )
     .order("created_at", { ascending: false });
 
@@ -28,6 +28,7 @@ export default async function AdminProjectsPage() {
     type: project.type,
     eventDate: project.event_date,
     status: project.status,
+    logoPath: project.logo_path,
     team: project.project_members.flatMap((member) =>
       member.profiles?.full_name ? [member.profiles.full_name] : [],
     ),

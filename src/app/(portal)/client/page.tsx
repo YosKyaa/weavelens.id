@@ -1,6 +1,7 @@
 import Link from "next/link";
 import { ArrowRight, MessageSquareWarning } from "lucide-react";
 import { EmptyState } from "@/components/atoms/EmptyState";
+import { ProjectAvatar } from "@/components/atoms/ProjectAvatar";
 import { StatusBadge } from "@/components/atoms/StatusBadge";
 import { portal, projectTypes } from "@/content/portal";
 import { requireClient } from "@/lib/auth";
@@ -25,7 +26,9 @@ export default async function ClientHomePage() {
     supabase.from("clients").select("name").eq("id", profile.client_id).maybeSingle(),
     supabase
       .from("projects")
-      .select("id, title, type, event_date, status, plan_items(status), design_assets(stage)")
+      .select(
+        "id, title, type, event_date, status, logo_path, plan_items(status), design_assets(stage)",
+      )
       .neq("status", "draft")
       .order("created_at", { ascending: false }),
   ]);
@@ -54,7 +57,10 @@ export default async function ClientHomePage() {
                     }`}
                   >
                     <div className="flex items-start justify-between gap-3">
-                      <h2 className="text-xl group-hover:text-primary">{project.title}</h2>
+                      <span className="flex min-w-0 items-center gap-3">
+                        <ProjectAvatar title={project.title} logoPath={project.logo_path} />
+                        <h2 className="text-xl group-hover:text-primary">{project.title}</h2>
+                      </span>
                       <StatusBadge kind="project" status={project.status} />
                     </div>
                     <p className="text-sm text-ink/70">

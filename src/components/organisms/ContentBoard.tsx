@@ -9,6 +9,7 @@ import { moveContent } from "@/app/(portal)/admin/projects/actions";
 import { DesignThumb } from "@/components/atoms/DesignThumb";
 import { BulkUpload } from "@/components/organisms/BulkUpload";
 import { ContentCreate } from "@/components/organisms/ContentCreate";
+import { ContentImport } from "@/components/organisms/ContentImport";
 import { Button } from "@/components/ui/button";
 import {
   DropdownMenu,
@@ -168,6 +169,11 @@ export function ContentBoard({ projectId, items: initialItems, brands }: Content
         </select>
         <p className="hidden text-sm text-ink/60 lg:block">{text.dragHint}</p>
         <div className="ml-auto flex flex-wrap gap-2">
+          <ContentImport
+            projectId={projectId}
+            brands={brands}
+            existing={items.map((item) => ({ title: item.title, publishDate: item.publishDate }))}
+          />
           <BulkUpload projectId={projectId} brands={brands} />
           <ContentCreate projectId={projectId} brands={brands} stage="brief" />
         </div>

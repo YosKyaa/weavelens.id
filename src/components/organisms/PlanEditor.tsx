@@ -11,6 +11,7 @@ import {
   type PlanInput,
 } from "@/app/(portal)/admin/projects/actions";
 import { ConfirmDialog } from "@/components/molecules/ConfirmDialog";
+import { PlanImport } from "@/components/organisms/PlanImport";
 import { selectClass } from "@/components/molecules/Field";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -163,7 +164,12 @@ export function PlanEditor({ projectId, rows }: { projectId: string; rows: PlanR
 
   return (
     <div className="grid gap-3">
-      {rows.length === 0 && <p className="text-sm text-ink/70">{text.empty}</p>}
+      <div className="flex flex-wrap items-center justify-between gap-2">
+        <p className="text-sm text-ink/70">
+          {rows.length === 0 ? text.empty : "Perubahan tersimpan otomatis."}
+        </p>
+        <PlanImport projectId={projectId} existing={rows} />
+      </div>
       <ol className="grid gap-2">
         {rows.map((row, index) => (
           <PlanRowEditor

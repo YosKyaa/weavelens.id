@@ -1,5 +1,6 @@
 import type { ReactNode } from "react";
 import { notFound } from "next/navigation";
+import { ProjectAvatar } from "@/components/atoms/ProjectAvatar";
 import { StatusBadge } from "@/components/atoms/StatusBadge";
 import { PageHeader } from "@/components/molecules/PageHeader";
 import { TabNav } from "@/components/molecules/TabNav";
@@ -21,7 +22,7 @@ export default async function ProjectLayout({ children, params }: LayoutProps) {
   const { data: project } = await supabase
     .from("projects")
     .select(
-      "id, title, type, status, clients(name), photo_sets(count), share_links(count), project_members(count)",
+      "id, title, type, status, logo_path, clients(name), photo_sets(count), share_links(count), project_members(count)",
     )
     .eq("id", id)
     .maybeSingle();
@@ -58,6 +59,7 @@ export default async function ProjectLayout({ children, params }: LayoutProps) {
     <>
       <PageHeader
         title={project.title}
+        icon={<ProjectAvatar title={project.title} logoPath={project.logo_path} />}
         description={[project.clients?.name, projectTypes[project.type]]
           .filter(Boolean)
           .join(" · ")}

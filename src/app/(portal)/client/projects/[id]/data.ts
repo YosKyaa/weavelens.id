@@ -13,7 +13,7 @@ export async function loadClientProject(id: string) {
   const { supabase } = await requireClient();
   const { data: project } = await supabase
     .from("projects")
-    .select("id, title, client_id, status")
+    .select("id, title, client_id, status, logo_path")
     .eq("id", id)
     .neq("status", "draft")
     .maybeSingle();

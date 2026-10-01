@@ -590,3 +590,185 @@ export async function revokeShareLink(projectId: string, linkId: string): Promis
   refreshProject(projectId);
   return { ok: true };
 }
+
+// ─── Import banyak (tempel dari Google Sheets / Excel / CSV) ───────────────
+
+const BRAND_COLORS = ["#74342B", "#2B5C74", "#4F6B2F", "#8A5A12", "#5B3F86", "#1F6F68"];
+
+const importContentSchema = z.object({
+  rows: z
+    .array(
+      z.object({
+        title: z.string().trim().min(1).max(160),
+        brandName: z.string().trim().max(80).nullable(),
+        format: z.enum(FORMATS),
+        publishDate: day,
+        dueDate: day,
+        brief: text(2000),
+        caption: text(2200),
+      }),
+    )
+    .min(1, "Tidak ada baris untuk diimport.")
+    .max(300, "Maksimal 300 baris sekali import."),
+  /** Nama brand yang belum ada dan boleh dibuat. */
+  newBrands: z.array(z.string().trim().min(1).max(80)).max(30),
+});
+
+export type ImportContentInput = z.input<typeof importContentSchema>;
+
+/** Rencana konten → kartu di kolom Brief (sekali jalan, urutan sesuai tabel). */
+export async function importContents(
+  projectId: string,
+  input: ImportContentInput,
+): Promise<Result<{ created: number; brandsCreated: number }>> {
+  if (!isId(projectId)) return { ok: false, error: FAILED };
+  const parsed = importContentSchema.safeParse(input);
+  if (!parsed.success) return { ok: false, error: parsed.error.issues[0]?.message ?? FAILED };
+  const { supabase, user } = await requireStaff();
+
+  const { data: project } = await supabase
+    .from("projects")
+    .select("client_id")
+    .eq("id", projectId)
+    .maybeSingle();
+  if (!project) return { ok: false, error: FAILED };
+
+  const { data: existing } = await supabase
+    .from("brands")
+    .select("id, name, sort")
+    .eq("client_id", project.client_id);
+  const brandId = new Map((existing ?? []).map((brand) => [brand.name.toLowerCase(), brand.id]));
+
+  // Brand baru (hanya yang memang dipakai baris import & belum ada).
+  const wanted = [...new Set(parsed.data.newBrands.map((name) => name.trim()))].filter(
+    (name) =>
+      !brandId.has(name.toLowerCase()) &&
+      parsed.data.rows.some((row) => row.brandName?.toLowerCase() === name.toLowerCase()),
+  );
+  let brandsCreated = 0;
+  if (wanted.length) {
+    const start = (existing ?? []).reduce((max, brand) => Math.max(max, brand.sort), 0) + 1;
+    const { data: inserted, error } = await supabase
+      .from("brands")
+      .insert(
+        wanted.map((name, index) => ({
+          client_id: project.client_id,
+          name,
+          color: BRAND_COLORS[((existing?.length ?? 0) + index) % BRAND_COLORS.length],
+          sort: start + index,
+        })),
+      )
+      .select("id, name");
+    if (error) {
+      return {
+        ok: false,
+        error:
+          "Brand baru tidak bisa dibuat (butuh izin Klien & brand). Hapus centang brand baru atau minta admin.",
+      };
+    }
+    for (const brand of inserted ?? []) brandId.set(brand.name.toLowerCase(), brand.id);
+    brandsCreated = inserted?.length ?? 0;
+  }
+
+  const base = Date.now();
+  const { error } = await supabase.from("design_assets").insert(
+    parsed.data.rows.map((row, index) => ({
+      project_id: projectId,
+      title: row.title,
+      brand_id: row.brandName ? (brandId.get(row.brandName.toLowerCase()) ?? null) : null,
+      format: row.format,
+      stage: "brief",
+      publish_date: row.publishDate,
+      due_date: row.dueDate,
+      brief: row.brief,
+      caption: row.caption,
+      sort: base + index,
+    })),
+  );
+  if (error) return { ok: false, error: FAILED };
+
+  await logActivity(supabase, {
+    projectId,
+    action: "content.imported",
+    actorId: user.id,
+    meta: { count: parsed.data.rows.length },
+  });
+  refreshProject(projectId);
+  return { ok: true, created: parsed.data.rows.length, brandsCreated };
+}
+
+const importPlanSchema = z.object({
+  rows: z
+    .array(
+      z.object({
+        title: z.string().trim().min(1).max(160),
+        dueDate: day,
+        status: z.enum(["planned", "in_progress", "done"]),
+        description: text(1000),
+      }),
+    )
+    .min(1, "Tidak ada baris untuk diimport.")
+    .max(200, "Maksimal 200 baris sekali import."),
+});
+
+export type ImportPlanInput = z.input<typeof importPlanSchema>;
+
+/** Tahapan rencana kerja ditambahkan di akhir daftar, sesuai urutan tabel. */
+export async function importPlanItems(
+  projectId: string,
+  input: ImportPlanInput,
+): Promise<Result<{ created: number }>> {
+  if (!isId(projectId)) return { ok: false, error: FAILED };
+  const parsed = importPlanSchema.safeParse(input);
+  if (!parsed.success) return { ok: false, error: parsed.error.issues[0]?.message ?? FAILED };
+  const { supabase } = await requireStaff();
+  const { data: last } = await supabase
+    .from("plan_items")
+    .select("order")
+    .eq("project_id", projectId)
+    .order("order", { ascending: false })
+    .limit(1)
+    .maybeSingle();
+  const start = (last?.order ?? -1) + 1;
+  const { error } = await supabase.from("plan_items").insert(
+    parsed.data.rows.map((row, index) => ({
+      project_id: projectId,
+      title: row.title,
+      due_date: row.dueDate,
+      status: row.status,
+      description: row.description,
+      order: start + index,
+    })),
+  );
+  if (error) return { ok: false, error: FAILED };
+  refreshProject(projectId);
+  return { ok: true, created: parsed.data.rows.length };
+}
+
+// ─── Logo proyek ───────────────────────────────────────────────────────────
+
+/** Simpan / hapus logo proyek. File sudah diunggah browser ke bucket `logos/<projectId>/…`. */
+export async function setProjectLogo(projectId: string, path: string | null): Promise<Result> {
+  if (!isId(projectId)) return { ok: false, error: FAILED };
+  if (path !== null && !new RegExp(`^${projectId}/[A-Za-z0-9-]+\.(png|jpe?g|webp)$`).test(path)) {
+    return { ok: false, error: FAILED };
+  }
+  const { supabase } = await requirePermission("projects.manage");
+  const { data: current } = await supabase
+    .from("projects")
+    .select("logo_path")
+    .eq("id", projectId)
+    .maybeSingle();
+  const { error } = await supabase
+    .from("projects")
+    .update({ logo_path: path, updated_at: new Date().toISOString() })
+    .eq("id", projectId);
+  if (error) return { ok: false, error: FAILED };
+  // Logo lama tidak dipakai lagi.
+  if (current?.logo_path && current.logo_path !== path) {
+    await supabase.storage.from("logos").remove([current.logo_path]);
+  }
+  refreshProject(projectId);
+  revalidatePath("/client", "layout");
+  return { ok: true };
+}
