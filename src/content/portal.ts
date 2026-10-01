@@ -71,8 +71,8 @@ export const portal = {
   },
 
   login: {
-    heading: "Masuk ke portal",
-    sub: "Kelola proyek, review desain, dan seleksi foto di satu tempat.",
+    heading: "Masuk ke WeaveLens",
+    sub: "Selamat datang kembali.",
     teamTab: "Tim WeaveLens",
     clientTab: "Klien",
     google: "Masuk dengan Google",
@@ -83,7 +83,7 @@ export const portal = {
     passwordLabel: "Password",
     showPassword: "Tampilkan password",
     hidePassword: "Sembunyikan password",
-    forgot: "Lupa password? Minta admin membuat password sementara di menu Tim & akses.",
+    forgot: "Lupa password? Hubungi admin WeaveLens.",
     clientHint: "Kami kirim link masuk ke email ini. Tidak perlu password.",
     clientShareHint:
       "Dapat link proyek dari WeaveLens lewat WhatsApp? Buka link itu langsung, tidak perlu masuk di sini.",
@@ -93,15 +93,10 @@ export const portal = {
     checking: "Memeriksa…",
     linkSent: (email: string) =>
       `Kalau ${email} terdaftar, link masuk sudah kami kirim. Cek kotak masuk atau folder spam; link berlaku 10 menit.`,
+    /** Panel kiri hanya identitas brand, tanpa daftar fitur. */
     brand: {
-      eyebrow: "Portal WeaveLens",
-      title: "Satu tempat untuk semua pekerjaan visual",
-      points: [
-        "Papan konten & review desain bersama klien",
-        "Seleksi foto dan video langsung dari Google Drive",
-        "Invoice, analitik, dan konten website",
-      ],
-      footer: "Catch the Moment, Remember Forever",
+      tagline: "Catch the Moment, Remember Forever",
+      pillars: "Capture. Craft. Connect.",
     },
     errors: {
       emailInvalid: "Tulis email yang valid, mis. nama@email.com.",

@@ -2,7 +2,6 @@ import type { Metadata } from "next";
 import Image from "next/image";
 import Link from "next/link";
 import { redirect } from "next/navigation";
-import { Check } from "lucide-react";
 import { BatikPattern } from "@/components/atoms/BatikPattern";
 import { Logo } from "@/components/atoms/Logo";
 import { LoginForm } from "@/components/organisms/LoginForm";
@@ -15,7 +14,7 @@ import { googleEnabled } from "@/lib/supabase/providers";
 export const dynamic = "force-dynamic";
 
 export const metadata: Metadata = {
-  title: `${portal.login.heading} — WeaveLens`,
+  title: "Masuk — WeaveLens",
   robots: { index: false, follow: false },
 };
 
@@ -72,28 +71,17 @@ export default async function LoginPage({ searchParams }: PageProps) {
           className="opacity-[0.07]"
         />
 
-        <Logo priority className="relative h-10 self-start brightness-0 invert-[0.94]" />
-
-        <div className="relative max-w-md">
-          <p className="font-heading text-sm font-semibold tracking-wide text-sand/80">
-            {text.brand.eyebrow}
+        {/* Hanya identitas brand: logo + tagline, tanpa daftar fitur. */}
+        <span />
+        <div className="relative flex flex-col items-center text-center">
+          <Logo priority className="h-16 brightness-0 invert-[0.94] xl:h-20" />
+          <p className="mt-6 font-serif text-2xl text-sand/85 italic xl:text-3xl">
+            {text.brand.tagline}
           </p>
-          <h2 className="mt-3 font-heading text-4xl leading-tight font-bold text-sand xl:text-[2.75rem]">
-            {text.brand.title}
-          </h2>
-          <ul className="mt-8 grid gap-3">
-            {text.brand.points.map((point) => (
-              <li key={point} className="flex items-start gap-3 text-sand/90">
-                <span className="mt-0.5 flex size-5 shrink-0 items-center justify-center rounded-full bg-sand/15">
-                  <Check className="size-3.5" />
-                </span>
-                {point}
-              </li>
-            ))}
-          </ul>
         </div>
-
-        <p className="relative font-serif text-lg text-sand/75 italic">{text.brand.footer}</p>
+        <p className="relative text-center font-heading text-sm font-semibold tracking-[0.2em] text-sand/60 uppercase">
+          {text.brand.pillars}
+        </p>
       </section>
 
       {/* Form */}
