@@ -25,26 +25,40 @@ export const getSession = cache(async () => {
 
   const { data: profile } = await supabase
     .from("profiles")
-    .select("id, full_name, role, client_id, phone, active, team_roles(name, permissions)")
+    .select(
+      "id, full_name, role, client_id, phone, active, profile_team_roles(team_roles(name, permissions))",
+    )
     .eq("id", claims.sub)
     .maybeSingle();
   if (!profile || !profile.active) return null;
 
   const role = profile.role as Role;
-  // Admin punya semua izin; tim sesuai peran timnya; klien tidak punya izin portal.
+  // Anggota tim bisa punya beberapa peran: izinnya digabung.
+  const teamRoles = profile.profile_team_roles.flatMap((item) =>
+    item.team_roles ? [item.team_roles] : [],
+  );
+  // Admin punya semua izin; tim sesuai gabungan peran timnya; klien tidak punya izin portal.
   const permissions: Permission[] =
     role === "admin"
       ? PERMISSION_KEYS
       : role === "team"
-        ? PERMISSION_KEYS.filter((key) => profile.team_roles?.permissions.includes(key))
+        ? PERMISSION_KEYS.filter((key) => teamRoles.some((item) => item.permissions.includes(key)))
         : [];
 
   return {
     supabase,
     user: { id: claims.sub, email: typeof claims.email === "string" ? claims.email : null },
-    profile: { ...profile, role },
+    profile: {
+      id: profile.id,
+      full_name: profile.full_name,
+      role,
+      client_id: profile.client_id,
+      phone: profile.phone,
+      active: profile.active,
+    },
     permissions,
-    teamRoleName: role === "admin" ? "Admin" : (profile.team_roles?.name ?? "Tim"),
+    teamRoleName:
+      role === "admin" ? "Admin" : teamRoles.map((item) => item.name).join(" + ") || "Tim",
   };
 });
 

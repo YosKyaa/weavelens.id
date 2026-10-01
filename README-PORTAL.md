@@ -151,8 +151,10 @@ npm run db:types
 
 Peran bawaan dari migrasi: **Tim proyek** (tanpa izin tambahan), **Editor CMS** (CMS), dan **Project manager** (semua proyek, kelola proyek, klien). Kalau izin sebuah peran diubah, semua anggotanya langsung ikut berubah. Peran yang dihapus membuat anggotanya kembali ke akses dasar.
 
+**Satu anggota bisa punya beberapa peran sekaligus** (mis. Editor CMS + Project manager). Izinnya digabung. Anggota tim tanpa peran tambahan tampil sebagai "Tim dasar": hanya proyek yang ditugaskan. Peran disimpan di tabel `profile_team_roles` (migrasi `0007_multi_team_roles.sql`).
+
 - **Tambah anggota:** buka **Tim & akses**, lalu **Tambah anggota**, dan pilih perannya. Akun langsung aktif dengan password sementara yang tampil **sekali**. Kirim lewat tombol WhatsApp; anggota menggantinya di **Akun saya**.
-- **Ubah peran anggota:** menu **⋯** di baris anggota, lalu **Ubah peran**.
+- **Ubah peran anggota:** menu **⋯** di baris anggota, lalu **Ubah peran**. Pilih **Admin**, atau **Tim WeaveLens** lalu centang satu/lebih peran.
 - **Tugaskan ke proyek:** saat **Buat proyek** (centang anggota), atau lewat tab **Tim** di halaman proyek.
 - **Nonaktifkan akses:** akun tidak bisa login dan semua aksesnya langsung hilang. Data tetap tersimpan dan bisa diaktifkan lagi. Sistem selalu menyisakan minimal satu admin aktif.
 - **Penegakan akses:** aturan dijaga Row Level Security di database (migrasi `0005_team_roles.sql` dan `0006_team_permissions.sql`), jadi tetap aman walau seseorang mengetik URL halaman secara langsung.

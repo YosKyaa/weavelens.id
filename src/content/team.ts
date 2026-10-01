@@ -9,6 +9,9 @@ export const teamText = {
   search: "Cari nama atau email…",
   empty: "Belum ada anggota tim.",
   fields: { fullName: "Nama", email: "Email", role: "Peran" },
+  /** Anggota tim tanpa peran tambahan: hanya proyek yang ditugaskan. */
+  baseOnly: "Tim dasar",
+  pickRoles: "Pilih satu atau beberapa peran; izinnya digabung.",
   roleHints: {
     admin: "Akses penuh, termasuk invoice, analitik, CMS, klien, dan penugasan proyek.",
     team: "Hanya proyek yang ditugaskan: papan konten, galeri, rencana kerja, dan link klien.",

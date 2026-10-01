@@ -901,6 +901,39 @@ export type Database = {
         };
         Relationships: [];
       };
+      profile_team_roles: {
+        Row: {
+          profile_id: string;
+          team_role_id: string;
+          created_at: string;
+        };
+        Insert: {
+          profile_id: string;
+          team_role_id: string;
+          created_at?: string;
+        };
+        Update: {
+          profile_id?: string;
+          team_role_id?: string;
+          created_at?: string;
+        };
+        Relationships: [
+          {
+            foreignKeyName: "profile_team_roles_profile_id_fkey";
+            columns: ["profile_id"];
+            isOneToOne: false;
+            referencedRelation: "profiles";
+            referencedColumns: ["id"];
+          },
+          {
+            foreignKeyName: "profile_team_roles_team_role_id_fkey";
+            columns: ["team_role_id"];
+            isOneToOne: false;
+            referencedRelation: "team_roles";
+            referencedColumns: ["id"];
+          },
+        ];
+      };
       profiles: {
         Row: {
           id: string;

@@ -18,7 +18,7 @@ export default async function TeamPage() {
     supabase
       .from("profiles")
       .select(
-        "id, full_name, role, active, team_role_id, team_roles(name), project_members(projects(title))",
+        "id, full_name, role, active, profile_team_roles(team_role_id, team_roles(name, created_at)), project_members(projects(title))",
       )
       .in("role", ["admin", "team"])
       .order("role")
@@ -31,8 +31,17 @@ export default async function TeamPage() {
     id: profile.id,
     name: profile.full_name || emails.get(profile.id) || "Tanpa nama",
     email: emails.get(profile.id) ?? "",
-    access: profile.role === "admin" ? "admin" : (profile.team_role_id ?? ""),
-    roleName: profile.role === "admin" ? "Admin" : (profile.team_roles?.name ?? "Tanpa peran"),
+    access:
+      profile.role === "admin"
+        ? "admin"
+        : profile.profile_team_roles.map((item) => item.team_role_id),
+    roleNames:
+      profile.role === "admin"
+        ? ["Admin"]
+        : profile.profile_team_roles
+            .flatMap((item) => (item.team_roles ? [item.team_roles] : []))
+            .sort((a, b) => a.created_at.localeCompare(b.created_at))
+            .map((role) => role.name),
     active: profile.active,
     projects: profile.project_members.flatMap((member) =>
       member.projects ? [member.projects.title] : [],
@@ -47,7 +56,9 @@ export default async function TeamPage() {
     permissions: role.permissions.filter((key): key is Permission =>
       (PERMISSION_KEYS as string[]).includes(key),
     ),
-    members: members.filter((member) => member.access === role.id).length,
+    members: members.filter(
+      (member) => member.access !== "admin" && member.access.includes(role.id),
+    ).length,
   }));
 
   return <TeamManager members={members} roles={roles} />;

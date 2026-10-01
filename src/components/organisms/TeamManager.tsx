@@ -21,7 +21,7 @@ import {
   updateMember,
 } from "@/app/(portal)/admin/team/actions";
 import { ConfirmDialog } from "@/components/molecules/ConfirmDialog";
-import { Field, selectClass } from "@/components/molecules/Field";
+import { Field } from "@/components/molecules/Field";
 import { PageHeader } from "@/components/molecules/PageHeader";
 import { DataTable } from "@/components/organisms/DataTable";
 import { PasswordReveal } from "@/components/organisms/PasswordReveal";
@@ -42,13 +42,16 @@ import { cn } from "@/lib/utils";
 
 const text = teamText;
 
+/** "admin" (akses penuh) atau daftar id peran tim (boleh lebih dari satu, boleh kosong). */
+export type Access = "admin" | string[];
+
 export type MemberRow = {
   id: string;
   name: string;
   email: string;
-  /** "admin" atau id peran tim. */
-  access: string;
-  roleName: string;
+  access: Access;
+  /** Nama peran untuk tampilan & filter (["Admin"] untuk admin). */
+  roleNames: string[];
   active: boolean;
   projects: string[];
   isSelf: boolean;
@@ -56,23 +59,36 @@ export type MemberRow = {
 
 type Credential = { name: string; email: string; password: string };
 
-function RoleBadge({ member }: { member: Pick<MemberRow, "access" | "roleName"> }) {
+function RoleBadges({ member }: { member: Pick<MemberRow, "access" | "roleNames"> }) {
   const isAdmin = member.access === "admin";
+  const names = member.roleNames.length ? member.roleNames : [text.baseOnly];
   return (
-    <span
-      className={cn(
-        "inline-flex h-6 items-center gap-1 rounded-full border px-2.5 font-heading text-xs font-semibold whitespace-nowrap",
-        isAdmin ? "border-brand/20 bg-brand-soft text-primary" : "border-line bg-paper text-ink",
-      )}
-    >
-      {isAdmin ? (
-        <ShieldCheck aria-hidden className="size-3.5" />
-      ) : (
-        <UserRound aria-hidden className="size-3.5" />
-      )}
-      {member.roleName}
+    <span className="flex flex-wrap gap-1">
+      {names.map((name) => (
+        <span
+          key={name}
+          className={cn(
+            "inline-flex h-6 items-center gap-1 rounded-full border px-2.5 font-heading text-xs font-semibold whitespace-nowrap",
+            isAdmin
+              ? "border-brand/20 bg-brand-soft text-primary"
+              : "border-line bg-paper text-ink",
+          )}
+        >
+          {isAdmin ? (
+            <ShieldCheck aria-hidden className="size-3.5" />
+          ) : (
+            <UserRound aria-hidden className="size-3.5" />
+          )}
+          {name}
+        </span>
+      ))}
     </span>
   );
+}
+
+function sameAccess(a: Access, b: Access): boolean {
+  if (a === "admin" || b === "admin") return a === b;
+  return a.length === b.length && a.every((id) => b.includes(id));
 }
 
 function StatusBadge({ active }: { active: boolean }) {
@@ -88,45 +104,106 @@ function StatusBadge({ active }: { active: boolean }) {
   );
 }
 
-/** Pilihan peran: semua peran tim + Admin, dengan ringkasan izin peran terpilih. */
-function AccessSelect({
+/**
+ * Pilihan akses: Admin (akses penuh) ATAU anggota tim dengan satu/lebih peran.
+ * Izin beberapa peran digabung; ringkasannya tampil di bawah daftar.
+ */
+function AccessPicker({
   id,
   value,
   roles,
   onChange,
 }: {
   id: string;
-  value: string;
+  value: Access;
   roles: TeamRoleRow[];
-  onChange: (value: string) => void;
+  onChange: (value: Access) => void;
 }) {
-  const role = roles.find((item) => item.id === value);
-  const hint =
-    value === "admin"
-      ? text.roleHints.admin
-      : role
-        ? role.permissions.length
-          ? `Proyek yang ditugaskan + ${role.permissions.map(permissionLabel).join(", ")}.`
-          : text.roleHints.team
-        : undefined;
+  const isAdmin = value === "admin";
+  const selected = isAdmin ? [] : value;
+  const permissions = [
+    ...new Set(
+      roles.filter((role) => selected.includes(role.id)).flatMap((role) => role.permissions),
+    ),
+  ];
+  const summary = isAdmin
+    ? text.roleHints.admin
+    : permissions.length
+      ? `Proyek yang ditugaskan + ${permissions.map(permissionLabel).join(", ")}.`
+      : text.roleHints.team;
+
+  const option = (active: boolean) =>
+    cn(
+      "flex cursor-pointer items-start gap-3 rounded-xl border px-3 py-2.5 transition-colors hover:border-sand-deep has-[:focus-visible]:ring-[3px] has-[:focus-visible]:ring-ring/50",
+      active ? "border-primary bg-brand-soft/40" : "border-line",
+    );
 
   return (
-    <Field id={id} label={text.fields.role} hint={hint}>
-      <select
-        id={id}
-        value={value}
-        onChange={(event) => onChange(event.target.value)}
-        className={selectClass}
-        aria-describedby={hint ? `${id}-hint` : undefined}
-      >
-        {roles.map((item) => (
-          <option key={item.id} value={item.id}>
-            {item.name}
-          </option>
-        ))}
-        <option value="admin">Admin (akses penuh)</option>
-      </select>
-    </Field>
+    <fieldset className="grid gap-2" aria-describedby={`${id}-summary`}>
+      <legend className="mb-1.5 font-heading text-sm font-semibold text-ink">
+        {text.fields.role}
+      </legend>
+      <label className={option(isAdmin)}>
+        <input
+          type="radio"
+          name={`${id}-kind`}
+          checked={isAdmin}
+          onChange={() => onChange("admin")}
+          className="mt-1 accent-primary"
+        />
+        <span>
+          <span className="block font-medium text-ink">Admin</span>
+          <span className="block text-sm text-ink/70">Akses penuh ke semua menu.</span>
+        </span>
+      </label>
+      <label className={option(!isAdmin)}>
+        <input
+          type="radio"
+          name={`${id}-kind`}
+          checked={!isAdmin}
+          onChange={() => onChange(roles[0] ? [roles[0].id] : [])}
+          className="mt-1 accent-primary"
+        />
+        <span>
+          <span className="block font-medium text-ink">Tim WeaveLens</span>
+          <span className="block text-sm text-ink/70">{text.pickRoles}</span>
+        </span>
+      </label>
+      {!isAdmin && (
+        <ul className="grid gap-1 pl-7">
+          {roles.map((role) => {
+            const checked = selected.includes(role.id);
+            return (
+              <li key={role.id}>
+                <label className="flex cursor-pointer items-start gap-2.5 rounded-lg px-2 py-1.5 hover:bg-canvas">
+                  <input
+                    type="checkbox"
+                    checked={checked}
+                    onChange={() =>
+                      onChange(
+                        checked
+                          ? selected.filter((roleId) => roleId !== role.id)
+                          : [...selected, role.id],
+                      )
+                    }
+                    className="mt-0.5 size-4 accent-primary"
+                  />
+                  <span>
+                    <span className="block text-sm font-medium text-ink">{role.name}</span>
+                    {role.description && (
+                      <span className="block text-xs text-ink/65">{role.description}</span>
+                    )}
+                  </span>
+                </label>
+              </li>
+            );
+          })}
+        </ul>
+      )}
+      <p id={`${id}-summary`} className="rounded-lg bg-canvas px-3 py-2 text-sm text-ink/75">
+        {summary}
+      </p>
+    </fieldset>
   );
 }
 
@@ -143,7 +220,7 @@ function MemberActions({
   const router = useRouter();
   const [pending, startTransition] = useTransition();
   const [dialog, setDialog] = useState<"role" | "reset" | "deactivate" | null>(null);
-  const [access, setAccess] = useState(member.access);
+  const [access, setAccess] = useState<Access>(member.access);
 
   function saveRole() {
     startTransition(async () => {
@@ -221,12 +298,12 @@ function MemberActions({
       </DropdownMenu>
 
       <Dialog open={dialog === "role"} onOpenChange={(open) => !open && setDialog(null)}>
-        <DialogContent className="sm:max-w-md">
+        <DialogContent className="max-h-[90dvh] overflow-y-auto sm:max-w-md">
           <DialogTitle>{text.actions.changeRoleTitle(member.name)}</DialogTitle>
           <DialogDescription className="text-ink/75">
             {text.actions.changeRoleHint}
           </DialogDescription>
-          <AccessSelect
+          <AccessPicker
             id={`access-${member.id}`}
             value={access}
             roles={roles}
@@ -236,7 +313,7 @@ function MemberActions({
             <Button variant="outline" onClick={() => setDialog(null)} disabled={pending}>
               Batal
             </Button>
-            <Button onClick={saveRole} disabled={pending || access === member.access}>
+            <Button onClick={saveRole} disabled={pending || sameAccess(access, member.access)}>
               {pending && <Loader2 className="animate-spin" aria-hidden />}
               Simpan peran
             </Button>
@@ -291,7 +368,11 @@ function CreateMember({
 }) {
   const router = useRouter();
   const [open, setOpen] = useState(false);
-  const initial = { fullName: "", email: "", access: roles[0]?.id ?? "admin" };
+  const initial: { fullName: string; email: string; access: Access } = {
+    fullName: "",
+    email: "",
+    access: roles[0] ? [roles[0].id] : "admin",
+  };
   const [values, setValues] = useState(initial);
   const [error, setError] = useState<string>();
   const [pending, startTransition] = useTransition();
@@ -319,7 +400,7 @@ function CreateMember({
         {text.add}
       </Button>
       <Dialog open={open} onOpenChange={setOpen}>
-        <DialogContent className="sm:max-w-md">
+        <DialogContent className="max-h-[90dvh] overflow-y-auto sm:max-w-md">
           <DialogTitle>{text.add}</DialogTitle>
           <DialogDescription className="text-ink/75">{text.addDescription}</DialogDescription>
           <form
@@ -355,7 +436,7 @@ function CreateMember({
                 onChange={(event) => setValues({ ...values, email: event.target.value })}
               />
             </Field>
-            <AccessSelect
+            <AccessPicker
               id="member-access"
               value={values.access}
               roles={roles}
@@ -376,8 +457,11 @@ function CreateMember({
 /** Teks kolom proyek: admin & peran ber-izin "semua proyek" tidak perlu ditugaskan. */
 function projectsLabel(member: MemberRow, roles: TeamRoleRow[]): string | null {
   if (member.access === "admin") return "Semua proyek";
-  const role = roles.find((item) => item.id === member.access);
-  if (role?.permissions.includes("projects.all")) return "Semua proyek";
+  const access = member.access;
+  const seesAll = roles.some(
+    (role) => access.includes(role.id) && role.permissions.includes("projects.all"),
+  );
+  if (seesAll) return "Semua proyek";
   return member.projects.length ? null : text.assign.none;
 }
 
@@ -401,10 +485,12 @@ export function TeamManager({ members, roles }: { members: MemberRow[]; roles: T
       ),
     },
     {
-      accessorKey: "roleName",
+      id: "roles",
+      accessorFn: (row) => row.roleNames.join(", "),
       header: text.columns.role,
-      filterFn: "equalsString",
-      cell: ({ row }) => <RoleBadge member={row.original} />,
+      // Satu anggota bisa punya beberapa peran: cocok jika salah satunya sama.
+      filterFn: (row, _columnId, value: string) => row.original.roleNames.includes(value),
+      cell: ({ row }) => <RoleBadges member={row.original} />,
     },
     {
       id: "projects",
@@ -450,7 +536,7 @@ export function TeamManager({ members, roles }: { members: MemberRow[]; roles: T
           getRowId={(row) => row.id}
           searchPlaceholder={text.search}
           filter={{
-            columnId: "roleName",
+            columnId: "roles",
             label: text.columns.role,
             options: [
               { value: "Admin", label: "Admin" },
@@ -466,7 +552,7 @@ export function TeamManager({ members, roles }: { members: MemberRow[]; roles: T
                   <span className="block truncate text-sm text-ink/65">{member.email}</span>
                 </span>
                 <span className="flex flex-wrap gap-1.5">
-                  <RoleBadge member={member} />
+                  <RoleBadges member={member} />
                   <StatusBadge active={member.active} />
                 </span>
                 {member.access !== "admin" && (

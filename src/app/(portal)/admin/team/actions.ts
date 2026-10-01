@@ -28,13 +28,38 @@ function refresh() {
   revalidatePath("/admin/team");
 }
 
-/** Akses anggota: "admin" (akses penuh) atau id peran tim. */
-const accessSchema = z.string().refine((value) => value === "admin" || isId(value), "Pilih peran.");
+/** Akses anggota: "admin" (akses penuh) atau daftar peran tim (boleh lebih dari satu, boleh kosong). */
+const accessSchema = z.union([
+  z.literal("admin"),
+  z
+    .array(z.string().refine(isId, "Peran tidak valid."))
+    .max(10, "Maksimal 10 peran.")
+    .transform((ids) => [...new Set(ids)]),
+]);
 
-function accessColumns(access: string) {
-  return access === "admin"
-    ? { role: "admin", team_role_id: null }
-    : { role: "team", team_role_id: access };
+export type MemberAccess = z.input<typeof accessSchema>;
+
+/** Kolom profil sesuai akses. `team_role_id` (usang) dikosongkan; peran ada di profile_team_roles. */
+function accessColumns(access: "admin" | string[]) {
+  return { role: access === "admin" ? "admin" : "team", team_role_id: null };
+}
+
+/** Ganti seluruh peran tim anggota (admin: semua peran tim dihapus). */
+async function replaceTeamRoles(
+  db: NonNullable<ReturnType<typeof createServiceClient>>,
+  memberId: string,
+  access: "admin" | string[],
+): Promise<boolean> {
+  const { error: clearError } = await db
+    .from("profile_team_roles")
+    .delete()
+    .eq("profile_id", memberId);
+  if (clearError) return false;
+  if (access === "admin" || access.length === 0) return true;
+  const { error } = await db
+    .from("profile_team_roles")
+    .insert(access.map((roleId) => ({ profile_id: memberId, team_role_id: roleId })));
+  return !error;
 }
 
 const memberSchema = z.object({
@@ -76,6 +101,9 @@ export async function createMember(input: MemberInput): Promise<Result<{ passwor
     active: true,
   });
   if (profileError) return { ok: false, error: FAILED };
+  if (!(await replaceTeamRoles(db, data.user.id, parsed.data.access))) {
+    return { ok: false, error: FAILED };
+  }
 
   refresh();
   return { ok: true, password };
@@ -92,7 +120,7 @@ async function wouldRemoveLastAdmin(memberId: string): Promise<boolean> {
 
 export async function updateMember(
   memberId: string,
-  input: { fullName: string; access: string },
+  input: { fullName: string; access: MemberAccess },
 ): Promise<Result> {
   if (!isId(memberId)) return { ok: false, error: FAILED };
   const parsed = memberSchema.pick({ fullName: true, access: true }).safeParse(input);
@@ -110,6 +138,9 @@ export async function updateMember(
     .eq("id", memberId)
     .in("role", ["admin", "team"]);
   if (error) return { ok: false, error: FAILED };
+  if (!(await replaceTeamRoles(db, memberId, parsed.data.access))) {
+    return { ok: false, error: FAILED };
+  }
   refresh();
   return { ok: true };
 }
