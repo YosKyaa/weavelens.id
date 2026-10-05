@@ -8,6 +8,7 @@ import {
   type TableImportConfig,
 } from "@/components/organisms/TableImportDialog";
 import { formatLabels, type ContentFormat } from "@/content/workspace";
+import { excelDate, type ExcelTemplate } from "@/lib/excel";
 import { formatDate, todayJakarta } from "@/lib/format";
 import { matchKeyword, parseDate, sameText } from "@/lib/table-import";
 
@@ -62,18 +63,68 @@ const FORMAT_KEYWORDS: Record<ContentFormat, string[]> = {
   other: ["lainnya", "other", "banner", "backdrop", "poster", "desain", "design", "x"],
 };
 
-function template(): string {
+function template(): ExcelTemplate {
   const [year, month] = todayJakarta().split("-").map(Number);
   const next = month === 12 ? 1 : month + 1;
   const y = month === 12 ? year + 1 : year;
-  const d = (day: number) =>
-    `${String(day).padStart(2, "0")}/${String(next).padStart(2, "0")}/${y}`;
-  return [
-    "Tanggal tayang,Brand,Format,Judul,Brief,Caption,Tenggat",
-    `${d(5)},Brand A,Feed,Promo awal bulan,"Foto produk + harga promo, warna brand","Promo spesial bulan ini! Cek link di bio.",${d(3)}`,
-    `${d(9)},Brand A,Carousel,Tips memilih paket,"5 slide tips, slide terakhir CTA WhatsApp",,${d(6)}`,
-    `${d(12)},Brand B,Reels,Behind the scene,"Video 20-30 detik, hook 3 detik pertama",,${d(10)}`,
-  ].join("\n");
+  const d = (day: number) => excelDate(y, next, day);
+  return {
+    filename: "template-rencana-konten.xlsx",
+    sheet: "Rencana konten",
+    columns: [
+      { header: "Tanggal tayang", width: 15 },
+      { header: "Brand", width: 16 },
+      { header: "Format", width: 12 },
+      { header: "Judul", width: 30 },
+      { header: "Brief", width: 40 },
+      { header: "Caption", width: 40 },
+      { header: "Tenggat", width: 13 },
+    ],
+    rows: [
+      [
+        d(5),
+        "Brand A",
+        "Feed",
+        "Promo awal bulan",
+        "Foto produk + harga promo, warna brand",
+        "Promo spesial bulan ini! Cek link di bio.",
+        d(3),
+      ],
+      [
+        d(9),
+        "Brand A",
+        "Carousel",
+        "Tips memilih paket",
+        "5 slide tips, slide terakhir CTA WhatsApp",
+        null,
+        d(6),
+      ],
+      [
+        d(12),
+        "Brand B",
+        "Reels",
+        "Behind the scene",
+        "Video 20-30 detik, hook 3 detik pertama",
+        null,
+        d(10),
+      ],
+    ],
+    guide: [
+      [
+        "Tanggal tayang",
+        "Opsional. Format dd/mm/yyyy. Konten tampil di kalender sesuai tanggal ini.",
+      ],
+      [
+        "Brand",
+        "Opsional. Nama brand klien; brand yang belum terdaftar bisa langsung dibuat saat import.",
+      ],
+      ["Format", "Feed, Carousel, Story, Reels, atau Lainnya. Kosong = Feed."],
+      ["Judul", 'Wajib. Nama konten, mis. "Promo awal bulan".'],
+      ["Brief", "Opsional. Arahan untuk tim desain."],
+      ["Caption", "Opsional. Teks caption; klien bisa mengomentarinya saat review."],
+      ["Tenggat", "Opsional. Tanggal desain harus siap (dd/mm/yyyy)."],
+    ],
+  };
 }
 
 type ContentImportProps = {
@@ -143,7 +194,7 @@ export function ContentImport({ projectId, brands, existing }: ContentImportProp
     synonyms: SYNONYMS,
     requiredField: "title",
     requiredLabel: "Judul",
-    template: { filename: "template-rencana-konten.csv", csv: template() },
+    template: template(),
     toRow,
     columns: [
       {

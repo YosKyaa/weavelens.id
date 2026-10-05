@@ -204,13 +204,13 @@ Link masuk lewat email butuh SMTP sendiri (Resend), karena email bawaan Supabase
 
 ## 14. Import rencana konten & rencana kerja
 
-**Rencana konten → papan:** di papan konten, **Import rencana**. Susun di Google Sheets/Excel, blok tabel (termasuk baris judul kolom), salin, lalu tempel. Atau pilih file CSV, atau unduh template.
+**Rencana konten → papan:** di papan konten, **Import rencana**. **Unduh template Excel** (.xlsx, berisi contoh dan sheet "Petunjuk"), isi, lalu **Unggah file Excel**. Bisa juga blok tabel dari Google Sheets/Excel (termasuk baris judul kolom), salin, lalu tempel.
 - Kolom dikenali dari judulnya: Tanggal tayang, Brand, Format, Judul, Brief, Caption, Tenggat. Penulisan bebas, mis. "Tgl Tayang", "Akun", "Jenis", "Deadline".
 - Tanggal: `05/11/2026`, `2026-11-05`, `5 Nov 2026`, `5 Nov` (tahun berjalan). Format: Feed, Carousel, Story, Reels (juga "IG Feed", "Reels TikTok", "slide", …).
 - Pratinjau sebelum disimpan: baris bermasalah ditandai merah dan dilewati; duplikat (judul + tanggal sama dengan kartu yang ada) tidak dicentang; brand yang belum terdaftar bisa langsung dibuat.
 - Semua baris masuk ke kolom **Brief**. Kolom Brief = rencana konten; geser ke **Dikerjakan** saat mulai digarap. Kalender otomatis menampilkan semuanya.
 
-**Rencana kerja:** di tab Rencana kerja, **Import tahapan** (kolom Tahap, Target, Status, Keterangan). Klien melihat rencana kerja di link klien (tab Rencana) dan di portal klien (tampilan **Rencana kerja**).
+**Rencana kerja:** di tab Rencana kerja, **Import tahapan**. Cara sama: unduh template Excel (kolom Tahap, Target, Status, Keterangan), isi, unggah. Klien melihat rencana kerja di link klien (tab Rencana) dan di portal klien (tampilan **Rencana kerja**).
 
 ## 15. Logo proyek
 

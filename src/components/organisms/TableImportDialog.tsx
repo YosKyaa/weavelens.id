@@ -7,7 +7,13 @@ import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
 import { Dialog, DialogContent, DialogDescription, DialogTitle } from "@/components/ui/dialog";
 import { Textarea } from "@/components/ui/textarea";
-import { downloadText, mapHeaders, parseTable } from "@/lib/table-import";
+import {
+  downloadExcelTemplate,
+  isExcelFile,
+  readExcelTable,
+  type ExcelTemplate,
+} from "@/lib/excel";
+import { mapHeaders, parseTable } from "@/lib/table-import";
 import { cn } from "@/lib/utils";
 
 export type ParsedRow<T> = {
@@ -25,7 +31,8 @@ export type TableImportConfig<F extends string, T> = {
   synonyms: Record<F, string[]>;
   requiredField: F;
   requiredLabel: string;
-  template: { filename: string; csv: string };
+  /** Template Excel (.xlsx) yang bisa diunduh. */
+  template: ExcelTemplate;
   /** Baris tabel (per field) → nilai siap simpan + pesan. */
   toRow: (record: Partial<Record<F, string>>) => ParsedRow<T>;
   columns: { label: string; className?: string; render: (value: T) => ReactNode }[];
@@ -36,7 +43,7 @@ export type TableImportConfig<F extends string, T> = {
 };
 
 /**
- * Import banyak dari tempelan Google Sheets / Excel atau file CSV:
+ * Import banyak dari tempelan Google Sheets / Excel, atau file Excel (.xlsx) / CSV:
  * tempel → pratinjau (baris bermasalah ditandai, bisa dicentang/lepas) → simpan.
  */
 export function TableImportDialog<F extends string, T>({
@@ -58,7 +65,10 @@ export function TableImportDialog<F extends string, T>({
   }
 
   function preview(text: string) {
-    const table = parseTable(text);
+    previewTable(parseTable(text));
+  }
+
+  function previewTable(table: string[][]) {
     if (table.length < 2) {
       setHeaderError("Tempel tabel lengkap dengan baris judul kolom dan minimal satu baris isi.");
       return;
@@ -84,9 +94,28 @@ export function TableImportDialog<F extends string, T>({
 
   async function readFile(file: File | undefined) {
     if (!file) return;
-    const text = await file.text();
-    setRaw(text);
-    preview(text);
+    try {
+      if (isExcelFile(file)) {
+        // Excel: baca sheet pertama langsung (tanggal Excel ikut terbaca dengan benar).
+        previewTable(await readExcelTable(file));
+        return;
+      }
+      const text = await file.text();
+      setRaw(text);
+      preview(text);
+    } catch {
+      setHeaderError(
+        "File tidak bisa dibaca. Pakai file Excel (.xlsx) dari template, atau tempel tabelnya.",
+      );
+    }
+  }
+
+  async function downloadTemplate() {
+    try {
+      await downloadExcelTemplate(config.template);
+    } catch {
+      toast.error("Template gagal dibuat. Coba lagi.");
+    }
   }
 
   // Baris bermasalah tidak pernah ikut, walau tercentang sebelumnya.
@@ -130,9 +159,12 @@ export function TableImportDialog<F extends string, T>({
           {!rows ? (
             <div className="grid gap-4">
               <ol className="grid gap-1 rounded-xl bg-canvas p-4 text-sm text-ink/80">
-                <li>1. Susun di Google Sheets / Excel (atau unduh template di bawah).</li>
-                <li>2. Blok tabel termasuk baris judul kolom, lalu salin (Ctrl+C).</li>
-                <li>3. Tempel di kotak ini (Ctrl+V), lalu tekan Pratinjau.</li>
+                <li>1. Unduh template Excel di bawah, lalu isi (atau pakai tabel sendiri).</li>
+                <li>
+                  2. Unggah file Excel-nya, atau blok tabel termasuk baris judul kolom lalu salin
+                  (Ctrl+C).
+                </li>
+                <li>3. Jika menyalin, tempel di kotak ini (Ctrl+V), lalu tekan Pratinjau.</li>
               </ol>
               <Textarea
                 aria-label="Tempel tabel di sini"
@@ -149,20 +181,16 @@ export function TableImportDialog<F extends string, T>({
               )}
               <div className="flex flex-wrap items-center justify-between gap-2">
                 <div className="flex flex-wrap gap-2">
-                  <Button
-                    variant="ghost"
-                    size="sm"
-                    onClick={() => downloadText(config.template.filename, config.template.csv)}
-                  >
+                  <Button variant="ghost" size="sm" onClick={downloadTemplate}>
                     <Download aria-hidden />
-                    Unduh template
+                    Unduh template Excel
                   </Button>
                   <label className="inline-flex h-8 cursor-pointer items-center gap-1.5 rounded-md px-3 text-sm font-medium text-ink hover:bg-canvas">
                     <FileUp aria-hidden className="size-4" />
-                    Pilih file CSV
+                    Unggah file Excel
                     <input
                       type="file"
-                      accept=".csv,.tsv,.txt,text/csv"
+                      accept=".xlsx,.csv,.tsv,.txt,application/vnd.openxmlformats-officedocument.spreadsheetml.sheet,text/csv"
                       className="sr-only"
                       onChange={(event) => readFile(event.target.files?.[0])}
                     />

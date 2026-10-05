@@ -7,6 +7,7 @@ import {
   type TableImportConfig,
 } from "@/components/organisms/TableImportDialog";
 import { workspaceText } from "@/content/workspace";
+import { excelDate, type ExcelTemplate } from "@/lib/excel";
 import { formatDate, todayJakarta } from "@/lib/format";
 import { matchKeyword, parseDate, sameText } from "@/lib/table-import";
 
@@ -62,15 +63,35 @@ const STATUS_KEYWORDS: Record<Status, string[]> = {
   planned: ["direncanakan", "rencana", "planned", "belum", "todo", "pending", "nanti", "plan"],
 };
 
-function template(): string {
-  const year = todayJakarta().slice(0, 4);
-  return [
-    "Tahap,Target,Status,Keterangan",
-    `Brief & konsep,03/10/${year},Selesai,Kumpulkan kebutuhan dan referensi`,
-    `Produksi konten minggu 1,10/10/${year},Dikerjakan,Feed + Reels`,
-    `Review klien,14/10/${year},Direncanakan,`,
-    `Jadwal tayang,17/10/${year},Direncanakan,`,
-  ].join("\n");
+function template(): ExcelTemplate {
+  const year = Number(todayJakarta().slice(0, 4));
+  const month = Number(todayJakarta().slice(5, 7));
+  return {
+    filename: "template-rencana-kerja.xlsx",
+    sheet: "Rencana kerja",
+    columns: [
+      { header: "Tahap", width: 34 },
+      { header: "Target", width: 14 },
+      { header: "Status", width: 16 },
+      { header: "Keterangan", width: 44 },
+    ],
+    rows: [
+      ["Brief & konsep", excelDate(year, month, 3), "Selesai", "Kumpulkan kebutuhan dan referensi"],
+      ["Produksi konten minggu 1", excelDate(year, month, 10), "Dikerjakan", "Feed + Reels"],
+      ["Review klien", excelDate(year, month, 14), "Direncanakan", null],
+      ["Jadwal tayang", excelDate(year, month, 17), "Direncanakan", null],
+    ],
+    guide: [
+      [
+        "Tahap",
+        'Wajib. Nama tahapan yang dilihat klien di timeline, mis. "Shooting" atau "Review klien".',
+      ],
+      ["Target", "Opsional. Tanggal target, format dd/mm/yyyy (mis. 17/10/2026)."],
+      ["Status", "Opsional: Direncanakan, Dikerjakan, atau Selesai. Kosong = Direncanakan."],
+      ["Keterangan", "Opsional. Catatan singkat yang ikut tampil ke klien."],
+      ["Urutan", "Tahapan ditambahkan di akhir timeline sesuai urutan baris di sheet ini."],
+    ],
+  };
 }
 
 /** Import tahapan rencana kerja (timeline yang dilihat klien) dari tabel. */
@@ -116,7 +137,7 @@ export function PlanImport({
     synonyms: SYNONYMS,
     requiredField: "title",
     requiredLabel: "Tahap",
-    template: { filename: "template-rencana-kerja.csv", csv: template() },
+    template: template(),
     toRow,
     columns: [
       {
