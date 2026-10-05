@@ -2,17 +2,19 @@
 
 import { useRef, useState, useTransition } from "react";
 import { useRouter } from "next/navigation";
-import { ImageUp, Loader2, Trash2 } from "lucide-react";
+import { Crop, ImageUp, Loader2, Trash2 } from "lucide-react";
 import { toast } from "sonner";
 import { setProjectLogo } from "@/app/(portal)/admin/projects/actions";
-import { ProjectAvatar } from "@/components/atoms/ProjectAvatar";
+import { ProjectAvatar, projectLogoUrl } from "@/components/atoms/ProjectAvatar";
+import { LogoCropDialog } from "@/components/organisms/LogoCropDialog";
 import { Button } from "@/components/ui/button";
 import { createBrowserSupabase } from "@/lib/supabase/browser";
 
 const TYPES = ["image/png", "image/jpeg", "image/webp"];
-const MAX_BYTES = 2 * 1024 * 1024;
+/** File asli boleh besar: hasil crop selalu PNG 512 px. */
+const MAX_SOURCE_BYTES = 10 * 1024 * 1024;
 
-/** Logo proyek opsional: tampil di daftar proyek, portal klien, dan link klien. */
+/** Logo proyek opsional: pilih gambar → atur (crop) → simpan. Bisa diatur ulang kapan saja. */
 export function ProjectLogoField({
   projectId,
   title,
@@ -25,39 +27,46 @@ export function ProjectLogoField({
   const router = useRouter();
   const inputRef = useRef<HTMLInputElement>(null);
   const [path, setPath] = useState(logoPath);
+  const [cropSrc, setCropSrc] = useState<string | null>(null);
   const [pending, startTransition] = useTransition();
 
-  function upload(file: File | undefined) {
+  function closeCrop() {
+    if (cropSrc?.startsWith("blob:")) URL.revokeObjectURL(cropSrc);
+    setCropSrc(null);
+    if (inputRef.current) inputRef.current.value = "";
+  }
+
+  function pick(file: File | undefined) {
     if (!file) return;
     if (!TYPES.includes(file.type)) {
       toast.error("Pakai file PNG, JPG, atau WebP.");
       return;
     }
-    if (file.size > MAX_BYTES) {
-      toast.error("Ukuran logo maksimal 2 MB.");
+    if (file.size > MAX_SOURCE_BYTES) {
+      toast.error("Ukuran gambar maksimal 10 MB.");
       return;
     }
-    startTransition(async () => {
-      const extension =
-        file.type === "image/png" ? "png" : file.type === "image/webp" ? "webp" : "jpg";
-      const next = `${projectId}/${crypto.randomUUID()}.${extension}`;
-      const { error } = await createBrowserSupabase()
-        .storage.from("logos")
-        .upload(next, file, { contentType: file.type, cacheControl: "31536000" });
-      if (error) {
-        toast.error("Logo gagal diunggah. Coba lagi.");
-        return;
-      }
-      const result = await setProjectLogo(projectId, next);
-      if (!result.ok) {
-        toast.error(result.error);
-        return;
-      }
-      setPath(next);
-      toast.success("Logo proyek tersimpan.");
-      router.refresh();
-    });
-    if (inputRef.current) inputRef.current.value = "";
+    setCropSrc(URL.createObjectURL(file));
+  }
+
+  async function saveCropped(blob: Blob) {
+    const next = `${projectId}/${crypto.randomUUID()}.png`;
+    const { error } = await createBrowserSupabase()
+      .storage.from("logos")
+      .upload(next, blob, { contentType: "image/png", cacheControl: "31536000" });
+    if (error) {
+      toast.error("Logo gagal diunggah. Coba lagi.");
+      return;
+    }
+    const result = await setProjectLogo(projectId, next);
+    if (!result.ok) {
+      toast.error(result.error);
+      return;
+    }
+    setPath(next);
+    closeCrop();
+    toast.success("Logo proyek tersimpan.");
+    router.refresh();
   }
 
   function remove() {
@@ -84,7 +93,7 @@ export function ProjectLogoField({
             accept={TYPES.join(",")}
             className="sr-only"
             id="project-logo"
-            onChange={(event) => upload(event.target.files?.[0])}
+            onChange={(event) => pick(event.target.files?.[0])}
             disabled={pending}
           />
           <Button asChild variant="outline" size="sm" disabled={pending}>
@@ -94,23 +103,36 @@ export function ProjectLogoField({
             </label>
           </Button>
           {path && (
-            <Button
-              variant="ghost"
-              size="sm"
-              onClick={remove}
-              disabled={pending}
-              className="text-danger hover:bg-danger-soft hover:text-danger"
-            >
-              <Trash2 aria-hidden />
-              Hapus
-            </Button>
+            <>
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={() => setCropSrc(projectLogoUrl(path))}
+                disabled={pending}
+              >
+                <Crop aria-hidden />
+                Atur ulang
+              </Button>
+              <Button
+                variant="ghost"
+                size="sm"
+                onClick={remove}
+                disabled={pending}
+                className="text-danger hover:bg-danger-soft hover:text-danger"
+              >
+                <Trash2 aria-hidden />
+                Hapus
+              </Button>
+            </>
           )}
         </div>
         <p className="text-xs text-ink/65">
-          Opsional. PNG/JPG/WebP maks. 2 MB, sebaiknya persegi. Tanpa logo, proyek tampil dengan
-          inisial berwarna.
+          Opsional. PNG/JPG/WebP; setelah dipilih, logo bisa digeser, diperbesar/diperkecil, dan
+          diberi latar transparan atau putih. Tanpa logo, proyek tampil dengan inisial berwarna.
         </p>
       </div>
+
+      <LogoCropDialog src={cropSrc} onCancel={closeCrop} onConfirm={saveCropped} />
     </div>
   );
 }

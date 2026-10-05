@@ -57,7 +57,7 @@ export function ProjectAvatar({
     >
       {url ? (
         // eslint-disable-next-line @next/next/no-img-element -- logo kecil dari bucket publik
-        <img src={url} alt="" className="size-full object-contain p-1" loading="lazy" />
+        <img src={url} alt="" className="size-full object-cover" loading="lazy" />
       ) : (
         initials(title)
       )}
