@@ -59,15 +59,18 @@ export default async function ClientProjectPage({ params, searchParams }: PagePr
         <ChevronLeft aria-hidden className="size-4" />
         {text.backToProjects}
       </Link>
-      <div className="flex flex-wrap items-start justify-between gap-3">
-        <div className="flex min-w-0 items-center gap-4">
+      {/* Logo + judul sebaris (status di bawah judul), keterangan selebar layar di bawahnya. */}
+      <div className="grid gap-3">
+        <div className="flex items-center gap-4">
           <ProjectAvatar title={project.title} logoPath={project.logo_path} size="lg" />
-          <div className="min-w-0">
-            <h1 className="text-3xl">{project.title}</h1>
-            <p className="mt-2 max-w-2xl text-ink/75">{text.contentSub}</p>
+          <div className="grid min-w-0 flex-1 justify-items-start gap-2">
+            <h1 className="text-2xl leading-tight break-words sm:text-3xl">{project.title}</h1>
+            <StatusBadge kind="project" status={project.status} />
           </div>
         </div>
-        <StatusBadge kind="project" status={project.status} />
+        <p className="max-w-2xl text-ink/75">
+          {planView ? text.planSub : calendar ? text.calendarSub : text.contentSub}
+        </p>
       </div>
       <ViewSwitch
         label="Tampilan proyek"
@@ -75,7 +78,7 @@ export default async function ClientProjectPage({ params, searchParams }: PagePr
         options={[
           { id: "list", label: "Konten", href: base },
           { id: "calendar", label: "Kalender", href: monthHref(month) },
-          { id: "plan", label: "Rencana kerja", href: `${base}?view=plan` },
+          { id: "plan", label: "Rencana kerja", shortLabel: "Rencana", href: `${base}?view=plan` },
         ]}
       />
       {planView ? (

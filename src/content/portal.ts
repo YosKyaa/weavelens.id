@@ -208,6 +208,8 @@ export const portal = {
     contentHeading: "Desain & konten",
     contentSub:
       "Buka satu desain untuk memberi komentar langsung di gambar, lalu setujui atau minta revisi.",
+    calendarSub: "Jadwal tayang konten per tanggal. Ketuk konten untuk membukanya.",
+    planSub: "Tahapan pengerjaan proyek dan progresnya.",
     noContent:
       "Belum ada desain untuk proyek ini. Kami kabari begitu desain pertama siap direview.",
   },
