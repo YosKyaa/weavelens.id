@@ -35,15 +35,18 @@ const SIZES = {
 export function ProjectAvatar({
   title,
   logoPath,
+  previewUrl,
   size = "md",
   className,
 }: {
   title: string;
   logoPath?: string | null;
+  /** URL pratinjau lokal (mis. hasil crop yang belum diunggah); mengalahkan `logoPath`. */
+  previewUrl?: string | null;
   size?: keyof typeof SIZES;
   className?: string;
 }) {
-  const url = projectLogoUrl(logoPath);
+  const url = previewUrl ?? projectLogoUrl(logoPath);
   return (
     <span
       aria-hidden

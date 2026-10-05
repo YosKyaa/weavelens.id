@@ -6,12 +6,14 @@ import { Camera, Clapperboard, Images, Loader2, Palette, Save } from "lucide-rea
 import { toast } from "sonner";
 import { saveProject, type ProjectInput } from "@/app/(portal)/admin/projects/actions";
 import { Field, selectClass } from "@/components/molecules/Field";
+import { LogoPicker } from "@/components/organisms/LogoPicker";
 import { MemberPicker, type TeamOption } from "@/components/organisms/ProjectMembersForm";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { projectTypes, statuses } from "@/content/portal";
 import { PROJECT_TYPES, workspaceText } from "@/content/workspace";
+import { uploadProjectLogo } from "@/lib/project-logo";
 import { cn } from "@/lib/utils";
 
 const text = workspaceText.projects;
@@ -37,6 +39,8 @@ export function ProjectForm({ projectId, initial, clients, teamOptions }: Projec
   const [values, setValues] = useState(initial);
   const [saved, setSaved] = useState(JSON.stringify(initial));
   const [error, setError] = useState<string>();
+  // Proyek baru: logo hasil crop disimpan di sini, diunggah setelah proyek tersimpan.
+  const [logo, setLogo] = useState<Blob | null>(null);
   const [pending, startTransition] = useTransition();
   const dirty = JSON.stringify(values) !== saved;
 
@@ -58,6 +62,14 @@ export function ProjectForm({ projectId, initial, clients, teamOptions }: Projec
         toast.success(text.toast.saved);
         router.refresh();
       } else {
+        if (logo) {
+          const uploaded = await uploadProjectLogo(result.id, logo);
+          if (!uploaded.ok) {
+            toast.warning(
+              "Proyek dibuat, tapi logo gagal diunggah. Unggah lagi di Pengaturan proyek.",
+            );
+          }
+        }
         toast.success(text.toast.created);
         router.push(`/admin/projects/${result.id}`);
       }
@@ -97,6 +109,15 @@ export function ProjectForm({ projectId, initial, clients, teamOptions }: Projec
           />
         </Field>
       </div>
+
+      {!projectId && (
+        <fieldset>
+          <legend className="mb-2 font-heading text-sm font-semibold text-ink">
+            Logo proyek (opsional)
+          </legend>
+          <LogoPicker title={values.title} value={logo} onChange={setLogo} disabled={pending} />
+        </fieldset>
+      )}
 
       <fieldset>
         <legend className="mb-2 font-heading text-sm font-semibold text-ink">

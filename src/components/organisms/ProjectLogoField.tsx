@@ -8,11 +8,7 @@ import { setProjectLogo } from "@/app/(portal)/admin/projects/actions";
 import { ProjectAvatar, projectLogoUrl } from "@/components/atoms/ProjectAvatar";
 import { LogoCropDialog } from "@/components/organisms/LogoCropDialog";
 import { Button } from "@/components/ui/button";
-import { createBrowserSupabase } from "@/lib/supabase/browser";
-
-const TYPES = ["image/png", "image/jpeg", "image/webp"];
-/** File asli boleh besar: hasil crop selalu PNG 512 px. */
-const MAX_SOURCE_BYTES = 10 * 1024 * 1024;
+import { LOGO_SOURCE_TYPES, logoSourceError, uploadProjectLogo } from "@/lib/project-logo";
 
 /** Logo proyek opsional: pilih gambar → atur (crop) → simpan. Bisa diatur ulang kapan saja. */
 export function ProjectLogoField({
@@ -38,32 +34,21 @@ export function ProjectLogoField({
 
   function pick(file: File | undefined) {
     if (!file) return;
-    if (!TYPES.includes(file.type)) {
-      toast.error("Pakai file PNG, JPG, atau WebP.");
-      return;
-    }
-    if (file.size > MAX_SOURCE_BYTES) {
-      toast.error("Ukuran gambar maksimal 10 MB.");
+    const problem = logoSourceError(file);
+    if (problem) {
+      toast.error(problem);
       return;
     }
     setCropSrc(URL.createObjectURL(file));
   }
 
   async function saveCropped(blob: Blob) {
-    const next = `${projectId}/${crypto.randomUUID()}.png`;
-    const { error } = await createBrowserSupabase()
-      .storage.from("logos")
-      .upload(next, blob, { contentType: "image/png", cacheControl: "31536000" });
-    if (error) {
-      toast.error("Logo gagal diunggah. Coba lagi.");
-      return;
-    }
-    const result = await setProjectLogo(projectId, next);
+    const result = await uploadProjectLogo(projectId, blob);
     if (!result.ok) {
       toast.error(result.error);
       return;
     }
-    setPath(next);
+    setPath(result.path);
     closeCrop();
     toast.success("Logo proyek tersimpan.");
     router.refresh();
@@ -85,12 +70,12 @@ export function ProjectLogoField({
   return (
     <div className="flex flex-wrap items-center gap-4">
       <ProjectAvatar title={title} logoPath={path} size="lg" />
-      <div className="grid gap-2">
+      <div className="grid min-w-56 flex-1 gap-2">
         <div className="flex flex-wrap gap-2">
           <input
             ref={inputRef}
             type="file"
-            accept={TYPES.join(",")}
+            accept={LOGO_SOURCE_TYPES.join(",")}
             className="sr-only"
             id="project-logo"
             onChange={(event) => pick(event.target.files?.[0])}
