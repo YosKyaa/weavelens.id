@@ -39,7 +39,11 @@ export default async function ClientProjectPage({ params, searchParams }: PagePr
       .eq("project_id", project.id)
       .order("order"),
   ]);
-  const activeBrand = brand && brands?.some((item) => item.id === brand) ? brand : null;
+  // Proyek khusus satu brand: hanya brand itu (filter brand tidak ditampilkan).
+  const projectBrands = (brands ?? []).filter(
+    (item) => !project.brand_id || item.id === project.brand_id,
+  );
+  const activeBrand = brand && projectBrands.some((item) => item.id === brand) ? brand : null;
   const base = `/client/projects/${project.id}`;
   const calendar = view === "calendar";
   const planView = view === "plan";
@@ -81,7 +85,7 @@ export default async function ClientProjectPage({ params, searchParams }: PagePr
       ) : calendar ? (
         <ContentCalendar
           key={month}
-          items={toCalendarItems(items, brands ?? [])}
+          items={toCalendarItems(items, projectBrands)}
           month={month}
           monthHrefs={{
             previous: monthHref(shiftMonth(month, -1)),
@@ -93,7 +97,7 @@ export default async function ClientProjectPage({ params, searchParams }: PagePr
       ) : (
         <ContentReviewList
           items={items}
-          brands={brands ?? []}
+          brands={projectBrands}
           activeBrand={activeBrand}
           filterHref={(brandId) => (brandId ? `${base}?brand=${brandId}` : base)}
           itemHref={(contentId) => `${base}/content/${contentId}`}

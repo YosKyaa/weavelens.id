@@ -21,14 +21,14 @@ export default async function ProjectBoardPage({ params, searchParams }: PagePro
 
   const { data: project } = await supabase
     .from("projects")
-    .select("type, client_id")
+    .select("type, client_id, brand_id")
     .eq("id", id)
     .single();
   if (project && (project.type === "photo" || project.type === "video")) {
     redirect(`/admin/projects/${id}/galleries`);
   }
 
-  const [items, { data: brands }] = await Promise.all([
+  const [items, { data: clientBrands }] = await Promise.all([
     loadBoard(supabase, id),
     supabase
       .from("brands")
@@ -36,6 +36,11 @@ export default async function ProjectBoardPage({ params, searchParams }: PagePro
       .eq("client_id", project?.client_id ?? "")
       .order("sort"),
   ]);
+  // Proyek khusus satu brand: hanya brand itu yang relevan.
+  const brandLocked = Boolean(project?.brand_id);
+  const brands = (clientBrands ?? []).filter(
+    (brand) => !brandLocked || brand.id === project?.brand_id,
+  );
 
   const base = `/admin/projects/${id}`;
   const calendar = view === "calendar";
@@ -55,7 +60,7 @@ export default async function ProjectBoardPage({ params, searchParams }: PagePro
       {calendar ? (
         <ContentCalendar
           key={`${month}-${items.length}`}
-          items={toCalendarItems(items, brands ?? [])}
+          items={toCalendarItems(items, brands)}
           month={month}
           monthHrefs={{
             previous: monthHref(shiftMonth(month, -1)),
@@ -66,7 +71,7 @@ export default async function ProjectBoardPage({ params, searchParams }: PagePro
           reschedule={setPublishDate.bind(null, id)}
         />
       ) : (
-        <ContentBoard projectId={id} items={items} brands={brands ?? []} />
+        <ContentBoard projectId={id} items={items} brands={brands} brandLocked={brandLocked} />
       )}
     </div>
   );

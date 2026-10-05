@@ -1034,6 +1034,7 @@ export type Database = {
           description: string | null;
           updated_at: string;
           logo_path: string | null;
+          brand_id: string | null;
         };
         Insert: {
           id?: string;
@@ -1047,6 +1048,7 @@ export type Database = {
           description?: string | null;
           updated_at?: string;
           logo_path?: string | null;
+          brand_id?: string | null;
         };
         Update: {
           id?: string;
@@ -1060,6 +1062,7 @@ export type Database = {
           description?: string | null;
           updated_at?: string;
           logo_path?: string | null;
+          brand_id?: string | null;
         };
         Relationships: [
           {
@@ -1067,6 +1070,13 @@ export type Database = {
             columns: ["client_id"];
             isOneToOne: false;
             referencedRelation: "clients";
+            referencedColumns: ["id"];
+          },
+          {
+            foreignKeyName: "projects_brand_id_fkey";
+            columns: ["brand_id"];
+            isOneToOne: false;
+            referencedRelation: "brands";
             referencedColumns: ["id"];
           },
         ];

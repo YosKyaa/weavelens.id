@@ -33,7 +33,11 @@ export default async function ShareContentPage({ params, searchParams }: PagePro
         .select("id, name, color")
         .eq("client_id", context.project.client_id)
         .order("sort");
-  const brandById = new Map((brands ?? []).map((brand) => [brand.id, brand]));
+  // Proyek khusus satu brand: hanya brand itu (filter brand tidak ditampilkan).
+  const projectBrands = (brands ?? []).filter(
+    (brand) => !context.project.brand_id || brand.id === context.project.brand_id,
+  );
+  const brandById = new Map(projectBrands.map((brand) => [brand.id, brand]));
   const activeBrand = brandParam && brandById.has(brandParam) ? brandParam : null;
 
   const base = `/share/${token}`;
@@ -58,7 +62,7 @@ export default async function ShareContentPage({ params, searchParams }: PagePro
       {calendar ? (
         <ContentCalendar
           key={month}
-          items={toCalendarItems(items, context.brand ? [context.brand] : (brands ?? []))}
+          items={toCalendarItems(items, context.brand ? [context.brand] : projectBrands)}
           month={month}
           monthHrefs={{
             previous: monthHref(shiftMonth(month, -1)),
@@ -70,7 +74,7 @@ export default async function ShareContentPage({ params, searchParams }: PagePro
       ) : (
         <ContentReviewList
           items={items}
-          brands={brands ?? []}
+          brands={projectBrands}
           activeBrand={activeBrand}
           filterHref={(brandId) => (brandId ? `${base}?brand=${brandId}` : base)}
           itemHref={(contentId) => `${base}/content/${contentId}`}

@@ -12,10 +12,10 @@ export default async function ProjectSettingsPage({ params }: PageProps) {
   const [{ data: project }, { data: clients }] = await Promise.all([
     supabase
       .from("projects")
-      .select("id, client_id, title, type, event_date, description, status, logo_path")
+      .select("id, client_id, brand_id, title, type, event_date, description, status, logo_path")
       .eq("id", id)
       .single(),
-    supabase.from("clients").select("id, name").order("name"),
+    supabase.from("clients").select("id, name, brands(id, name, sort)").order("name"),
   ]);
   if (!project) return null;
 
@@ -31,9 +31,14 @@ export default async function ProjectSettingsPage({ params }: PageProps) {
       <FormSection title="Detail proyek" className="max-w-3xl">
         <ProjectForm
           projectId={id}
-          clients={clients ?? []}
+          clients={(clients ?? []).map((item) => ({
+            id: item.id,
+            name: item.name,
+            brands: [...item.brands].sort((a, b) => a.sort - b.sort),
+          }))}
           initial={{
             clientId: project.client_id,
+            brandId: project.brand_id,
             title: project.title,
             type: project.type as "design",
             eventDate: project.event_date ?? "",

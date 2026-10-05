@@ -30,7 +30,7 @@ export default async function ContentPage({ params }: PageProps) {
   const { data: content } = await supabase
     .from("design_assets")
     .select(
-      "id, title, stage, format, brand_id, due_date, publish_date, brief, caption, projects!inner(client_id)",
+      "id, title, stage, format, brand_id, due_date, publish_date, brief, caption, projects!inner(client_id, brand_id)",
     )
     .eq("id", contentId)
     .eq("project_id", id)
@@ -111,7 +111,8 @@ export default async function ContentPage({ params }: PageProps) {
           <ContentDetailsForm
             projectId={id}
             contentId={contentId}
-            brands={brands ?? []}
+            // Proyek khusus satu brand: pilihan brand disembunyikan.
+            brands={content.projects.brand_id ? [] : (brands ?? [])}
             initial={{
               title: content.title,
               brandId: content.brand_id,

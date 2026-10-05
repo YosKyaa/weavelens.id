@@ -10,7 +10,7 @@ export default async function ProjectSharePage({ params }: PageProps) {
   const { supabase } = await requireStaff();
 
   const [{ data: project }, { data: links }] = await Promise.all([
-    supabase.from("projects").select("title, client_id").eq("id", id).single(),
+    supabase.from("projects").select("title, client_id, brand_id").eq("id", id).single(),
     supabase
       .from("share_links")
       .select(
@@ -19,11 +19,16 @@ export default async function ProjectSharePage({ params }: PageProps) {
       .eq("project_id", id)
       .order("created_at", { ascending: false }),
   ]);
-  const { data: brands } = await supabase
+  const { data: clientBrands } = await supabase
     .from("brands")
     .select("id, name")
     .eq("client_id", project?.client_id ?? "")
     .order("sort");
+  // Proyek khusus satu brand: link hanya untuk brand itu (pilihan cakupan disembunyikan).
+  const projectBrandId = project?.brand_id ?? null;
+  const brands = (clientBrands ?? []).filter(
+    (brand) => !projectBrandId || brand.id === projectBrandId,
+  );
 
   const now = new Date();
   const rows: ShareLinkRow[] = (links ?? []).map((link) => ({
@@ -46,10 +51,10 @@ export default async function ProjectSharePage({ params }: PageProps) {
       <ShareLinksManager
         projectId={id}
         projectTitle={project?.title ?? ""}
-        brands={brands ?? []}
+        brands={projectBrandId ? [] : brands}
         links={rows}
         missingBrands={
-          (brands ?? []).filter(
+          brands.filter(
             (brand) =>
               !(links ?? []).some(
                 (link) =>

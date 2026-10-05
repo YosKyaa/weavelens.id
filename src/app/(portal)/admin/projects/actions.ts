@@ -42,15 +42,19 @@ type SessionDb = Awaited<ReturnType<typeof requireStaff>>["supabase"];
 
 /**
  * Link klien otomatis: satu link per brand yang belum punya link aktif
- * (atau satu link "Semua konten" jika klien belum punya brand). Mengembalikan jumlah link baru.
+ * (atau satu link "Semua konten" jika klien belum punya brand). Proyek khusus satu brand
+ * hanya mendapat link untuk brand itu. Mengembalikan jumlah link baru.
  */
 async function ensureBrandLinks(
   supabase: SessionDb,
   projectId: string,
   clientId: string,
+  projectBrandId: string | null = null,
 ): Promise<number> {
+  let brandQuery = supabase.from("brands").select("id, name").eq("client_id", clientId);
+  if (projectBrandId) brandQuery = brandQuery.eq("id", projectBrandId);
   const [{ data: brands }, { data: links }] = await Promise.all([
-    supabase.from("brands").select("id, name").eq("client_id", clientId).order("sort"),
+    brandQuery.order("sort"),
     supabase
       .from("share_links")
       .select("brand_id, expires_at")
@@ -81,8 +85,20 @@ async function ensureBrandLinks(
   return error ? 0 : rows.length;
 }
 
+/** Brand khusus proyek (atau `null` = proyek gabungan). */
+async function projectBrand(supabase: SessionDb, projectId: string) {
+  const { data } = await supabase
+    .from("projects")
+    .select("client_id, brand_id")
+    .eq("id", projectId)
+    .maybeSingle();
+  return data;
+}
+
 const projectSchema = z.object({
   clientId: uuid,
+  /** Proyek khusus satu brand milik klien; kosong = proyek gabungan semua brand. */
+  brandId: uuid.nullable().optional(),
   title: z.string().trim().min(1, "Isi nama proyek.").max(120),
   type: z.enum(PROJECT_TYPES),
   eventDate: day,
@@ -102,8 +118,20 @@ export async function saveProject(
   if (!parsed.success) return { ok: false, error: parsed.error.issues[0]?.message ?? FAILED };
   const { supabase } = await requirePermission("projects.manage");
   const value = parsed.data;
+  const brandId = value.brandId ?? null;
+  if (brandId) {
+    // Brand harus milik klien proyek ini.
+    const { data: brand } = await supabase
+      .from("brands")
+      .select("id")
+      .eq("id", brandId)
+      .eq("client_id", value.clientId)
+      .maybeSingle();
+    if (!brand) return { ok: false, error: "Brand tidak ditemukan untuk klien ini." };
+  }
   const row = {
     client_id: value.clientId,
+    brand_id: brandId,
     title: value.title,
     type: value.type,
     event_date: value.eventDate,
@@ -116,6 +144,8 @@ export async function saveProject(
     if (!isId(projectId)) return { ok: false, error: FAILED };
     const { error } = await supabase.from("projects").update(row).eq("id", projectId);
     if (error) return { ok: false, error: FAILED };
+    if (brandId)
+      await focusProjectOnBrand(supabase, projectId, value.clientId, brandId, value.type);
     refreshProject(projectId);
     return { ok: true, id: projectId };
   }
@@ -128,10 +158,41 @@ export async function saveProject(
   }
   // Proyek konten: link review klien per brand langsung tersedia di tab Link klien.
   if (value.type === "design" || value.type === "mixed") {
-    await ensureBrandLinks(supabase, data.id, value.clientId);
+    await ensureBrandLinks(supabase, data.id, value.clientId, brandId);
   }
   refreshProject(data.id);
   return { ok: true, id: data.id };
+}
+
+/**
+ * Proyek dijadikan khusus satu brand: konten tanpa brand ikut brand ini, link klien untuk
+ * brand LAIN dicabut (tidak relevan lagi), dan link untuk brand ini dibuat bila belum ada.
+ */
+async function focusProjectOnBrand(
+  supabase: SessionDb,
+  projectId: string,
+  clientId: string,
+  brandId: string,
+  type: string,
+) {
+  const now = new Date().toISOString();
+  await Promise.all([
+    supabase
+      .from("design_assets")
+      .update({ brand_id: brandId, updated_at: now })
+      .eq("project_id", projectId)
+      .is("brand_id", null),
+    supabase
+      .from("share_links")
+      .update({ revoked_at: now })
+      .eq("project_id", projectId)
+      .is("revoked_at", null)
+      .not("brand_id", "is", null)
+      .neq("brand_id", brandId),
+  ]);
+  if (type === "design" || type === "mixed") {
+    await ensureBrandLinks(supabase, projectId, clientId, brandId);
+  }
 }
 
 export async function deleteProject(projectId: string): Promise<Result> {
@@ -168,9 +229,11 @@ export async function saveContent(
   if (!parsed.success) return { ok: false, error: parsed.error.issues[0]?.message ?? FAILED };
   const { supabase, user } = await requireStaff();
   const value = parsed.data;
+  const project = await projectBrand(supabase, projectId);
   const row = {
     title: value.title,
-    brand_id: value.brandId,
+    // Proyek khusus satu brand: semua konten otomatis brand itu.
+    brand_id: project?.brand_id ?? value.brandId,
     format: value.format,
     stage: value.stage,
     due_date: value.dueDate,
@@ -522,11 +585,12 @@ export async function createShareLink(
   const parsed = shareSchema.safeParse(input);
   if (!parsed.success) return { ok: false, error: parsed.error.issues[0]?.message ?? FAILED };
   const { supabase } = await requireStaff();
+  const project = await projectBrand(supabase, projectId);
   const token = generateShareToken();
   const { error } = await supabase.from("share_links").insert({
     token,
     project_id: projectId,
-    brand_id: parsed.data.brandId,
+    brand_id: project?.brand_id ?? parsed.data.brandId,
     label: parsed.data.label,
     can_review: parsed.data.canReview,
     // Berlaku sampai akhir hari yang dipilih (zona Jakarta).
@@ -541,13 +605,9 @@ export async function createShareLink(
 export async function createBrandLinks(projectId: string): Promise<Result<{ created: number }>> {
   if (!isId(projectId)) return { ok: false, error: FAILED };
   const { supabase } = await requireStaff();
-  const { data: project } = await supabase
-    .from("projects")
-    .select("client_id")
-    .eq("id", projectId)
-    .maybeSingle();
+  const project = await projectBrand(supabase, projectId);
   if (!project) return { ok: false, error: FAILED };
-  const created = await ensureBrandLinks(supabase, projectId, project.client_id);
+  const created = await ensureBrandLinks(supabase, projectId, project.client_id, project.brand_id);
   refreshProject(projectId);
   return { ok: true, created };
 }
@@ -601,12 +661,13 @@ export async function importContents(
   if (!parsed.success) return { ok: false, error: parsed.error.issues[0]?.message ?? FAILED };
   const { supabase, user } = await requireStaff();
 
-  const { data: project } = await supabase
-    .from("projects")
-    .select("client_id")
-    .eq("id", projectId)
-    .maybeSingle();
+  const project = await projectBrand(supabase, projectId);
   if (!project) return { ok: false, error: FAILED };
+  // Proyek khusus satu brand: semua baris masuk brand itu, kolom Brand diabaikan.
+  if (project.brand_id) {
+    parsed.data.newBrands = [];
+    for (const row of parsed.data.rows) row.brandName = null;
+  }
 
   const { data: existing } = await supabase
     .from("brands")
@@ -650,7 +711,9 @@ export async function importContents(
     parsed.data.rows.map((row, index) => ({
       project_id: projectId,
       title: row.title,
-      brand_id: row.brandName ? (brandId.get(row.brandName.toLowerCase()) ?? null) : null,
+      brand_id:
+        project.brand_id ??
+        (row.brandName ? (brandId.get(row.brandName.toLowerCase()) ?? null) : null),
       format: row.format,
       stage: "brief",
       publish_date: row.publishDate,

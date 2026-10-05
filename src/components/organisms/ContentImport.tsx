@@ -63,12 +63,13 @@ const FORMAT_KEYWORDS: Record<ContentFormat, string[]> = {
   other: ["lainnya", "other", "banner", "backdrop", "poster", "desain", "design", "x"],
 };
 
-function template(): ExcelTemplate {
+/** `lockedBrand` = proyek khusus satu brand: template tanpa kolom Brand. */
+function template(lockedBrand: string | null): ExcelTemplate {
   const [year, month] = todayJakarta().split("-").map(Number);
   const next = month === 12 ? 1 : month + 1;
   const y = month === 12 ? year + 1 : year;
   const d = (day: number) => excelDate(y, next, day);
-  return {
+  const base: ExcelTemplate = {
     filename: "template-rencana-konten.xlsx",
     sheet: "Rencana konten",
     columns: [
@@ -125,6 +126,13 @@ function template(): ExcelTemplate {
       ["Tenggat", "Opsional. Tanggal desain harus siap (dd/mm/yyyy)."],
     ],
   };
+  if (!lockedBrand) return base;
+  return {
+    ...base,
+    columns: base.columns.filter((_, index) => index !== 1),
+    rows: base.rows.map((row) => row.filter((_, index) => index !== 1)),
+    guide: base.guide.filter(([column]) => column !== "Brand"),
+  };
 }
 
 type ContentImportProps = {
@@ -132,10 +140,17 @@ type ContentImportProps = {
   brands: { id: string; name: string }[];
   /** Kartu yang sudah ada, untuk menandai duplikat (judul + tanggal tayang sama). */
   existing: { title: string; publishDate: string | null }[];
+  /** Nama brand proyek bila proyek khusus satu brand (kolom Brand diabaikan). */
+  lockedBrand?: string | null;
 };
 
 /** Import rencana konten → kartu di kolom Brief, lengkap dengan brand, format, dan tanggal. */
-export function ContentImport({ projectId, brands, existing }: ContentImportProps) {
+export function ContentImport({
+  projectId,
+  brands,
+  existing,
+  lockedBrand = null,
+}: ContentImportProps) {
   const [skipBrands, setSkipBrands] = useState<string[]>([]);
   const year = Number(todayJakarta().slice(0, 4));
   const knownBrand = (name: string) => brands.find((brand) => sameText(brand.name, name));
@@ -157,9 +172,10 @@ export function ContentImport({ projectId, brands, existing }: ContentImportProp
       warnings.push(`Format "${formatText}" tidak dikenal, dipakai Feed`);
     }
 
-    const brandText = (record.brand ?? "").trim();
-    const brand = brandText ? knownBrand(brandText) : undefined;
-    if (brandText && !brand) warnings.push(`Brand baru: ${brandText}`);
+    // Proyek khusus satu brand: kolom Brand diabaikan, semua baris masuk brand proyek.
+    const brandText = lockedBrand ?? (record.brand ?? "").trim();
+    const brand = lockedBrand ? undefined : brandText ? knownBrand(brandText) : undefined;
+    if (!lockedBrand && brandText && !brand) warnings.push(`Brand baru: ${brandText}`);
 
     const duplicate =
       title &&
@@ -194,7 +210,7 @@ export function ContentImport({ projectId, brands, existing }: ContentImportProp
     synonyms: SYNONYMS,
     requiredField: "title",
     requiredLabel: "Judul",
-    template: template(),
+    template: template(lockedBrand),
     toRow,
     columns: [
       {
@@ -202,7 +218,15 @@ export function ContentImport({ projectId, brands, existing }: ContentImportProp
         className: "whitespace-nowrap",
         render: (row) => (row.publishDate ? formatDate(row.publishDate) : "–"),
       },
-      { label: "Brand", className: "whitespace-nowrap", render: (row) => row.brandName ?? "–" },
+      ...(lockedBrand
+        ? []
+        : [
+            {
+              label: "Brand",
+              className: "whitespace-nowrap",
+              render: (row: ContentRow) => row.brandName ?? "–",
+            },
+          ]),
       { label: "Format", render: (row) => formatLabels[row.format] },
       {
         label: "Judul",
@@ -223,6 +247,7 @@ export function ContentImport({ projectId, brands, existing }: ContentImportProp
       },
     ],
     extra: (selected) => {
+      if (lockedBrand) return null;
       const fresh = [
         ...new Set(
           selected

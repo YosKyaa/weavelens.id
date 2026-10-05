@@ -219,3 +219,11 @@ Di tab Rencana kerja:
 ## 15. Logo proyek
 
 Opsional, di **Pengaturan proyek → Logo proyek** (PNG/JPG/WebP). Setelah gambar dipilih, jendela **Atur logo** terbuka: geser posisi, perbesar/perkecil (tombol **Pas** = seluruh logo terlihat, **Penuh** = kotak terisi), pilih latar **Transparan** atau **Putih**. Hasil disimpan sebagai PNG persegi 512 px. Logo yang sudah ada bisa diatur lagi lewat **Atur ulang**. Logo juga bisa langsung dipilih & diatur saat **Buat proyek**; diunggah otomatis setelah proyek tersimpan. Tampil di daftar proyek, header proyek, beranda & halaman proyek portal klien, dan link klien. Tanpa logo, proyek tampil dengan inisial berwarna. Migrasi: `0009_project_logo.sql` (kolom `projects.logo_path` + bucket publik `logos`).
+
+## 16. Proyek per brand
+
+Klien dengan beberapa brand bisa diatur dengan dua cara:
+- **Satu proyek per brand** (mis. Resort Kamila, NIRWANA 88, …): saat membuat proyek atau di **Pengaturan proyek**, pilih **Brand proyek**. Konten otomatis masuk brand itu, pilihan & filter brand disembunyikan, import mengabaikan kolom Brand, dan link klien hanya untuk brand itu. Saat brand dipilih untuk proyek yang sudah ada, link klien untuk brand lain otomatis dicabut dan konten tanpa brand ikut brand proyek.
+- **Satu proyek gabungan** (mis. "Konten Oktober" untuk semua brand): biarkan **Semua brand**. Brand dipilih per konten, ada filter brand, dan link klien bisa per brand.
+
+Migrasi: `0010_project_brand.sql` (kolom `projects.brand_id`).

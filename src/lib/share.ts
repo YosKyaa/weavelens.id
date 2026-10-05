@@ -24,7 +24,7 @@ export const resolveShare = cache(async (token: string) => {
   const { data: link } = await db
     .from("share_links")
     .select(
-      "id, label, can_review, expires_at, revoked_at, brand_id, project_id, projects!inner(id, title, type, status, event_date, description, client_id, logo_path, clients(name)), brands(id, name, color)",
+      "id, label, can_review, expires_at, revoked_at, brand_id, project_id, projects!inner(id, title, type, status, event_date, description, client_id, brand_id, logo_path, clients(name)), brands(id, name, color)",
     )
     .eq("token", token)
     .maybeSingle();

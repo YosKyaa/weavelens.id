@@ -29,7 +29,8 @@ const typeHints: Record<string, string> = {
 type ProjectFormProps = {
   projectId: string | null;
   initial: ProjectInput;
-  clients: { id: string; name: string }[];
+  /** Klien beserta brand-nya (untuk pilihan "Brand proyek"). */
+  clients: { id: string; name: string; brands: { id: string; name: string }[] }[];
   /** Diisi saat membuat proyek: pilih tim yang langsung ditugaskan. */
   teamOptions?: TeamOption[];
 };
@@ -47,6 +48,8 @@ export function ProjectForm({ projectId, initial, clients, teamOptions }: Projec
   function update(patch: Partial<ProjectInput>) {
     setValues((current) => ({ ...current, ...patch }));
   }
+
+  const clientBrands = clients.find((client) => client.id === values.clientId)?.brands ?? [];
 
   function submit() {
     startTransition(async () => {
@@ -90,7 +93,8 @@ export function ProjectForm({ projectId, initial, clients, teamOptions }: Projec
           <select
             id="project-client"
             value={values.clientId}
-            onChange={(event) => update({ clientId: event.target.value })}
+            // Brand milik klien lain tidak berlaku lagi.
+            onChange={(event) => update({ clientId: event.target.value, brandId: null })}
             className={selectClass}
           >
             {clients.map((client) => (
@@ -109,6 +113,38 @@ export function ProjectForm({ projectId, initial, clients, teamOptions }: Projec
           />
         </Field>
       </div>
+
+      {clientBrands.length > 0 && (
+        <Field
+          id="project-brand"
+          label="Brand proyek"
+          hint={
+            values.brandId
+              ? "Proyek khusus brand ini: konten otomatis masuk brand ini dan link klien hanya untuk brand ini."
+              : 'Pilih brand bila proyek ini khusus satu brand. Biarkan "Semua brand" untuk proyek gabungan.'
+          }
+        >
+          <select
+            id="project-brand"
+            value={values.brandId ?? ""}
+            onChange={(event) => {
+              const brandId = event.target.value || null;
+              const brand = clientBrands.find((item) => item.id === brandId);
+              // Nama proyek kosong → isi dengan nama brand.
+              update({ brandId, ...(brand && !values.title.trim() ? { title: brand.name } : {}) });
+            }}
+            className={selectClass}
+            aria-describedby="project-brand-hint"
+          >
+            <option value="">Semua brand (proyek gabungan)</option>
+            {clientBrands.map((brand) => (
+              <option key={brand.id} value={brand.id}>
+                {brand.name}
+              </option>
+            ))}
+          </select>
+        </Field>
+      )}
 
       {!projectId && (
         <fieldset>

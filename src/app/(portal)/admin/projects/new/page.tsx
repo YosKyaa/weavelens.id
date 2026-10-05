@@ -16,7 +16,7 @@ export default async function NewProjectPage({ searchParams }: PageProps) {
   const { client } = await searchParams;
   const { supabase } = await requirePermission("projects.manage");
   const [{ data: clients }, teamOptions] = await Promise.all([
-    supabase.from("clients").select("id, name").order("name"),
+    supabase.from("clients").select("id, name, brands(id, name, sort)").order("name"),
     loadTeamOptions(supabase),
   ]);
 
@@ -37,10 +37,15 @@ export default async function NewProjectPage({ searchParams }: PageProps) {
         <FormSection title="Detail proyek" className="max-w-3xl">
           <ProjectForm
             projectId={null}
-            clients={clients}
+            clients={clients.map((item) => ({
+              id: item.id,
+              name: item.name,
+              brands: [...item.brands].sort((a, b) => a.sort - b.sort),
+            }))}
             teamOptions={teamOptions}
             initial={{
               clientId: clients.some((item) => item.id === client) ? client! : clients[0].id,
+              brandId: null,
               title: "",
               type: "design",
               eventDate: "",

@@ -56,6 +56,8 @@ type ContentBoardProps = {
   projectId: string;
   items: BoardItem[];
   brands: BoardBrand[];
+  /** Proyek khusus satu brand: filter, pilihan, dan label brand disembunyikan. */
+  brandLocked?: boolean;
 };
 
 function stageLabel(stage: Stage): string {
@@ -70,7 +72,14 @@ function sortBetween(before: number | undefined, after: number | undefined): num
   return (before + after) / 2;
 }
 
-export function ContentBoard({ projectId, items: initialItems, brands }: ContentBoardProps) {
+export function ContentBoard({
+  projectId,
+  items: initialItems,
+  brands,
+  brandLocked = false,
+}: ContentBoardProps) {
+  // Proyek brand: pilihan brand tidak ditampilkan (server mengisi brand proyek).
+  const choosable = brandLocked ? [] : brands;
   const router = useRouter();
   const [items, setItems] = useState(initialItems);
   const today = todayJakarta();
@@ -138,7 +147,7 @@ export function ContentBoard({ projectId, items: initialItems, brands }: Content
   return (
     <div className="grid gap-4">
       <div className="flex flex-wrap items-center gap-2">
-        {brands.length > 0 && (
+        {choosable.length > 0 && (
           <select
             value={brandFilter}
             onChange={(event) => setBrandFilter(event.target.value)}
@@ -172,10 +181,11 @@ export function ContentBoard({ projectId, items: initialItems, brands }: Content
           <ContentImport
             projectId={projectId}
             brands={brands}
+            lockedBrand={brandLocked ? (brands[0]?.name ?? null) : null}
             existing={items.map((item) => ({ title: item.title, publishDate: item.publishDate }))}
           />
-          <BulkUpload projectId={projectId} brands={brands} />
-          <ContentCreate projectId={projectId} brands={brands} stage="brief" />
+          <BulkUpload projectId={projectId} brands={choosable} />
+          <ContentCreate projectId={projectId} brands={choosable} stage="brief" />
         </div>
       </div>
 
@@ -205,12 +215,12 @@ export function ContentBoard({ projectId, items: initialItems, brands }: Content
                   </h2>
                   <p className="text-xs text-ink/60">{stageHints[stage]}</p>
                 </div>
-                <ContentCreate projectId={projectId} brands={brands} stage={stage} compact />
+                <ContentCreate projectId={projectId} brands={choosable} stage={stage} compact />
               </header>
 
               <ol className="flex flex-1 flex-col gap-2">
                 {cards.map((item) => {
-                  const brand = item.brandId ? brandById.get(item.brandId) : null;
+                  const brand = !brandLocked && item.brandId ? brandById.get(item.brandId) : null;
                   return (
                     <li
                       key={item.id}
