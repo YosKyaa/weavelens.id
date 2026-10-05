@@ -503,31 +503,6 @@ export async function deletePlanItem(projectId: string, itemId: string): Promise
   return { ok: true };
 }
 
-export async function movePlanItem(
-  projectId: string,
-  itemId: string,
-  direction: -1 | 1,
-): Promise<Result> {
-  if (!isId(projectId)) return { ok: false, error: FAILED };
-  if (!isId(itemId)) return { ok: false, error: FAILED };
-  const { supabase } = await requireStaff();
-  const { data } = await supabase
-    .from("plan_items")
-    .select("id")
-    .eq("project_id", projectId)
-    .order("order");
-  const ids = (data ?? []).map((row) => row.id);
-  const from = ids.indexOf(itemId);
-  const to = from + (direction === 1 ? 1 : -1);
-  if (from === -1 || to < 0 || to >= ids.length) return { ok: true };
-  [ids[from], ids[to]] = [ids[to], ids[from]];
-  await Promise.all(
-    ids.map((id, order) => supabase.from("plan_items").update({ order }).eq("id", id)),
-  );
-  refreshProject(projectId);
-  return { ok: true };
-}
-
 // ─── Link akses klien ──────────────────────────────────────────────────────
 
 const shareSchema = z.object({
@@ -771,4 +746,47 @@ export async function setProjectLogo(projectId: string, path: string | null): Pr
   refreshProject(projectId);
   revalidatePath("/client", "layout");
   return { ok: true };
+}
+
+/** Simpan urutan rencana kerja hasil drag (seluruh daftar, urutan baru). */
+export async function reorderPlanItems(projectId: string, ids: string[]): Promise<Result> {
+  if (!isId(projectId) || ids.length > 500 || !ids.every(isId)) {
+    return { ok: false, error: FAILED };
+  }
+  const { supabase } = await requireStaff();
+  const { data } = await supabase.from("plan_items").select("id").eq("project_id", projectId);
+  const known = new Set((data ?? []).map((row) => row.id));
+  // Hanya tahapan proyek ini; tahapan yang tidak dikirim (mis. baru ditambah orang lain) ke belakang.
+  const ordered = [
+    ...ids.filter((id) => known.has(id)),
+    ...[...known].filter((id) => !ids.includes(id)),
+  ];
+  const results = await Promise.all(
+    ordered.map((id, order) =>
+      supabase.from("plan_items").update({ order }).eq("id", id).eq("project_id", projectId),
+    ),
+  );
+  if (results.some((result) => result.error)) return { ok: false, error: FAILED };
+  refreshProject(projectId);
+  return { ok: true };
+}
+
+/** Hapus beberapa tahapan sekaligus (pilih banyak). */
+export async function deletePlanItems(
+  projectId: string,
+  ids: string[],
+): Promise<Result<{ deleted: number }>> {
+  if (!isId(projectId) || ids.length === 0 || ids.length > 500 || !ids.every(isId)) {
+    return { ok: false, error: FAILED };
+  }
+  const { supabase } = await requireStaff();
+  const { data, error } = await supabase
+    .from("plan_items")
+    .delete()
+    .eq("project_id", projectId)
+    .in("id", ids)
+    .select("id");
+  if (error) return { ok: false, error: FAILED };
+  refreshProject(projectId);
+  return { ok: true, deleted: data?.length ?? 0 };
 }

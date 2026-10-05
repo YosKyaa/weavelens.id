@@ -212,6 +212,10 @@ Link masuk lewat email butuh SMTP sendiri (Resend), karena email bawaan Supabase
 
 **Rencana kerja:** di tab Rencana kerja, **Import tahapan**. Cara sama: unduh template Excel (kolom Tahap, Target, Status, Keterangan), isi, unggah. Klien melihat rencana kerja di link klien (tab Rencana) dan di portal klien (tampilan **Rencana kerja**).
 
+Di tab Rencana kerja:
+- **Ubah urutan**: baris bisa diseret lewat pegangan ⋮⋮ (mouse, layar sentuh, atau keyboard: Spasi lalu panah), lalu **Simpan urutan** (atau **Batal**).
+- **Pilih banyak**: centang beberapa tahap (atau **Pilih semua**), lalu **Hapus terpilih**.
+
 ## 15. Logo proyek
 
 Opsional, di **Pengaturan proyek → Logo proyek** (PNG/JPG/WebP). Setelah gambar dipilih, jendela **Atur logo** terbuka: geser posisi, perbesar/perkecil (tombol **Pas** = seluruh logo terlihat, **Penuh** = kotak terisi), pilih latar **Transparan** atau **Putih**. Hasil disimpan sebagai PNG persegi 512 px. Logo yang sudah ada bisa diatur lagi lewat **Atur ulang**. Logo juga bisa langsung dipilih & diatur saat **Buat proyek**; diunggah otomatis setelah proyek tersimpan. Tampil di daftar proyek, header proyek, beranda & halaman proyek portal klien, dan link klien. Tanpa logo, proyek tampil dengan inisial berwarna. Migrasi: `0009_project_logo.sql` (kolom `projects.logo_path` + bucket publik `logos`).
