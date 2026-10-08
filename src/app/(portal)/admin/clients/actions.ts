@@ -233,3 +233,122 @@ export async function setClientUserActive(
   revalidatePath(`/admin/clients/${clientId}`);
   return { ok: true };
 }
+
+// ─── Brand kit: panduan, warna, font, file aset ────────────────────────────
+
+const brandKitSchema = z.object({
+  guideline: optional(4000),
+  voice: optional(2000),
+  palette: z
+    .array(z.string().regex(/^#[0-9a-fA-F]{6}$/, "Warna harus format #RRGGBB."))
+    .max(12, "Maksimal 12 warna."),
+  fonts: optional(300),
+  assetUrl: z
+    .string()
+    .trim()
+    .max(500)
+    .refine((value) => !value || /^https?:\/\/\S+$/i.test(value), "Link harus diawali https://")
+    .transform((value) => value || null),
+});
+
+export type BrandKitInput = z.input<typeof brandKitSchema>;
+
+function refreshBrand(clientId: string, brandId: string) {
+  revalidatePath(`/admin/clients/${clientId}`);
+  revalidatePath(`/admin/clients/${clientId}/brands/${brandId}`);
+  // Panel brand kit tampil di papan proyek.
+  revalidatePath("/admin/projects", "layout");
+}
+
+export async function saveBrandKit(
+  clientId: string,
+  brandId: string,
+  input: BrandKitInput,
+): Promise<Result> {
+  if (!isId(clientId) || !isId(brandId)) return { ok: false, error: FAILED };
+  const parsed = brandKitSchema.safeParse(input);
+  if (!parsed.success) return { ok: false, error: parsed.error.issues[0]?.message ?? FAILED };
+  const { supabase } = await requirePermission("clients");
+  const value = parsed.data;
+  const { error } = await supabase
+    .from("brands")
+    .update({
+      guideline: value.guideline,
+      voice: value.voice,
+      palette: [...new Set(value.palette.map((color) => color.toUpperCase()))],
+      fonts: value.fonts,
+      asset_url: value.assetUrl,
+    })
+    .eq("id", brandId)
+    .eq("client_id", clientId);
+  if (error) return { ok: false, error: FAILED };
+  refreshBrand(clientId, brandId);
+  return { ok: true };
+}
+
+const brandFileSchema = z.object({
+  path: z.string().max(400),
+  name: z.string().trim().min(1).max(200),
+  size: z
+    .number()
+    .int()
+    .nonnegative()
+    .max(60 * 1024 * 1024),
+  contentType: z.string().max(120).nullable(),
+});
+
+/** Catat file yang sudah diunggah browser ke `brand-assets/<brandId>/<acak>/<nama>`. */
+export async function registerBrandFiles(
+  clientId: string,
+  brandId: string,
+  files: z.input<typeof brandFileSchema>[],
+): Promise<Result> {
+  if (!isId(clientId) || !isId(brandId) || files.length === 0 || files.length > 30) {
+    return { ok: false, error: FAILED };
+  }
+  const parsed = z.array(brandFileSchema).safeParse(files);
+  if (!parsed.success) return { ok: false, error: FAILED };
+  const prefix = new RegExp(`^${brandId}/[A-Za-z0-9]{6,32}/[^/]+$`);
+  if (!parsed.data.every((file) => prefix.test(file.path))) return { ok: false, error: FAILED };
+  const { supabase, user } = await requirePermission("clients");
+  const { data: brand } = await supabase
+    .from("brands")
+    .select("id")
+    .eq("id", brandId)
+    .eq("client_id", clientId)
+    .maybeSingle();
+  if (!brand) return { ok: false, error: FAILED };
+  const { error } = await supabase.from("brand_files").insert(
+    parsed.data.map((file) => ({
+      brand_id: brandId,
+      path: file.path,
+      name: file.name,
+      size: file.size,
+      content_type: file.contentType,
+      created_by: user.id,
+    })),
+  );
+  if (error) return { ok: false, error: FAILED };
+  refreshBrand(clientId, brandId);
+  return { ok: true };
+}
+
+export async function deleteBrandFile(
+  clientId: string,
+  brandId: string,
+  fileId: string,
+): Promise<Result> {
+  if (!isId(clientId) || !isId(brandId) || !isId(fileId)) return { ok: false, error: FAILED };
+  const { supabase } = await requirePermission("clients");
+  const { data, error } = await supabase
+    .from("brand_files")
+    .delete()
+    .eq("id", fileId)
+    .eq("brand_id", brandId)
+    .select("path")
+    .maybeSingle();
+  if (error || !data) return { ok: false, error: FAILED };
+  await supabase.storage.from("brand-assets").remove([data.path]);
+  refreshBrand(clientId, brandId);
+  return { ok: true };
+}

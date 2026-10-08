@@ -33,7 +33,7 @@ const quickActions = [
 /** Ringkasan: angka 7 hari terakhir, jalan pintas, lalu daftar yang menunggu tindakan. */
 export default async function AdminHomePage() {
   const session = await requireStaff();
-  const { supabase, profile } = session;
+  const { supabase, profile, user } = session;
   const isAdmin = profile.role === "admin";
   const seesAnalytics = can(session, "analytics");
   const actions = quickActions.filter((action) =>
@@ -45,7 +45,7 @@ export default async function AdminHomePage() {
   const weekAhead = new Date(`${today}T00:00:00Z`);
   weekAhead.setUTCDate(weekAhead.getUTCDate() + 7);
 
-  const [traffic, unpaid, revisions, selections, active, deadlines] = await Promise.all([
+  const [traffic, unpaid, revisions, selections, active, deadlines, mine] = await Promise.all([
     // Data tanpa izin tidak di-query sama sekali (lebih cepat, dan memang tidak boleh terlihat).
     seesAnalytics ? supabase.rpc("analytics_overview", { p_from: week.from, p_to: week.to }) : none,
     !isAdmin
@@ -83,6 +83,16 @@ export default async function AdminHomePage() {
       .not("stage", "in", "(approved,published)")
       .order("due_date")
       .limit(30),
+    // Tugas yang ditugaskan ke saya: lewat tenggat atau jatuh dalam 7 hari ke depan.
+    supabase
+      .from("design_assets")
+      .select("id, title, stage, due_date, projects!inner(id, title, status, clients(name))")
+      .eq("assignee_id", user.id)
+      .not("due_date", "is", null)
+      .lte("due_date", weekAhead.toISOString().slice(0, 10))
+      .not("stage", "in", "(approved,published)")
+      .order("due_date")
+      .limit(20),
   ]);
 
   // Revisi hanya menunggu jika versi itu masih yang terbaru untuk asset-nya.
@@ -159,27 +169,31 @@ export default async function AdminHomePage() {
     ),
   }));
 
+  const toDeadlineRow = (row: NonNullable<typeof deadlines.data>[number]): InboxRow => {
+    const due = deadlineOf(row.due_date!, today, false);
+    return {
+      id: row.id,
+      href: `/admin/projects/${row.projects.id}/content/${row.id}`,
+      title: row.title,
+      meta: [row.projects.clients?.name, row.projects.title].filter(Boolean).join(" · "),
+      aside: (
+        <span
+          className={cn(
+            "inline-flex h-6 items-center rounded-full px-2.5 text-xs whitespace-nowrap",
+            deadlineClass[due.tone],
+          )}
+        >
+          {due.label}
+        </span>
+      ),
+    };
+  };
+  const myRows: InboxRow[] = (mine.data ?? [])
+    .filter((row) => row.projects.status !== "closed" && row.due_date)
+    .map(toDeadlineRow);
   const deadlineRows: InboxRow[] = (deadlines.data ?? [])
     .filter((row) => row.projects.status !== "closed" && row.due_date)
-    .map((row) => {
-      const due = deadlineOf(row.due_date!, today, false);
-      return {
-        id: row.id,
-        href: `/admin/projects/${row.projects.id}/content/${row.id}`,
-        title: row.title,
-        meta: [row.projects.clients?.name, row.projects.title].filter(Boolean).join(" · "),
-        aside: (
-          <span
-            className={cn(
-              "inline-flex h-6 items-center rounded-full px-2.5 text-xs whitespace-nowrap",
-              deadlineClass[due.tone],
-            )}
-          >
-            {due.label}
-          </span>
-        ),
-      };
-    });
+    .map(toDeadlineRow);
 
   const firstName = (profile.full_name ?? "").split(" ")[0];
 
@@ -250,6 +264,9 @@ export default async function AdminHomePage() {
             empty={text.overdue.empty}
             rows={overdueRows}
           />
+        )}
+        {myRows.length > 0 && (
+          <InboxSection heading="Tugas saya minggu ini" empty="" rows={myRows} />
         )}
         <InboxSection
           heading={text.revisions.heading}

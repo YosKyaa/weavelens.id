@@ -6,11 +6,13 @@ import { StatusBadge } from "@/components/atoms/StatusBadge";
 import { ViewSwitch } from "@/components/molecules/ViewSwitch";
 import { ContentCalendar } from "@/components/organisms/ContentCalendar";
 import { ContentReviewList } from "@/components/organisms/ContentReviewList";
+import { MonthlyReport } from "@/components/organisms/MonthlyReport";
 import { PlanTimeline } from "@/components/organisms/PlanTimeline";
 import { portal } from "@/content/portal";
 import { loadBoard, toCalendarItems } from "@/lib/board-data";
 import { isMonth, shiftMonth } from "@/lib/calendar";
 import { todayJakarta } from "@/lib/format";
+import { loadMonthlyReport } from "@/lib/report-data";
 import { loadClientProject } from "./data";
 
 const text = portal.clientHome;
@@ -47,8 +49,14 @@ export default async function ClientProjectPage({ params, searchParams }: PagePr
   const base = `/client/projects/${project.id}`;
   const calendar = view === "calendar";
   const planView = view === "plan";
-  const month = isMonth(monthParam) ? monthParam : todayJakarta().slice(0, 7);
+  const reportView = view === "report";
+  const currentMonth = todayJakarta().slice(0, 7);
+  const month = isMonth(monthParam) ? monthParam : currentMonth;
   const monthHref = (value: string) => `${base}?view=calendar&month=${value}`;
+  const reportHref = (value: string) => `${base}?view=report&month=${value}`;
+  const report = reportView
+    ? await loadMonthlyReport(db, project.id, month, project.brand_id)
+    : null;
 
   return (
     <div className="grid gap-6">
@@ -69,19 +77,42 @@ export default async function ClientProjectPage({ params, searchParams }: PagePr
           </div>
         </div>
         <p className="max-w-2xl text-ink/75">
-          {planView ? text.planSub : calendar ? text.calendarSub : text.contentSub}
+          {reportView
+            ? "Rekap konten, persetujuan, dan postingan per bulan. Bisa diunduh sebagai PDF."
+            : planView
+              ? text.planSub
+              : calendar
+                ? text.calendarSub
+                : text.contentSub}
         </p>
       </div>
       <ViewSwitch
         label="Tampilan proyek"
-        active={planView ? "plan" : calendar ? "calendar" : "list"}
+        active={reportView ? "report" : planView ? "plan" : calendar ? "calendar" : "list"}
         options={[
           { id: "list", label: "Konten", href: base },
           { id: "calendar", label: "Kalender", href: monthHref(month) },
           { id: "plan", label: "Rencana kerja", shortLabel: "Rencana", href: `${base}?view=plan` },
+          { id: "report", label: "Laporan", href: reportHref(month) },
         ]}
       />
-      {planView ? (
+      {report ? (
+        <MonthlyReport
+          report={report}
+          meta={{
+            projectTitle: project.title,
+            clientName: null,
+            brandName: null,
+            logoPath: project.logo_path,
+          }}
+          hrefs={{
+            previous: reportHref(shiftMonth(month, -1)),
+            next: reportHref(shiftMonth(month, 1)),
+            current: reportHref(currentMonth),
+          }}
+          isCurrentMonth={month === currentMonth}
+        />
+      ) : planView ? (
         <PlanTimeline plan={plan ?? []} />
       ) : items.length === 0 ? (
         <EmptyState message={text.noContent} />

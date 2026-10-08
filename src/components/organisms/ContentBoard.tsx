@@ -3,10 +3,11 @@
 import { useMemo, useState, useTransition, type DragEvent } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { CalendarDays, MessageSquare, MoreHorizontal, Plus } from "lucide-react";
+import { CalendarDays, ExternalLink, MessageSquare, MoreHorizontal, Plus } from "lucide-react";
 import { toast } from "sonner";
 import { moveContent } from "@/app/(portal)/admin/projects/actions";
 import { DesignThumb } from "@/components/atoms/DesignThumb";
+import { PersonBadge } from "@/components/atoms/PersonBadge";
 import { BulkUpload } from "@/components/organisms/BulkUpload";
 import { ContentCreate } from "@/components/organisms/ContentCreate";
 import { ContentImport } from "@/components/organisms/ContentImport";
@@ -44,6 +45,8 @@ export type BoardItem = {
   format: ContentFormat;
   sort: number;
   brandId: string | null;
+  assigneeId: string | null;
+  publishedUrl: string | null;
   dueDate: string | null;
   publishDate: string | null;
   versions: number;
@@ -58,6 +61,9 @@ type ContentBoardProps = {
   brands: BoardBrand[];
   /** Proyek khusus satu brand: filter, pilihan, dan label brand disembunyikan. */
   brandLocked?: boolean;
+  /** Admin & tim aktif (penanggung jawab). */
+  people?: { id: string; name: string }[];
+  currentUserId?: string;
 };
 
 function stageLabel(stage: Stage): string {
@@ -77,7 +83,11 @@ export function ContentBoard({
   items: initialItems,
   brands,
   brandLocked = false,
+  people = [],
+  currentUserId,
 }: ContentBoardProps) {
+  const [personFilter, setPersonFilter] = useState<string>("all");
+  const personById = new Map(people.map((person) => [person.id, person]));
   // Proyek brand: pilihan brand tidak ditampilkan (server mengisi brand proyek).
   const choosable = brandLocked ? [] : brands;
   const router = useRouter();
@@ -101,7 +111,9 @@ export function ContentBoard({
     (item) =>
       (brandFilter === "all" ||
         (brandFilter === "none" ? !item.brandId : item.brandId === brandFilter)) &&
-      (formatFilter === "all" || item.format === formatFilter),
+      (formatFilter === "all" || item.format === formatFilter) &&
+      (personFilter === "all" ||
+        (personFilter === "none" ? !item.assigneeId : item.assigneeId === personFilter)),
   );
   const columns = STAGES.map((stage) => ({
     stage,
@@ -176,7 +188,26 @@ export function ContentBoard({
             </option>
           ))}
         </select>
-        <p className="hidden text-sm text-ink/60 lg:block">{text.dragHint}</p>
+        {people.length > 0 && (
+          <select
+            value={personFilter}
+            onChange={(event) => setPersonFilter(event.target.value)}
+            aria-label="Filter penanggung jawab"
+            className={filterClass}
+          >
+            <option value="all">Semua orang</option>
+            {currentUserId && <option value={currentUserId}>Tugas saya</option>}
+            {people
+              .filter((person) => person.id !== currentUserId)
+              .map((person) => (
+                <option key={person.id} value={person.id}>
+                  {person.name}
+                </option>
+              ))}
+            <option value="none">Belum ada penanggung jawab</option>
+          </select>
+        )}
+        <p className="hidden text-sm text-ink/60 xl:block">{text.dragHint}</p>
         <div className="ml-auto flex flex-wrap gap-2">
           <ContentImport
             projectId={projectId}
@@ -185,7 +216,7 @@ export function ContentBoard({
             existing={items.map((item) => ({ title: item.title, publishDate: item.publishDate }))}
           />
           <BulkUpload projectId={projectId} brands={choosable} />
-          <ContentCreate projectId={projectId} brands={choosable} stage="brief" />
+          <ContentCreate projectId={projectId} brands={choosable} people={people} stage="brief" />
         </div>
       </div>
 
@@ -215,7 +246,13 @@ export function ContentBoard({
                   </h2>
                   <p className="text-xs text-ink/60">{stageHints[stage]}</p>
                 </div>
-                <ContentCreate projectId={projectId} brands={choosable} stage={stage} compact />
+                <ContentCreate
+                  projectId={projectId}
+                  brands={choosable}
+                  people={people}
+                  stage={stage}
+                  compact
+                />
               </header>
 
               <ol className="flex flex-1 flex-col gap-2">
@@ -304,6 +341,18 @@ export function ContentBoard({
                               <MessageSquare aria-hidden className="size-3.5" />
                               {text.comments(item.openComments)}
                             </span>
+                          )}
+                          {item.publishedUrl && (
+                            <span className="inline-flex items-center gap-1 font-semibold text-success">
+                              <ExternalLink aria-hidden className="size-3.5" />
+                              Tayang
+                            </span>
+                          )}
+                          {item.assigneeId && personById.get(item.assigneeId) && (
+                            <PersonBadge
+                              name={personById.get(item.assigneeId)!.name}
+                              className="ml-auto"
+                            />
                           )}
                         </span>
                       </Link>

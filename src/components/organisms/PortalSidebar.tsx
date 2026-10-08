@@ -13,11 +13,12 @@ import {
   Images,
   Inbox,
   LayoutTemplate,
-  type LucideIcon,
+  ListTodo,
   Settings,
   ShieldCheck,
   UserRound,
   Users,
+  type LucideIcon,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 
@@ -47,6 +48,7 @@ const icons: Record<string, LucideIcon> = {
   settings: Settings,
   shield: ShieldCheck,
   user: UserRound,
+  tasks: ListTodo,
 };
 
 const STORAGE_KEY = "wl_nav_groups";

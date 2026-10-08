@@ -1,6 +1,7 @@
 import { notFound } from "next/navigation";
 import { InvoiceEditor } from "@/components/organisms/InvoiceEditor";
 import { requireAdmin } from "@/lib/auth";
+import { emailConfigured } from "@/lib/email";
 import { loadClientOptions, loadCompany, loadInvoice } from "@/lib/invoice-data";
 
 type PageProps = { params: Promise<{ id: string }> };
@@ -25,6 +26,7 @@ export default async function InvoicePage({ params }: PageProps) {
       initial={invoice}
       company={company}
       clients={clients}
+      emailEnabled={emailConfigured()}
     />
   );
 }

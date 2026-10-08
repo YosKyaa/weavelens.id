@@ -1,4 +1,3 @@
-import { PageHeader } from "@/components/molecules/PageHeader";
 import { SettingsForm } from "@/components/organisms/SettingsForm";
 import { invoiceText } from "@/content/invoice";
 import { requireAdmin } from "@/lib/auth";
@@ -10,10 +9,7 @@ export default async function SettingsPage() {
 
   return (
     <>
-      <PageHeader
-        title={invoiceText.settings.title}
-        description={invoiceText.settings.description}
-      />
+      <p className="mb-5 max-w-2xl text-ink/75">{invoiceText.settings.description}</p>
       <SettingsForm initial={company} />
     </>
   );

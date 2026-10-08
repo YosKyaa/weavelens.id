@@ -6,6 +6,7 @@ import { StatusBadge } from "@/components/atoms/StatusBadge";
 import { FormSection } from "@/components/molecules/FormSection";
 import { ContentDetailsForm } from "@/components/organisms/ContentDetailsForm";
 import { ContentShareLinks } from "@/components/organisms/ContentShareLinks";
+import { PublishPanel } from "@/components/organisms/PublishPanel";
 import { ReviewWorkspace } from "@/components/organisms/ReviewWorkspace";
 import { VersionUploader } from "@/components/organisms/VersionUploader";
 import {
@@ -17,6 +18,7 @@ import {
 } from "@/content/workspace";
 import { requireStaff } from "@/lib/auth";
 import { loadReviewVersions } from "@/lib/review-data";
+import { loadStaffOptions } from "@/lib/team-data";
 
 const text = workspaceText.content;
 
@@ -30,14 +32,14 @@ export default async function ContentPage({ params }: PageProps) {
   const { data: content } = await supabase
     .from("design_assets")
     .select(
-      "id, title, stage, format, brand_id, due_date, publish_date, brief, caption, projects!inner(client_id, brand_id)",
+      "id, title, stage, format, brand_id, assignee_id, published_url, published_at, due_date, publish_date, brief, caption, projects!inner(client_id, brand_id)",
     )
     .eq("id", contentId)
     .eq("project_id", id)
     .maybeSingle();
   if (!content) notFound();
 
-  const [versions, { data: brands }, { data: links }] = await Promise.all([
+  const [versions, { data: brands }, { data: links }, people] = await Promise.all([
     loadReviewVersions(supabase, contentId),
     supabase
       .from("brands")
@@ -52,6 +54,7 @@ export default async function ContentPage({ params }: PageProps) {
       .eq("can_review", true)
       .is("revoked_at", null)
       .order("created_at", { ascending: false }),
+    loadStaffOptions(supabase),
   ]);
   const now = Date.now();
   const reviewLinks = (links ?? [])
@@ -103,19 +106,40 @@ export default async function ContentPage({ params }: PageProps) {
         />
       </FormSection>
 
+      {(stage === "approved" || stage === "published") && (
+        <FormSection
+          title="Tayang"
+          description="Setelah konten diposting, tandai di sini dan simpan link-nya."
+        >
+          <PublishPanel
+            key={content.published_at ?? "draft"}
+            projectId={id}
+            contentId={contentId}
+            publishedUrl={content.published_url}
+            publishedAt={content.published_at}
+            publishDate={content.publish_date}
+          />
+        </FormSection>
+      )}
+
       <div className="grid gap-5 xl:grid-cols-2">
         <FormSection title={text.versions.upload}>
           <VersionUploader projectId={id} contentId={contentId} />
         </FormSection>
         <FormSection title="Detail konten">
           <ContentDetailsForm
+            // Tahap bisa berubah dari panel Tayang; form dimuat ulang agar tidak menimpanya.
+            key={content.stage}
             projectId={id}
             contentId={contentId}
             // Proyek khusus satu brand: pilihan brand disembunyikan.
             brands={content.projects.brand_id ? [] : (brands ?? [])}
+            people={people}
+            aiEnabled={Boolean(process.env.ANTHROPIC_API_KEY)}
             initial={{
               title: content.title,
               brandId: content.brand_id,
+              assigneeId: content.assignee_id,
               format,
               stage,
               dueDate: content.due_date ?? "",

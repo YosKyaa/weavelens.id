@@ -21,7 +21,21 @@ type ErrorRecoveryProps = {
 export function ErrorRecovery({ error, reset }: ErrorRecoveryProps) {
   useEffect(() => {
     console.error(error);
-    if (!RECOVERABLE.test(`${error.name} ${error.message}`)) return;
+    const recoverable = RECOVERABLE.test(`${error.name} ${error.message}`);
+    // Catat untuk admin (kecuali error "muat ulang" yang wajar setelah deploy).
+    if (!recoverable) {
+      void fetch("/api/errors", {
+        method: "POST",
+        headers: { "content-type": "application/json" },
+        body: JSON.stringify({
+          message: `${error.name}: ${error.message}`.slice(0, 2000),
+          digest: error.digest ?? null,
+          path: window.location.pathname,
+        }),
+        keepalive: true,
+      }).catch(() => {});
+    }
+    if (!recoverable) return;
     try {
       // Cegah putaran muat ulang: paling sering sekali per 30 detik.
       const last = Number(sessionStorage.getItem(GUARD_KEY) ?? 0);

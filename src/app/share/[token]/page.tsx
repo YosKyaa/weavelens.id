@@ -3,10 +3,12 @@ import { EmptyState } from "@/components/atoms/EmptyState";
 import { ViewSwitch } from "@/components/molecules/ViewSwitch";
 import { ContentCalendar } from "@/components/organisms/ContentCalendar";
 import { ContentReviewList } from "@/components/organisms/ContentReviewList";
+import { MonthlyReport } from "@/components/organisms/MonthlyReport";
 import { shareText } from "@/content/workspace";
 import { loadBoard, toCalendarItems } from "@/lib/board-data";
 import { isMonth, shiftMonth } from "@/lib/calendar";
 import { todayJakarta } from "@/lib/format";
+import { loadMonthlyReport } from "@/lib/report-data";
 import { resolveShare } from "@/lib/share";
 
 type PageProps = {
@@ -46,20 +48,48 @@ export default async function ShareContentPage({ params, searchParams }: PagePro
     return <EmptyState message={shareText.content.empty} className="bg-paper" />;
 
   const calendar = view === "calendar";
-  const month = isMonth(monthParam) ? monthParam : todayJakarta().slice(0, 7);
+  const currentMonth = todayJakarta().slice(0, 7);
+  const month = isMonth(monthParam) ? monthParam : currentMonth;
   const monthHref = (value: string) => `${base}?view=calendar&month=${value}`;
+  const reportHref = (value: string) => `${base}?view=report&month=${value}`;
+  const report =
+    view === "report"
+      ? await loadMonthlyReport(
+          context.db,
+          context.project.id,
+          month,
+          context.brandId ?? context.project.brand_id,
+        )
+      : null;
 
   return (
     <div className="grid gap-5">
       <ViewSwitch
         label="Tampilan konten"
-        active={calendar ? "calendar" : "list"}
+        active={report ? "report" : calendar ? "calendar" : "list"}
         options={[
           { id: "list", label: "Daftar", href: base },
           { id: "calendar", label: "Kalender", href: monthHref(month) },
+          { id: "report", label: "Laporan", href: reportHref(month) },
         ]}
       />
-      {calendar ? (
+      {report ? (
+        <MonthlyReport
+          report={report}
+          meta={{
+            projectTitle: context.project.title,
+            clientName: context.project.clients?.name ?? null,
+            brandName: context.brand?.name ?? null,
+            logoPath: context.project.logo_path,
+          }}
+          hrefs={{
+            previous: reportHref(shiftMonth(month, -1)),
+            next: reportHref(shiftMonth(month, 1)),
+            current: reportHref(currentMonth),
+          }}
+          isCurrentMonth={month === currentMonth}
+        />
+      ) : calendar ? (
         <ContentCalendar
           key={month}
           items={toCalendarItems(items, context.brand ? [context.brand] : projectBrands)}

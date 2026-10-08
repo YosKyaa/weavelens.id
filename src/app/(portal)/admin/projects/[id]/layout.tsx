@@ -44,6 +44,7 @@ export default async function ProjectLayout({ children, params }: LayoutProps) {
         ]
       : []),
     { href: `${base}/plan`, label: text.tabs.plan },
+    ...(showBoard ? [{ href: `${base}/report`, label: text.tabs.report }] : []),
     { href: `${base}/share`, label: text.tabs.share, count: project.share_links[0]?.count },
     { href: `${base}/activity`, label: text.tabs.activity },
     // Penugasan tim & pengaturan proyek hanya untuk admin.

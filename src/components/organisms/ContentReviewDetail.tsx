@@ -1,5 +1,12 @@
 import Link from "next/link";
-import { ArrowRight, CheckCircle2, ChevronLeft, ChevronRight, ListChecks } from "lucide-react";
+import {
+  ArrowRight,
+  CheckCircle2,
+  ChevronLeft,
+  ChevronRight,
+  ExternalLink,
+  ListChecks,
+} from "lucide-react";
 import { StatusBadge } from "@/components/atoms/StatusBadge";
 import { ReviewWorkspace } from "@/components/organisms/ReviewWorkspace";
 import { formatLabels, shareText, type ContentFormat } from "@/content/workspace";
@@ -16,6 +23,8 @@ export type ReviewContent = {
   stage: string;
   caption: string | null;
   publish_date: string | null;
+  /** Link postingan setelah tayang (diisi tim). */
+  published_url?: string | null;
   brands: { name: string; color: string } | null;
 };
 
@@ -132,7 +141,20 @@ export function ContentReviewDetail({
           </p>
           <h2 className="mt-1 text-2xl">{content.title}</h2>
         </div>
-        <StatusBadge kind="stage" status={content.stage} />
+        <div className="flex flex-wrap items-center gap-3">
+          {content.published_url && (
+            <a
+              href={content.published_url}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="inline-flex h-9 items-center gap-1.5 rounded-full border border-line bg-paper px-3 text-sm font-medium text-ink hover:border-ink"
+            >
+              Lihat postingan
+              <ExternalLink aria-hidden className="size-4" />
+            </a>
+          )}
+          <StatusBadge kind="stage" status={content.stage} />
+        </div>
       </div>
 
       <ReviewWorkspace

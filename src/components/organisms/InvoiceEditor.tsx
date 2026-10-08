@@ -31,6 +31,7 @@ import { PaymentAccountsField } from "@/components/molecules/PaymentAccountsFiel
 import { PageHeader } from "@/components/molecules/PageHeader";
 import { ScaledPage } from "@/components/molecules/ScaledPage";
 import { InvoiceDocument } from "@/components/organisms/InvoiceDocument";
+import { InvoiceSendDialog } from "@/components/organisms/InvoiceSendDialog";
 import { Button } from "@/components/ui/button";
 import {
   DropdownMenu,
@@ -70,6 +71,8 @@ type InvoiceEditorProps = {
   initial: InvoiceDraft;
   company: CompanyInfo;
   clients: ClientOption[];
+  /** Resend aktif: tombol kirim email bisa dipakai. */
+  emailEnabled?: boolean;
 };
 
 type FieldErrors = Partial<Record<"name" | "items" | "dueDate", string>>;
@@ -118,7 +121,13 @@ function validate(draft: InvoiceDraft): FieldErrors {
   return errors;
 }
 
-export function InvoiceEditor({ id, initial, company, clients }: InvoiceEditorProps) {
+export function InvoiceEditor({
+  id,
+  initial,
+  company,
+  clients,
+  emailEnabled = false,
+}: InvoiceEditorProps) {
   const router = useRouter();
   const [draft, setDraft] = useState(initial);
   const [saved, setSaved] = useState(() => JSON.stringify(initial));
@@ -670,6 +679,24 @@ export function InvoiceEditor({ id, initial, company, clients }: InvoiceEditorPr
                 />
               </div>
             </ConfirmDialog>
+          )}
+
+          {id && draft.number && draft.status !== "void" && (
+            <InvoiceSendDialog
+              id={id}
+              number={draft.number}
+              total={totals.total}
+              dueDate={draft.dueDate}
+              status={draft.status}
+              recipientName={draft.billTo.name}
+              contacts={[
+                draft.billTo.contact,
+                clients.find((option) => option.id === draft.clientId)?.contact ?? "",
+              ].filter(Boolean)}
+              emailEnabled={emailEnabled}
+              // Perubahan yang belum disimpan harus disimpan dulu supaya klien melihat versi terbaru.
+              disabled={dirty || saving}
+            />
           )}
 
           <Button variant="outline" onClick={handlePrint} disabled={saving}>

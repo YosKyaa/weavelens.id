@@ -16,7 +16,9 @@ export default async function ShareReviewPage({ params }: PageProps) {
 
   let query = context.db
     .from("design_assets")
-    .select("id, title, stage, format, caption, publish_date, brief, brands(name, color)")
+    .select(
+      "id, title, stage, format, caption, publish_date, published_url, brief, brands(name, color)",
+    )
     .eq("id", contentId)
     .eq("project_id", context.project.id);
   if (context.brandId) query = query.eq("brand_id", context.brandId);

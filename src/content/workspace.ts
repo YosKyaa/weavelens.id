@@ -106,6 +106,7 @@ export const workspaceText = {
       board: "Papan konten",
       galleries: "Galeri seleksi",
       plan: "Rencana kerja",
+      report: "Laporan",
       share: "Link klien",
       activity: "Aktivitas",
       team: "Tim",
@@ -302,6 +303,9 @@ export const workspaceText = {
     actions: {
       "content.created": "menambahkan konten",
       "content.moved": "memindahkan konten",
+      "content.published": "menandai konten tayang",
+      "content.assigned": "menugaskan konten",
+      "project.duplicated": "membuat proyek ini dari duplikat",
       "version.uploaded": "mengunggah versi baru",
       "version.approved": "menyetujui desain",
       "version.changes_requested": "meminta revisi",

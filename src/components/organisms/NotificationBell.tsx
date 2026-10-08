@@ -2,7 +2,7 @@
 
 import { useState, useTransition } from "react";
 import Link from "next/link";
-import { Bell, CheckCircle2, MessageSquare, RotateCcw } from "lucide-react";
+import { Bell, CheckCircle2, MessageSquare, RotateCcw, UserCheck } from "lucide-react";
 import { markNotificationsSeen } from "@/app/(portal)/admin/notification-actions";
 import { Button } from "@/components/ui/button";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
@@ -13,11 +13,13 @@ const ICONS = {
   approved: { icon: CheckCircle2, className: "bg-success-soft text-success" },
   revision: { icon: RotateCcw, className: "bg-brand-soft text-primary" },
   comment: { icon: MessageSquare, className: "bg-sand text-ink" },
+  assigned: { icon: UserCheck, className: "bg-ink text-paper" },
 } as const;
 
 function sentence(item: NotificationItem): string {
   if (item.kind === "approved") return `${item.actor} menyetujui "${item.title}"`;
   if (item.kind === "revision") return `${item.actor} minta revisi "${item.title}"`;
+  if (item.kind === "assigned") return `${item.actor} menugaskanmu "${item.title}"`;
   return `${item.actor} berkomentar di "${item.title}"`;
 }
 
@@ -64,7 +66,7 @@ export function NotificationBell({ feed }: { feed: NotificationFeed }) {
       </PopoverTrigger>
       <PopoverContent align="end" className="w-[min(22rem,calc(100vw-2rem))] p-0">
         <p className="border-b border-line px-4 py-3 font-heading text-sm font-semibold">
-          Notifikasi dari klien
+          Notifikasi
         </p>
         {feed.items.length === 0 ? (
           <p className="px-4 py-6 text-center text-sm text-ink/65">

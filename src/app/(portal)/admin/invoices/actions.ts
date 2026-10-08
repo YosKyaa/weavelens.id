@@ -4,9 +4,11 @@ import { revalidatePath } from "next/cache";
 import { z } from "zod";
 import { invoiceText } from "@/content/invoice";
 import { requireAdmin } from "@/lib/auth";
+import { emailConfigured, emailLayout, sendEmail } from "@/lib/email";
 import { todayJakarta } from "@/lib/format";
 import { completeAccounts, summarizeAccounts } from "@/lib/payment";
 import { paymentAccountsSchema } from "@/lib/payment-schema";
+import { generateShareToken } from "@/lib/share";
 
 const text = invoiceText.editor;
 const date = z.string().regex(/^\d{4}-\d{2}-\d{2}$/);
@@ -193,5 +195,78 @@ export async function deleteDraft(id: string): Promise<ActionResult> {
     .select("id");
   if (error || !data?.length) return { ok: false, error: text.toast.failed };
   refresh();
+  return { ok: true };
+}
+
+// ─── Kirim invoice ke klien (WhatsApp / email) ─────────────────────────────
+
+/** Link lihat & unduh invoice untuk klien (dibuat sekali, dipakai ulang). */
+export async function ensureInvoiceLink(
+  id: string,
+): Promise<{ ok: true; token: string } | { ok: false; error: string }> {
+  if (!isId(id)) return { ok: false, error: text.toast.failed };
+  const { supabase } = await requireAdmin();
+  const { data } = await supabase.from("invoices").select("share_token").eq("id", id).maybeSingle();
+  if (!data) return { ok: false, error: text.toast.failed };
+  if (data.share_token) return { ok: true, token: data.share_token };
+  const token = generateShareToken();
+  const { error } = await supabase.from("invoices").update({ share_token: token }).eq("id", id);
+  if (error) return { ok: false, error: text.toast.failed };
+  return { ok: true, token };
+}
+
+const emailSchema = z.object({
+  to: z.string().trim().toLowerCase().email("Format email tidak valid."),
+  message: z.string().trim().min(1, "Tulis pesan untuk klien.").max(2000),
+  link: z.string().url().max(500),
+});
+
+/**
+ * Kirim invoice lewat email (Resend) berisi pesan + tombol "Lihat & unduh invoice".
+ * Draf otomatis ditandai terkirim.
+ */
+export async function sendInvoiceEmail(
+  id: string,
+  input: z.input<typeof emailSchema>,
+): Promise<ActionResult> {
+  if (!isId(id)) return { ok: false, error: text.toast.failed };
+  const parsed = emailSchema.safeParse(input);
+  if (!parsed.success)
+    return { ok: false, error: parsed.error.issues[0]?.message ?? text.toast.failed };
+  if (!emailConfigured()) {
+    return {
+      ok: false,
+      error:
+        "Email belum aktif. Isi RESEND_API_KEY dan EMAIL_FROM di Vercel, atau kirim lewat WhatsApp.",
+    };
+  }
+  const { supabase } = await requireAdmin();
+  const { data: invoice } = await supabase
+    .from("invoices")
+    .select("number, status, share_token")
+    .eq("id", id)
+    .maybeSingle();
+  if (!invoice?.share_token || !parsed.data.link.endsWith(`/invoice/${invoice.share_token}`)) {
+    return { ok: false, error: text.toast.failed };
+  }
+  const sent = await sendEmail({
+    to: [parsed.data.to],
+    subject: `Invoice ${invoice.number} dari WeaveLens`,
+    html: emailLayout({
+      heading: `Invoice ${invoice.number}`,
+      paragraphs: parsed.data.message.split(/\n+/).filter(Boolean),
+      action: { label: "Lihat & unduh invoice", href: parsed.data.link },
+    }),
+  });
+  if (!sent)
+    return { ok: false, error: "Email gagal dikirim. Coba lagi atau kirim lewat WhatsApp." };
+  if (invoice.status === "draft") {
+    await supabase
+      .from("invoices")
+      .update({ status: "sent", updated_at: new Date().toISOString() })
+      .eq("id", id)
+      .eq("status", "draft");
+  }
+  refresh(id);
   return { ok: true };
 }

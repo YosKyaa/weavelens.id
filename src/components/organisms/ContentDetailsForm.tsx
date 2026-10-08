@@ -10,6 +10,7 @@ import {
   type ContentInput,
 } from "@/app/(portal)/admin/projects/actions";
 import { ConfirmDialog } from "@/components/molecules/ConfirmDialog";
+import { CaptionAssistant } from "@/components/organisms/CaptionAssistant";
 import { Field, selectClass } from "@/components/molecules/Field";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -24,6 +25,9 @@ type ContentDetailsFormProps = {
   contentId: string;
   initial: ContentInput;
   brands: { id: string; name: string }[];
+  people?: { id: string; name: string }[];
+  /** ANTHROPIC_API_KEY terpasang (asisten caption). */
+  aiEnabled?: boolean;
 };
 
 export function ContentDetailsForm({
@@ -31,6 +35,8 @@ export function ContentDetailsForm({
   contentId,
   initial,
   brands,
+  people = [],
+  aiEnabled = false,
 }: ContentDetailsFormProps) {
   const router = useRouter();
   const [values, setValues] = useState(initial);
@@ -73,7 +79,7 @@ export function ContentDetailsForm({
           onChange={(event) => update({ title: event.target.value })}
         />
       </Field>
-      <div className="grid gap-4 sm:grid-cols-3">
+      <div className="grid gap-4 sm:grid-cols-2">
         {brands.length > 0 && (
           <Field id="content-brand" label={text.fields.brand}>
             <select
@@ -105,6 +111,23 @@ export function ContentDetailsForm({
             ))}
           </select>
         </Field>
+        {people.length > 0 && (
+          <Field id="content-assignee" label="Penanggung jawab">
+            <select
+              id="content-assignee"
+              value={values.assigneeId ?? ""}
+              onChange={(event) => update({ assigneeId: event.target.value || null })}
+              className={selectClass}
+            >
+              <option value="">Belum ditentukan</option>
+              {people.map((person) => (
+                <option key={person.id} value={person.id}>
+                  {person.name}
+                </option>
+              ))}
+            </select>
+          </Field>
+        )}
         <Field id="content-stage" label={text.fields.stage}>
           <select
             id="content-stage"
@@ -154,6 +177,19 @@ export function ContentDetailsForm({
           onChange={(event) => update({ caption: event.target.value })}
         />
       </Field>
+      <CaptionAssistant
+        projectId={projectId}
+        contentId={contentId}
+        enabled={aiEnabled}
+        input={{
+          title: values.title ?? "",
+          brief: values.brief ?? "",
+          caption: values.caption ?? "",
+          format: values.format ?? "",
+          brandId: values.brandId ?? initial.brandId ?? null,
+        }}
+        onPick={(caption) => update({ caption })}
+      />
       <div className="flex flex-wrap items-center gap-2">
         <Button type="submit" disabled={pending || !dirty}>
           {pending ? <Loader2 className="animate-spin" aria-hidden /> : <Save aria-hidden />}

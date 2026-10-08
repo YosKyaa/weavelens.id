@@ -41,6 +41,7 @@ function buildNav(isAdmin: boolean, permissions: Permission[]): PortalNavGroup[]
       id: "main",
       items: compact([
         { href: "/admin", label: "Ringkasan", icon: "home" },
+        { href: "/admin/tasks", label: "Tugas saya", icon: "tasks" },
         can("analytics") && { href: "/admin/analytics", label: "Analitik website", icon: "chart" },
       ]),
     },

@@ -1,8 +1,9 @@
 "use client";
 
 import { useState, useTransition } from "react";
+import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { Loader2, Pencil, Plus, Trash2 } from "lucide-react";
+import { Loader2, Palette, Pencil, Plus, Trash2 } from "lucide-react";
 import { toast } from "sonner";
 import { deleteBrand, saveBrand } from "@/app/(portal)/admin/clients/actions";
 import { ConfirmDialog } from "@/components/molecules/ConfirmDialog";
@@ -147,6 +148,12 @@ export function BrandManager({ clientId, brands }: { clientId: string; brands: B
                   <span className="block text-sm text-ink/65">{brand.instagram}</span>
                 )}
               </span>
+              <Button asChild variant="outline" size="sm">
+                <Link href={`/admin/clients/${clientId}/brands/${brand.id}`}>
+                  <Palette aria-hidden />
+                  Brand kit
+                </Link>
+              </Button>
               <Button
                 variant="ghost"
                 size="icon"

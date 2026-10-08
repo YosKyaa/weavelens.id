@@ -29,13 +29,22 @@ const text = workspaceText.content;
 type ContentCreateProps = {
   projectId: string;
   brands: { id: string; name: string }[];
+  /** Pilihan penanggung jawab (opsional). */
+  people?: { id: string; name: string }[];
   stage: Stage;
   /** Versi ikon kecil di kepala kolom kanban. */
   compact?: boolean;
 };
 
 /** Tambah kartu konten cepat: judul, brand, format, tenggat. Detail lain diisi di halaman konten. */
-export function ContentCreate({ projectId, brands, stage, compact }: ContentCreateProps) {
+export function ContentCreate({
+  projectId,
+  brands,
+  people = [],
+  stage,
+  compact,
+}: ContentCreateProps) {
+  const [assigneeId, setAssigneeId] = useState("");
   const router = useRouter();
   const [open, setOpen] = useState(false);
   const [title, setTitle] = useState("");
@@ -56,6 +65,7 @@ export function ContentCreate({ projectId, brands, stage, compact }: ContentCrea
         publishDate: "",
         brief: "",
         caption: "",
+        assigneeId: assigneeId || null,
       });
       if (!result.ok) {
         setError(result.error);
@@ -124,6 +134,23 @@ export function ContentCreate({ projectId, brands, stage, compact }: ContentCrea
                     </option>
                   ))}
                   <option value="">{workspaceText.board.noBrand}</option>
+                </select>
+              </Field>
+            )}
+            {people.length > 0 && (
+              <Field id={`new-assignee-${stage}`} label="Penanggung jawab">
+                <select
+                  id={`new-assignee-${stage}`}
+                  value={assigneeId}
+                  onChange={(event) => setAssigneeId(event.target.value)}
+                  className={selectClass}
+                >
+                  <option value="">Belum ditentukan</option>
+                  {people.map((person) => (
+                    <option key={person.id} value={person.id}>
+                      {person.name}
+                    </option>
+                  ))}
                 </select>
               </Field>
             )}

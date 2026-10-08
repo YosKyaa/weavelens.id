@@ -112,6 +112,54 @@ export type Database = {
         };
         Relationships: [];
       };
+      brand_files: {
+        Row: {
+          id: string;
+          brand_id: string;
+          path: string;
+          name: string;
+          size: number | null;
+          content_type: string | null;
+          created_by: string | null;
+          created_at: string;
+        };
+        Insert: {
+          id?: string;
+          brand_id: string;
+          path: string;
+          name: string;
+          size?: number | null;
+          content_type?: string | null;
+          created_by?: string | null;
+          created_at?: string;
+        };
+        Update: {
+          id?: string;
+          brand_id?: string;
+          path?: string;
+          name?: string;
+          size?: number | null;
+          content_type?: string | null;
+          created_by?: string | null;
+          created_at?: string;
+        };
+        Relationships: [
+          {
+            foreignKeyName: "brand_files_brand_id_fkey";
+            columns: ["brand_id"];
+            isOneToOne: false;
+            referencedRelation: "brands";
+            referencedColumns: ["id"];
+          },
+          {
+            foreignKeyName: "brand_files_created_by_fkey";
+            columns: ["created_by"];
+            isOneToOne: false;
+            referencedRelation: "profiles";
+            referencedColumns: ["id"];
+          },
+        ];
+      };
       brands: {
         Row: {
           id: string;
@@ -121,6 +169,11 @@ export type Database = {
           instagram: string | null;
           sort: number;
           created_at: string;
+          guideline: string | null;
+          voice: string | null;
+          palette: string[];
+          fonts: string | null;
+          asset_url: string | null;
         };
         Insert: {
           id?: string;
@@ -130,6 +183,11 @@ export type Database = {
           instagram?: string | null;
           sort?: number;
           created_at?: string;
+          guideline?: string | null;
+          voice?: string | null;
+          palette?: string[];
+          fonts?: string | null;
+          asset_url?: string | null;
         };
         Update: {
           id?: string;
@@ -139,6 +197,11 @@ export type Database = {
           instagram?: string | null;
           sort?: number;
           created_at?: string;
+          guideline?: string | null;
+          voice?: string | null;
+          palette?: string[];
+          fonts?: string | null;
+          asset_url?: string | null;
         };
         Relationships: [
           {
@@ -252,6 +315,9 @@ export type Database = {
           publish_date: string | null;
           sort: number;
           updated_at: string;
+          assignee_id: string | null;
+          published_url: string | null;
+          published_at: string | null;
         };
         Insert: {
           id?: string;
@@ -267,6 +333,9 @@ export type Database = {
           publish_date?: string | null;
           sort?: number;
           updated_at?: string;
+          assignee_id?: string | null;
+          published_url?: string | null;
+          published_at?: string | null;
         };
         Update: {
           id?: string;
@@ -282,6 +351,9 @@ export type Database = {
           publish_date?: string | null;
           sort?: number;
           updated_at?: string;
+          assignee_id?: string | null;
+          published_url?: string | null;
+          published_at?: string | null;
         };
         Relationships: [
           {
@@ -296,6 +368,13 @@ export type Database = {
             columns: ["brand_id"];
             isOneToOne: false;
             referencedRelation: "brands";
+            referencedColumns: ["id"];
+          },
+          {
+            foreignKeyName: "design_assets_assignee_id_fkey";
+            columns: ["assignee_id"];
+            isOneToOne: false;
+            referencedRelation: "profiles";
             referencedColumns: ["id"];
           },
         ];
@@ -381,6 +460,7 @@ export type Database = {
           external_url: string | null;
           decided_by: string | null;
           decided_at: string | null;
+          reminded_at: string | null;
         };
         Insert: {
           id?: string;
@@ -395,6 +475,7 @@ export type Database = {
           external_url?: string | null;
           decided_by?: string | null;
           decided_at?: string | null;
+          reminded_at?: string | null;
         };
         Update: {
           id?: string;
@@ -409,6 +490,7 @@ export type Database = {
           external_url?: string | null;
           decided_by?: string | null;
           decided_at?: string | null;
+          reminded_at?: string | null;
         };
         Relationships: [
           {
@@ -426,6 +508,39 @@ export type Database = {
             referencedColumns: ["id"];
           },
         ];
+      };
+      error_events: {
+        Row: {
+          id: string;
+          created_at: string;
+          source: string;
+          message: string;
+          digest: string | null;
+          path: string | null;
+          user_id: string | null;
+          user_agent: string | null;
+        };
+        Insert: {
+          id?: string;
+          created_at?: string;
+          source: string;
+          message: string;
+          digest?: string | null;
+          path?: string | null;
+          user_id?: string | null;
+          user_agent?: string | null;
+        };
+        Update: {
+          id?: string;
+          created_at?: string;
+          source?: string;
+          message?: string;
+          digest?: string | null;
+          path?: string | null;
+          user_id?: string | null;
+          user_agent?: string | null;
+        };
+        Relationships: [];
       };
       faqs: {
         Row: {
@@ -529,6 +644,7 @@ export type Database = {
           payment_details: string | null;
           updated_at: string;
           payment_accounts: Json;
+          share_token: string | null;
         };
         Insert: {
           id?: string;
@@ -554,6 +670,7 @@ export type Database = {
           payment_details?: string | null;
           updated_at?: string;
           payment_accounts?: Json;
+          share_token?: string | null;
         };
         Update: {
           id?: string;
@@ -579,6 +696,7 @@ export type Database = {
           payment_details?: string | null;
           updated_at?: string;
           payment_accounts?: Json;
+          share_token?: string | null;
         };
         Relationships: [
           {
@@ -948,6 +1066,8 @@ export type Database = {
           active: boolean;
           team_role_id: string | null;
           notifications_seen_at: string;
+          /** Kolom terhitung (fungsi public.mfa_enabled), hanya untuk select. */
+          mfa_enabled: boolean;
         };
         Insert: {
           id: string;

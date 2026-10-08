@@ -227,3 +227,25 @@ Klien dengan beberapa brand bisa diatur dengan dua cara:
 - **Satu proyek gabungan** (mis. "Konten Oktober" untuk semua brand): biarkan **Semua brand**. Brand dipilih per konten, ada filter brand, dan link klien bisa per brand.
 
 Migrasi: `0010_project_brand.sql` (kolom `projects.brand_id`).
+
+## 17. Paket operasional (migrasi `0011_ops_toolkit.sql`)
+
+**Penanggung jawab & Tugas saya.** Setiap konten bisa diberi **Penanggung jawab** (saat membuat kartu atau di Detail konten). Yang ditugaskan mendapat notifikasi di lonceng (+ email bila Resend aktif) dan otomatis menjadi anggota proyek. Menu **Tugas saya** berisi semua tugas lintas proyek, dikelompokkan Lewat tenggat / Hari ini & besok / Minggu ini / Nanti. Admin & pengelola proyek bisa melihat tugas orang lain dan tabel **Beban kerja tim**. Papan konten punya filter orang, dan Ringkasan menampilkan **Tugas saya minggu ini**.
+
+**Tandai tayang.** Konten yang sudah disetujui punya panel **Tayang** di halaman konten: isi link postingan (opsional) dan tanggal tayang, lalu **Tandai tayang**. Tahap otomatis pindah ke Sudah tayang; klien melihat tombol **Lihat postingan** dan link-nya masuk laporan bulanan.
+
+**Laporan bulanan.** Tab **Laporan** di proyek (klien melihat yang sama di portal & link klien → **Laporan**): jumlah konten, disetujui, tayang, tayang sesuai jadwal, putaran revisi, rata-rata waktu sampai disetujui, daftar konten + link postingan, dan rencana kerja bulan itu. **Unduh PDF** lalu kirim lewat WhatsApp/email.
+
+**Duplikat ke bulan berikutnya.** **Pengaturan proyek → Duplikat ke bulan berikutnya**: nama otomatis ("Oktober 2026" → "November 2026"), salin rencana kerja (status direset), daftar konten sebagai Brief (opsional), anggota tim, logo; semua tanggal digeser.
+
+**Brand kit.** **Klien & brand → (klien) → Brand kit** per brand: palet warna, font, gaya bahasa, panduan, link folder aset, dan file (logo, guideline PDF, font). Tim melihatnya di panel **Brand kit** di atas papan proyek brand itu.
+
+**Asisten caption AI.** Di Detail konten, **Buat caption dengan AI** memberi 3 pilihan caption + hashtag dari judul, brief, dan gaya bahasa brand kit. Butuh `ANTHROPIC_API_KEY` di Vercel (model Claude Opus 5.5; bila permintaan ditolak filter keamanan, API otomatis mencoba model cadangan).
+
+**Kirim invoice ke klien.** Di invoice, **Kirim ke klien** → WhatsApp (pesan + link siap kirim) atau Email (butuh Resend). Klien membuka link `weavelens.id/invoice/…` untuk melihat & **Unduh PDF** tanpa login. Draft bisa otomatis ditandai Terkirim.
+
+**Tugas harian otomatis (Vercel Cron, 08.00 WIB).** Isi `CRON_SECRET` di Vercel (teks acak panjang). Setiap pagi: backup database ke Storage privat (30 hari terakhir), pengingat ke klien untuk desain yang menunggu review > 2 hari (diulang tiap 4 hari, maks. 2 minggu), ringkasan tugas ke tiap anggota tim, dan ringkasan error ke admin. Email butuh Resend.
+
+**Pengaturan → Sistem & keamanan.** Status layanan (email + **Kirim email uji**, cron, AI, Drive, 2FA), daftar backup (unduh / **Backup sekarang**), dan **Log error** (error browser & server tercatat otomatis, log > 30 hari dibuang).
+
+**Verifikasi 2 langkah.** **Akun saya → Aktifkan verifikasi 2 langkah**: pindai QR dengan Google Authenticator/Authy, masukkan kode. Setelah aktif, setiap login meminta kode 6 digit. Sangat disarankan untuk admin. Pastikan MFA TOTP aktif di Supabase (**Authentication → Multi-Factor**, bawaan: aktif).

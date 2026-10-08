@@ -1,5 +1,5 @@
 import Link from "next/link";
-import { CalendarDays, Columns3, LayoutGrid, ListChecks } from "lucide-react";
+import { CalendarDays, Columns3, FileBarChart, LayoutGrid, ListChecks } from "lucide-react";
 import { cn } from "@/lib/utils";
 
 const ICONS = {
@@ -7,6 +7,7 @@ const ICONS = {
   list: LayoutGrid,
   calendar: CalendarDays,
   plan: ListChecks,
+  report: FileBarChart,
 } as const;
 
 type ViewSwitchProps = {

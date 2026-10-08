@@ -292,8 +292,8 @@
     [data-reveal] {
       animation: reveal-up linear both;
       animation-timeline: view();
-      animation-range: entry calc(4% + var(--reveal-step, 0) * 7%)
-        cover calc(28% + var(--reveal-step, 0) * 7%);
+      animation-range: entry calc(4% + var(--reveal-step, 0) * 7%) cover
+        calc(28% + var(--reveal-step, 0) * 7%);
     }
 
     /* Parallax hanya di layar lebar: di mobile efeknya kecil tapi menunda render foto hero. */
@@ -498,6 +498,32 @@
   .invoice-keep {
     break-inside: avoid;
   }
+
+  /* Laporan bulanan: halaman putih bermargin (bukan latar penuh seperti invoice). */
+  html:has(.print-report),
+  html:has(.print-report) body {
+    background: #fff !important;
+  }
+
+  .print-report {
+    page: report;
+  }
+
+  .print-report .report-doc {
+    border: 0;
+    border-radius: 0;
+    padding: 0;
+    background: transparent;
+  }
+
+  .report-keep {
+    break-inside: avoid;
+  }
+}
+
+@page report {
+  size: A4;
+  margin: 14mm;
 }
 
 /* FAQ <details>: buka-tutup halus di browser yang mendukung ::details-content. */

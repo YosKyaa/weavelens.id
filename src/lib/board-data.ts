@@ -13,6 +13,8 @@ export type BoardRow = {
   format: ContentFormat;
   sort: number;
   brandId: string | null;
+  assigneeId: string | null;
+  publishedUrl: string | null;
   dueDate: string | null;
   publishDate: string | null;
   caption: string | null;
@@ -43,7 +45,7 @@ export async function loadBoard(
   let query = db
     .from("design_assets")
     .select(
-      "id, title, stage, format, sort, brand_id, due_date, publish_date, caption, design_versions(id, version_no, files, external_url, status, design_comments(resolved))",
+      "id, title, stage, format, sort, brand_id, assignee_id, published_url, due_date, publish_date, caption, design_versions(id, version_no, files, external_url, status, design_comments(resolved))",
     )
     .eq("project_id", projectId);
   if (brandId) query = query.eq("brand_id", brandId);
@@ -89,6 +91,8 @@ export async function loadBoard(
       format: asFormat(item.format),
       sort: item.sort,
       brandId: item.brand_id,
+      assigneeId: item.assignee_id,
+      publishedUrl: item.published_url,
       dueDate: item.due_date,
       publishDate: item.publish_date,
       caption: item.caption,

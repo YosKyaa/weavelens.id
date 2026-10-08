@@ -17,7 +17,7 @@ export default async function ClientContentPage({ params }: PageProps) {
 
   const { data: content } = await db
     .from("design_assets")
-    .select("id, title, stage, format, caption, publish_date, brands(name, color)")
+    .select("id, title, stage, format, caption, publish_date, published_url, brands(name, color)")
     .eq("id", contentId)
     .eq("project_id", project.id)
     .maybeSingle();

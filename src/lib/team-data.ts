@@ -16,3 +16,19 @@ export async function loadTeamOptions(supabase: SessionClient): Promise<TeamOpti
     projects: profile.project_members[0]?.count ?? 0,
   }));
 }
+
+export type StaffOption = { id: string; name: string };
+
+/** Admin & tim aktif — pilihan penanggung jawab konten. */
+export async function loadStaffOptions(supabase: SessionClient): Promise<StaffOption[]> {
+  const { data } = await supabase
+    .from("profiles")
+    .select("id, full_name")
+    .in("role", ["admin", "team"])
+    .eq("active", true)
+    .order("full_name");
+  return (data ?? []).map((profile) => ({
+    id: profile.id,
+    name: profile.full_name || "Tanpa nama",
+  }));
+}

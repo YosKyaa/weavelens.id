@@ -7,7 +7,7 @@ import { Logo } from "@/components/atoms/Logo";
 import { LoginForm } from "@/components/organisms/LoginForm";
 import { PortalSetupNotice } from "@/components/organisms/PortalSetupNotice";
 import { portal } from "@/content/portal";
-import { getSession, homeFor } from "@/lib/auth";
+import { getLoginState, homeFor, MFA_PATH } from "@/lib/auth";
 import { supabaseEnv } from "@/lib/supabase/env";
 import { googleEnabled } from "@/lib/supabase/providers";
 
@@ -39,10 +39,13 @@ const ERRORS: Record<string, { message: string; tab: "team" | "client" }> = {
 export default async function LoginPage({ searchParams }: PageProps) {
   if (!supabaseEnv()) return <PortalSetupNotice />;
 
-  const [session, google] = await Promise.all([getSession(), googleEnabled()]);
+  const [session, google] = await Promise.all([getLoginState(), googleEnabled()]);
+  const { next, error } = await searchParams;
+  if (session?.mfaPending) {
+    redirect(next?.startsWith("/") ? `${MFA_PATH}?next=${encodeURIComponent(next)}` : MFA_PATH);
+  }
   if (session) redirect(homeFor(session.profile.role));
 
-  const { next, error } = await searchParams;
   const problem = error ? ERRORS[error] : undefined;
   const tab = problem?.tab ?? (next?.startsWith("/client") ? "client" : "team");
 

@@ -1,12 +1,17 @@
 import "server-only";
 import type { Session } from "@/lib/auth";
 
-/** Aksi klien yang perlu diketahui tim (dari activity_log). */
-const CLIENT_ACTIONS = ["version.approved", "version.changes_requested", "comment.added"] as const;
+/** Aksi yang perlu diketahui tim (dari activity_log): aksi klien + penugasan konten. */
+const NOTIFY_ACTIONS = [
+  "version.approved",
+  "version.changes_requested",
+  "comment.added",
+  "content.assigned",
+] as const;
 
 export type NotificationItem = {
   id: string;
-  kind: "approved" | "revision" | "comment";
+  kind: "approved" | "revision" | "comment" | "assigned";
   actor: string;
   title: string;
   project: string;
@@ -27,8 +32,8 @@ export async function loadNotifications(session: Session): Promise<NotificationF
   const [{ data: rows }, { data: me }] = await Promise.all([
     supabase
       .from("activity_log")
-      .select("id, action, actor_name, meta, created_at, project_id, projects(title)")
-      .in("action", [...CLIENT_ACTIONS])
+      .select("id, action, actor_id, actor_name, meta, created_at, project_id, projects(title)")
+      .in("action", [...NOTIFY_ACTIONS])
       .gte("created_at", since)
       .order("created_at", { ascending: false })
       .limit(40),
@@ -38,10 +43,14 @@ export async function loadNotifications(session: Session): Promise<NotificationF
 
   const items = (rows ?? [])
     .filter((row) => {
-      if (row.action !== "comment.added") return true;
-      // Komentar: hanya dari klien (komentar tim sendiri tidak perlu diberitahukan).
       const meta = (row.meta ?? {}) as Record<string, unknown>;
-      return meta.by === "client";
+      // Komentar: hanya dari klien (komentar tim sendiri tidak perlu diberitahukan).
+      if (row.action === "comment.added") return meta.by === "client";
+      // Penugasan: hanya untuk orang yang ditugaskan, dan bukan oleh dirinya sendiri.
+      if (row.action === "content.assigned") {
+        return meta.assigneeId === user.id && row.actor_id !== user.id;
+      }
+      return true;
     })
     .slice(0, 20)
     .map((row): NotificationItem => {
@@ -54,7 +63,9 @@ export async function loadNotifications(session: Session): Promise<NotificationF
             ? "approved"
             : row.action === "version.changes_requested"
               ? "revision"
-              : "comment",
+              : row.action === "content.assigned"
+                ? "assigned"
+                : "comment",
         actor: row.actor_name ?? "Klien",
         title: typeof meta.title === "string" ? meta.title : "Konten",
         project: row.projects?.title ?? "",
