@@ -141,6 +141,16 @@ const BACKUP_TABLES: TableName[] = [
   "faqs",
   "partners",
   "site_contact",
+  // Photobooth (aplikasi tablet): transaksi dan data acara ikut dicadangkan.
+  "booth_events",
+  "booth_packages",
+  "booth_frames",
+  "booth_devices",
+  "booth_sessions",
+  "booth_photos",
+  "booth_payments",
+  "booth_vouchers",
+  "booth_voucher_redemptions",
 ];
 const KEEP_BACKUPS = 30;
 

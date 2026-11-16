@@ -5,6 +5,7 @@ import Link from "next/link";
 import { usePathname } from "next/navigation";
 import {
   BarChart3,
+  Camera,
   ChevronDown,
   FileText,
   FolderKanban,
@@ -49,6 +50,7 @@ const icons: Record<string, LucideIcon> = {
   shield: ShieldCheck,
   user: UserRound,
   tasks: ListTodo,
+  camera: Camera,
 };
 
 const STORAGE_KEY = "wl_nav_groups";

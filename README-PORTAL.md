@@ -249,3 +249,29 @@ Migrasi: `0010_project_brand.sql` (kolom `projects.brand_id`).
 **Pengaturan → Sistem & keamanan.** Status layanan (email + **Kirim email uji**, cron, AI, Drive, 2FA), daftar backup (unduh / **Backup sekarang**), dan **Log error** (error browser & server tercatat otomatis, log > 30 hari dibuang).
 
 **Verifikasi 2 langkah.** **Akun saya → Aktifkan verifikasi 2 langkah**: pindai QR dengan Google Authenticator/Authy, masukkan kode. Setelah aktif, setiap login meminta kode 6 digit. Sangat disarankan untuk admin. Pastikan MFA TOTP aktif di Supabase (**Authentication → Multi-Factor**, bawaan: aktif).
+
+## 14. Photobooth (WeaveLens Booth)
+
+Aplikasi tablet photobooth ada di repo terpisah ([YosKyaa/photoboothWL](https://github.com/YosKyaa/photoboothWL)) dan memakai **proyek Supabase yang sama** dengan portal. Portal menyediakan:
+
+| Halaman | Isi |
+|---|---|
+| `/g/<kode>` | Galeri tamu dari QR booth (layar & cetakan): unduh foto, bagikan ke WhatsApp, GIF, foto satuan. Tanpa login, `noindex`. Saat booth masih offline: "Fotomu sedang dalam perjalanan", memuat ulang tiap 30 detik. |
+| `/admin/booth` | Transaksi & sesi (pendapatan, metode, voucher, tablet, tautan galeri). |
+| `/admin/booth/events` | Event (profil booth: mode bayar, salinan tambahan, alur foto, layout, frame aktif, filter) dan paketnya. Tablet: Admin > Profil > **Sinkronkan profil**. |
+| `/admin/booth/frames` | Unggah PNG frame, slot visual + **Deteksi otomatis**, kotak **QR galeri** di cetakan, preview foto contoh, versi baru setiap simpan. Tablet: Admin > Tampilan > **Sinkronkan frame**. |
+| `/admin/booth/vouchers` | Voucher potongan (rupiah/persen/gratis), kuota, masa berlaku. Berlaku langsung di semua booth online. |
+| `/admin/booth/devices` | Daftarkan tablet (token tampil sekali), lihat kapan terakhir terhubung, cabut akses, izin kelola voucher dari tablet. |
+
+**Akses:** admin, atau anggota tim yang perannya punya izin **Photobooth** (Tim & akses → Peran tim). Dijaga RLS lewat `booth_is_admin()` = `has_permission('booth')`.
+
+**Setup sekali:**
+
+1. `npm run db:push` → menjalankan `0012_booth.sql` (tabel `booth_*`, RLS, bucket `booth` privat dan `frames` publik). Semua migrasi Supabase, termasuk milik booth, ada di repo ini.
+2. Edge Function booth di-deploy dari repo booth: `scripts\deploy-supabase.ps1` (Midtrans, Resend, cron).
+3. Galeri membaca foto Drive booth dengan `GOOGLE_SERVICE_ACCOUNT_JSON` portal: tambahkan email service account portal ke Shared drive "WeaveLens Booth" sebagai **Content manager**, atau pakai kunci yang sama di tablet.
+4. Daftarkan tablet di `/admin/booth/devices`, ketik tokennya di tablet (Admin > Sistem > Token perangkat).
+
+Tidak ada env baru: galeri memakai `SUPABASE_SERVICE_ROLE_KEY` dan `GOOGLE_SERVICE_ACCOUNT_JSON` yang sudah ada.
+
+**Aturan yang harus sama dengan tablet** (ubah keduanya bila salah satu berubah): `src/lib/booth/frames.ts` ↔ `FrameValidator.kt`/`QrGeometry.kt`, `src/lib/booth/profile.ts` ↔ `EventProfile` di `BoothConfig.kt`.

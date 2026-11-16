@@ -195,3 +195,24 @@ export async function shareFolderWithLink(folderId: string): Promise<void> {
   });
   if (!response.ok) throw new Error(`Gagal membagikan folder (${response.status}).`);
 }
+
+/** File asli dari Drive (mis. tombol Unduh di galeri booth). `null` bila tidak ada/tidak bisa dibaca. */
+export async function fetchOriginal(fileId: string): Promise<Response | null> {
+  const response = await drive(`files/${encodeURIComponent(fileId)}?alt=media&supportsAllDrives=true`);
+  return response.ok ? response : null;
+}
+
+/** ID file bernama [name] langsung di dalam folder (Shared Drive ikut dicari). */
+export async function findFileInFolder(folderId: string, name: string): Promise<string | null> {
+  const quote = (value: string) => value.replace(/\\/g, "\\\\").replace(/'/g, "\\'");
+  const params = new URLSearchParams({
+    q: `name = '${quote(name)}' and '${quote(folderId)}' in parents and trashed = false`,
+    fields: "files(id)",
+    supportsAllDrives: "true",
+    includeItemsFromAllDrives: "true",
+  });
+  const response = await drive(`files?${params}`);
+  if (!response.ok) return null;
+  const { files } = (await response.json()) as { files?: { id: string }[] };
+  return files?.[0]?.id ?? null;
+}

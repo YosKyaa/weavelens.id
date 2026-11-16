@@ -1,7 +1,7 @@
 /**
  * Izin yang bisa diberikan ke peran tim. Admin selalu punya semuanya.
  * Invoice, Pengaturan, dan Tim & akses sengaja TIDAK ada di sini: tetap khusus admin.
- * Daftar ini harus sama dengan constraint di supabase/migrations/0006_team_permissions.sql.
+ * Daftar ini harus sama dengan constraint team_roles_permissions_check (terakhir di supabase/migrations/0012_booth.sql).
  */
 export const PERMISSIONS = [
   {
@@ -28,6 +28,11 @@ export const PERMISSIONS = [
     key: "analytics",
     label: "Analitik website",
     description: "Melihat jumlah pengunjung dan klik WhatsApp.",
+  },
+  {
+    key: "booth",
+    label: "Photobooth",
+    description: "Mengelola event, paket, frame, voucher, perangkat, dan transaksi WeaveLens Booth.",
   },
 ] as const;
 

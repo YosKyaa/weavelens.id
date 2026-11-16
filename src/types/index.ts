@@ -1,5 +1,5 @@
 /** Kunci pesan WhatsApp yang terisi otomatis. Teksnya ada di content/site.ts. */
-export type WaMessageKey = "general" | "photo" | "photoVideo" | "video" | "reels" | "design";
+export type WaMessageKey = "general" | "photo" | "photoVideo" | "video" | "reels" | "design" | "photobooth";
 
 /** Asal klik CTA, dikirim ke Vercel Analytics. */
 export type CtaSection =

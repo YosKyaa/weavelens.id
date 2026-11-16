@@ -30,6 +30,21 @@ const cmsGroup: PortalNavGroup = {
   ],
 };
 
+/** Photobooth (aplikasi tablet WeaveLens Booth): data yang disinkron tablet lewat Supabase. */
+const boothGroup: PortalNavGroup = {
+  id: "booth",
+  label: "Photobooth",
+  icon: "camera",
+  collapsible: true,
+  items: [
+    { href: "/admin/booth", label: "Transaksi & sesi" },
+    { href: "/admin/booth/events", label: "Event & paket" },
+    { href: "/admin/booth/frames", label: "Frame" },
+    { href: "/admin/booth/vouchers", label: "Voucher" },
+    { href: "/admin/booth/devices", label: "Perangkat" },
+  ],
+};
+
 /** Menu disusun dari izin: setiap orang hanya melihat yang memang bisa dibukanya. */
 function buildNav(isAdmin: boolean, permissions: Permission[]): PortalNavGroup[] {
   const can = (permission: Permission) => permissions.includes(permission);
@@ -68,6 +83,7 @@ function buildNav(isAdmin: boolean, permissions: Permission[]): PortalNavGroup[]
     },
   ];
   if (can("cms")) groups.push(cmsGroup);
+  if (can("booth")) groups.push(boothGroup);
   groups.push({
     id: "system",
     items: compact([

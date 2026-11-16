@@ -13,6 +13,410 @@ export type Json =
 export type Database = {
   public: {
     Tables: {
+      booth_devices: {
+        Row: {
+          id: string;
+          name: string;
+          token_hash: string;
+          active: boolean;
+          last_seen: string | null;
+          app_version: string | null;
+          created_at: string;
+          manage_vouchers: boolean;
+          revoked_at: string | null;
+        };
+        Insert: {
+          id?: string;
+          name: string;
+          token_hash: string;
+          active?: boolean;
+          last_seen?: string | null;
+          app_version?: string | null;
+          created_at?: string;
+          manage_vouchers?: boolean;
+          revoked_at?: string | null;
+        };
+        Update: {
+          id?: string;
+          name?: string;
+          token_hash?: string;
+          active?: boolean;
+          last_seen?: string | null;
+          app_version?: string | null;
+          created_at?: string;
+          manage_vouchers?: boolean;
+          revoked_at?: string | null;
+        };
+        Relationships: [];
+      };
+      booth_events: {
+        Row: {
+          id: string;
+          name: string;
+          profile: Json;
+          active: boolean;
+          updated_at: string;
+        };
+        Insert: {
+          id: string;
+          name: string;
+          profile?: Json;
+          active?: boolean;
+          updated_at?: string;
+        };
+        Update: {
+          id?: string;
+          name?: string;
+          profile?: Json;
+          active?: boolean;
+          updated_at?: string;
+        };
+        Relationships: [];
+      };
+      booth_frames: {
+        Row: {
+          id: string;
+          name: string;
+          layout: string;
+          version: number;
+          canvas_w: number;
+          canvas_h: number;
+          slots: Json;
+          print: Json;
+          png_path: string;
+          active_from: string | null;
+          active_to: string | null;
+          client_id: string | null;
+          deleted_at: string | null;
+          created_at: string;
+          updated_at: string;
+          qr: Json | null;
+        };
+        Insert: {
+          id: string;
+          name: string;
+          layout: string;
+          version?: number;
+          canvas_w: number;
+          canvas_h: number;
+          slots: Json;
+          print?: Json;
+          png_path: string;
+          active_from?: string | null;
+          active_to?: string | null;
+          client_id?: string | null;
+          deleted_at?: string | null;
+          created_at?: string;
+          updated_at?: string;
+          qr?: Json | null;
+        };
+        Update: {
+          id?: string;
+          name?: string;
+          layout?: string;
+          version?: number;
+          canvas_w?: number;
+          canvas_h?: number;
+          slots?: Json;
+          print?: Json;
+          png_path?: string;
+          active_from?: string | null;
+          active_to?: string | null;
+          client_id?: string | null;
+          deleted_at?: string | null;
+          created_at?: string;
+          updated_at?: string;
+          qr?: Json | null;
+        };
+        Relationships: [];
+      };
+      booth_packages: {
+        Row: {
+          id: string;
+          event_id: string;
+          name: string;
+          price: number;
+          output: string;
+          print_copies: number;
+          layouts: string[];
+          active: boolean;
+          sort: number;
+          updated_at: string;
+        };
+        Insert: {
+          id: string;
+          event_id: string;
+          name: string;
+          price: number;
+          output: string;
+          print_copies?: number;
+          layouts?: string[];
+          active?: boolean;
+          sort?: number;
+          updated_at?: string;
+        };
+        Update: {
+          id?: string;
+          event_id?: string;
+          name?: string;
+          price?: number;
+          output?: string;
+          print_copies?: number;
+          layouts?: string[];
+          active?: boolean;
+          sort?: number;
+          updated_at?: string;
+        };
+        Relationships: [
+          {
+            foreignKeyName: "booth_packages_event_id_fkey";
+            columns: ["event_id"];
+            isOneToOne: false;
+            referencedRelation: "booth_events";
+            referencedColumns: ["id"];
+          },
+        ];
+      };
+      booth_payments: {
+        Row: {
+          order_id: string;
+          session_code: string;
+          method: string;
+          amount: number;
+          status: string;
+          qr_string: string | null;
+          expires_at: string | null;
+          paid_at: string | null;
+          midtrans_transaction_id: string | null;
+          raw: Json | null;
+          device_id: string | null;
+          created_at: string;
+          updated_at: string;
+          voucher_code: string | null;
+          discount: number;
+          base_amount: number | null;
+        };
+        Insert: {
+          order_id: string;
+          session_code: string;
+          method: string;
+          amount: number;
+          status: string;
+          qr_string?: string | null;
+          expires_at?: string | null;
+          paid_at?: string | null;
+          midtrans_transaction_id?: string | null;
+          raw?: Json | null;
+          device_id?: string | null;
+          created_at?: string;
+          updated_at?: string;
+          voucher_code?: string | null;
+          discount?: number;
+          base_amount?: number | null;
+        };
+        Update: {
+          order_id?: string;
+          session_code?: string;
+          method?: string;
+          amount?: number;
+          status?: string;
+          qr_string?: string | null;
+          expires_at?: string | null;
+          paid_at?: string | null;
+          midtrans_transaction_id?: string | null;
+          raw?: Json | null;
+          device_id?: string | null;
+          created_at?: string;
+          updated_at?: string;
+          voucher_code?: string | null;
+          discount?: number;
+          base_amount?: number | null;
+        };
+        Relationships: [
+          {
+            foreignKeyName: "booth_payments_device_id_fkey";
+            columns: ["device_id"];
+            isOneToOne: false;
+            referencedRelation: "booth_devices";
+            referencedColumns: ["id"];
+          },
+        ];
+      };
+      booth_photos: {
+        Row: {
+          session_code: string;
+          index: number;
+          drive_file_id: string | null;
+          created_at: string;
+        };
+        Insert: {
+          session_code: string;
+          index: number;
+          drive_file_id?: string | null;
+          created_at?: string;
+        };
+        Update: {
+          session_code?: string;
+          index?: number;
+          drive_file_id?: string | null;
+          created_at?: string;
+        };
+        Relationships: [
+          {
+            foreignKeyName: "booth_photos_session_code_fkey";
+            columns: ["session_code"];
+            isOneToOne: false;
+            referencedRelation: "booth_sessions";
+            referencedColumns: ["code"];
+          },
+        ];
+      };
+      booth_sessions: {
+        Row: {
+          code: string;
+          event_id: string | null;
+          device_id: string | null;
+          package_id: string | null;
+          package_name: string | null;
+          price_snapshot: number;
+          pay_mode: string | null;
+          layout: string | null;
+          frame_id: string | null;
+          frame_version: number | null;
+          filter: string | null;
+          print_copies: number;
+          email: string | null;
+          email_sent_at: string | null;
+          composition_path: string | null;
+          thumb_path: string | null;
+          drive_folder_id: string | null;
+          drive_composition_id: string | null;
+          created_at: string | null;
+          finished_at: string | null;
+          synced_at: string;
+        };
+        Insert: {
+          code: string;
+          event_id?: string | null;
+          device_id?: string | null;
+          package_id?: string | null;
+          package_name?: string | null;
+          price_snapshot?: number;
+          pay_mode?: string | null;
+          layout?: string | null;
+          frame_id?: string | null;
+          frame_version?: number | null;
+          filter?: string | null;
+          print_copies?: number;
+          email?: string | null;
+          email_sent_at?: string | null;
+          composition_path?: string | null;
+          thumb_path?: string | null;
+          drive_folder_id?: string | null;
+          drive_composition_id?: string | null;
+          created_at?: string | null;
+          finished_at?: string | null;
+          synced_at?: string;
+        };
+        Update: {
+          code?: string;
+          event_id?: string | null;
+          device_id?: string | null;
+          package_id?: string | null;
+          package_name?: string | null;
+          price_snapshot?: number;
+          pay_mode?: string | null;
+          layout?: string | null;
+          frame_id?: string | null;
+          frame_version?: number | null;
+          filter?: string | null;
+          print_copies?: number;
+          email?: string | null;
+          email_sent_at?: string | null;
+          composition_path?: string | null;
+          thumb_path?: string | null;
+          drive_folder_id?: string | null;
+          drive_composition_id?: string | null;
+          created_at?: string | null;
+          finished_at?: string | null;
+          synced_at?: string;
+        };
+        Relationships: [
+          {
+            foreignKeyName: "booth_sessions_device_id_fkey";
+            columns: ["device_id"];
+            isOneToOne: false;
+            referencedRelation: "booth_devices";
+            referencedColumns: ["id"];
+          },
+        ];
+      };
+      booth_voucher_redemptions: {
+        Row: {
+          order_id: string;
+          voucher_code: string;
+          redeemed_at: string;
+        };
+        Insert: {
+          order_id: string;
+          voucher_code: string;
+          redeemed_at?: string;
+        };
+        Update: {
+          order_id?: string;
+          voucher_code?: string;
+          redeemed_at?: string;
+        };
+        Relationships: [
+          {
+            foreignKeyName: "booth_voucher_redemptions_order_id_fkey";
+            columns: ["order_id"];
+            isOneToOne: false;
+            referencedRelation: "booth_payments";
+            referencedColumns: ["order_id"];
+          },
+        ];
+      };
+      booth_vouchers: {
+        Row: {
+          code: string;
+          kind: string;
+          value: number;
+          package_ids: string[];
+          max_uses: number;
+          used: number;
+          valid_until: string | null;
+          active: boolean;
+          created_at: string;
+          updated_at: string;
+        };
+        Insert: {
+          code: string;
+          kind: string;
+          value?: number;
+          package_ids?: string[];
+          max_uses?: number;
+          used?: number;
+          valid_until?: string | null;
+          active?: boolean;
+          created_at?: string;
+          updated_at?: string;
+        };
+        Update: {
+          code?: string;
+          kind?: string;
+          value?: number;
+          package_ids?: string[];
+          max_uses?: number;
+          used?: number;
+          valid_until?: string | null;
+          active?: boolean;
+          created_at?: string;
+          updated_at?: string;
+        };
+        Relationships: [];
+      };
+
       activity_log: {
         Row: {
           id: string;

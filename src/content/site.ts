@@ -66,6 +66,8 @@ export const site = {
         "Halo WeaveLens, saya mau tanya produksi Konten Reels.\nUntuk (brand/acara): \nJumlah video: \nTanggal: ",
       design:
         "Halo WeaveLens, saya mau tanya harga Desain Visual.\nUntuk acara: \nKebutuhan (backdrop/banner/feed): ",
+      photobooth:
+        "Halo WeaveLens, saya mau pesan Photobooth untuk acara.\nJenis acara: \nTanggal: \nLokasi: \nPerkiraan jumlah tamu: ",
     },
   },
 
