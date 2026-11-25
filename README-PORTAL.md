@@ -274,4 +274,4 @@ Aplikasi tablet photobooth ada di repo terpisah ([YosKyaa/photoboothWL](https://
 
 Tidak ada env baru: galeri memakai `SUPABASE_SERVICE_ROLE_KEY` dan `GOOGLE_SERVICE_ACCOUNT_JSON` yang sudah ada.
 
-**Aturan yang harus sama dengan tablet** (ubah keduanya bila salah satu berubah): `src/lib/booth/frames.ts` ↔ `FrameValidator.kt`/`QrGeometry.kt`, `src/lib/booth/profile.ts` ↔ `EventProfile` di `BoothConfig.kt`.
+**Aturan yang harus sama dengan tablet** (ubah keduanya bila salah satu berubah): `src/lib/booth/frames.ts` ↔ `FrameValidator.kt`/`QrGeometry.kt`, `src/lib/booth/profile.ts` ↔ `EventProfile` di `BoothConfig.kt`. Setelah mengubahnya, buat ulang fixture kontrak untuk test tablet: `npx tsx scripts/booth-contract-fixture.ts > ../PHOTOBOOTH/app/src/test/resources/portal/portal_rows.json`, lalu jalankan unit test tablet.
