@@ -1,15 +1,18 @@
 import Link from "next/link";
-import { ExternalLink } from "lucide-react";
+import { Download, ExternalLink } from "lucide-react";
 import { EmptyState } from "@/components/atoms/EmptyState";
 import { StatTile } from "@/components/atoms/StatTile";
 import { PageHeader } from "@/components/molecules/PageHeader";
 import { RangeFilter } from "@/components/molecules/RangeFilter";
+import { Button } from "@/components/ui/button";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { requirePermission } from "@/lib/auth";
 import { formatRupiah } from "@/lib/booth/profile";
 
 const RANGES = [1, 7, 30] as const;
 const ROWS = 100;
+/** Tablet dianggap online bila memanggil Edge Function dalam 15 menit terakhir (antrean unggah, cek bayar). */
+const ONLINE_MINUTES = 15;
 
 const METHOD: Record<string, string> = { qris: "QRIS", cash: "Tunai", free: "Gratis" };
 const STATUS: Record<string, { label: string; tone: string }> = {
@@ -52,8 +55,11 @@ export default async function BoothOverviewPage({ searchParams }: Props) {
       .gte("synced_at", from)
       .order("created_at", { ascending: false, nullsFirst: false })
       .limit(ROWS),
-    supabase.from("booth_devices").select("id, name"),
+    supabase.from("booth_devices").select("id, name, active, last_seen"),
   ]);
+  const onlineSince = Date.now() - ONLINE_MINUTES * 60_000;
+  const activeDevices = (devices.data ?? []).filter((device) => device.active);
+  const online = activeDevices.filter((device) => device.last_seen && Date.parse(device.last_seen) >= onlineSince);
 
   const deviceName = new Map((devices.data ?? []).map((device) => [device.id, device.name]));
   const paid = (payments.data ?? []).filter((payment) => payment.status === "paid");
@@ -66,7 +72,17 @@ export default async function BoothOverviewPage({ searchParams }: Props) {
       <PageHeader
         title="Transaksi & sesi"
         description="Data dari semua tablet booth. Pembayaran tunai dan sesi offline muncul setelah tablet tersinkron."
-        actions={<RangeFilter basePath="/admin/booth" options={RANGES} value={days} />}
+        actions={
+          <div className="flex flex-wrap items-center gap-2">
+            <RangeFilter basePath="/admin/booth" options={RANGES} value={days} />
+            <Button asChild variant="outline" size="sm">
+              <a href={`/admin/booth/export?days=${days}`} download>
+                <Download aria-hidden />
+                Unduh CSV
+              </a>
+            </Button>
+          </div>
+        }
       />
       <div className="mb-8 grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
         <StatTile label="Pendapatan lunas" value={formatRupiah(revenue)} hint={`QRIS ${formatRupiah(qris)}`} />
@@ -74,6 +90,14 @@ export default async function BoothOverviewPage({ searchParams }: Props) {
         <StatTile label="Sesi tersinkron" value={String(sessions.data?.length ?? 0)} hint={`Maks. ${ROWS} terbaru`} />
         <StatTile label="Memakai voucher" value={String(vouchers)} />
       </div>
+      <p className="-mt-4 mb-8 text-sm text-ink/75">
+        Tablet online: {online.length} dari {activeDevices.length}
+        {online.length > 0 && ` (${online.map((device) => device.name).join(", ")})`}. Dihitung dari aktivitas{" "}
+        {ONLINE_MINUTES} menit terakhir.{" "}
+        <Link href="/admin/booth/devices" className="font-semibold text-primary underline-offset-4 hover:underline">
+          Kelola perangkat
+        </Link>
+      </p>
 
       <section className="mb-10">
         <h2 className="mb-3 text-lg">Pembayaran</h2>
